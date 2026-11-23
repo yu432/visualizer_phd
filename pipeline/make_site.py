@@ -77,7 +77,8 @@ TEMPLATE = """<!doctype html>
 <p>__SCENE_NOTE__ Мышь вращает, колесо зумит, правая кнопка сдвигает.
 Сверху переключается облако (GT, DA3-Giant, VGGT-Ω или оба предсказания) и раскраска —
 цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога).
-Каждая страница самодостаточна, кроме соседнего <code>plotly.min.js</code>.</p>
+Каждая страница берёт рядом лежащие <code>three.min.js</code> и двоичные облака из
+<code>data/</code>.</p>
 <div class="cards">
 __CARDS__
 </div>
@@ -299,7 +300,12 @@ def main() -> int:
                      .replace("__THUMB__", image or "")
                      .replace("__SCENE__", pretty(dataset, scene))
                      .replace("__NUM__", scene_number(rows, dataset, scene)))
-    shutil.copyfile(Path(args.viewer) / "plotly.min.js", out / "viewer" / "plotly.min.js")
+    # The WebGL pages load three.js and their binary point payloads from next to themselves.
+    for script in sorted(Path(args.viewer).glob("*.js")):
+        shutil.copyfile(script, out / "viewer" / script.name)
+    payloads = Path(args.viewer) / "data"
+    if payloads.is_dir():
+        shutil.copytree(payloads, out / "viewer" / "data", dirs_exist_ok=True)
 
     eth3d = [row for row in rows if row.get("dataset") == "eth3d"]
     tnt = [row for row in rows if row.get("dataset") == "tnt"]

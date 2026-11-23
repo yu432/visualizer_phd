@@ -1,9 +1,17 @@
-"""Build interactive HTML viewers (Plotly / WebGL) so the clouds can be rotated by hand.
+"""Build interactive point-cloud pages (WebGL / three.js) so the clouds can be rotated by hand.
 
-Each scene page shows one cloud at a time (GT lidar, DA3-Giant, VGGT-Omega or both
-predictions) and can recolour the points either with their pixel colours or with the
-distance to the GT cloud (green = on the surface, red = far / off). Everything is
-inlined, so the pages work offline over file:// with the neighbouring plotly.min.js.
+Each scene page shows one cloud at a time (GT lidar, DA3-Giant, VGGT-Omega or both predictions)
+and can recolour the points either with their pixel colours or with the distance to the GT cloud
+(green = on the surface, red = far / off).
+
+Plotly's Scatter3d stops being usable above a few hundred thousand markers: the old pages showed
+at most 100 000 points per cloud and the clouds therefore read as sparse voxels. The pages now
+draw the points with three.js (one WebGL buffer per cloud): positions are quantised to int16 over
+the cloud's own bounding box and the colour is a one-byte index into a 256-entry palette, so a
+point costs 7 bytes. The payloads sit in data/ next to the page and are fetched the first time a
+cloud is switched on, which keeps the HTML at a few kilobytes and lets one page carry millions of
+points. Pages must be served over http (GitHub Pages does that); a file:// page is not allowed to
+fetch the neighbouring binaries.
 """
 import argparse
 import base64
@@ -13,7 +21,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import plotly.graph_objects as go
 from scipy.spatial import cKDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -22,20 +29,28 @@ from pose_align import centres, sim3 as pose_sim3  # noqa: E402
 from common import (CLOUDS, GT, OUTPUTS, crop_mask, diagonal, load_crop,  # noqa: E402
                     percentile_box, read_json, read_ply, view_basis)
 
-SHORT_HEX = "0123456789abcdef"
+VENDOR = Path(__file__).resolve().parent / "vendor"
 LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9"}
+SHORTCUTS = {"da3-giant": "da3", "vggt-omega": "omega"}
 # Green to red, the same convention as the distance figures in the PDF.
 DIST_SCALE = [
     [0.0, "#1a9850"], [0.25, "#91cf60"], [0.5, "#d9ef8b"],
     [0.75, "#fdae61"], [0.9, "#f46d43"], [1.0, "#d73027"],
 ]
-# Kept compact and top-right so it does not eat the view; the title is set per mode.
-COLORBAR = dict(colorbar=dict(
-    len=0.62, thickness=12, x=0.995, xanchor="right", y=0.95, yanchor="top",
-    bgcolor="rgba(20,23,28,0)", outlinewidth=0,
-    title=dict(text="", side="top", font=dict(size=11.5)),
-    tickfont=dict(size=10.5),
-))
+RAMP_SIZE = 256
+FOV = 45.0
+
+CSS = """
+html, body { margin: 0; background: #14171c; color: #e8e8e8; }
+#gl { width: 100%; height: 86vh; overflow: hidden; }
+#gl canvas { display: block; }
+.pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
+        padding:4px 11px; font:inherit; cursor:pointer; }
+.pick:hover { background:#262e38; }
+.pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
+.pick:disabled { opacity:.35; cursor:not-allowed; }
+.fail { padding:28px 24px; max-width:640px; color:#ffd08a; font-size:15px; line-height:1.5; }
+"""
 
 HEADER = (
     "<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;"
@@ -58,145 +73,468 @@ CONTROLS = """
   <span style="width:1px;height:18px;background:#2b313a"></span>
   <label style="cursor:pointer;color:#c3cad3"><input type="checkbox" id="cams"
      style="vertical-align:-2px;margin-right:4px">центры камер GT</label>
+  <label style="cursor:pointer;color:#8f98a3">размер
+     <input type="range" id="size" min="1" max="8" step="0.1"
+            style="width:96px;vertical-align:-3px"></label>
   <span id="hint" style="color:#8f98a3"></span>
 </div>
-<style>
-  .pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
-          padding:4px 11px; font:inherit; cursor:pointer; }
-  .pick:hover { background:#262e38; }
-  .pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
-  .pick:disabled { opacity:.35; cursor:not-allowed; }
-</style>
 """
 
-SCRIPT = """
+SCRIPT = r"""
 <script>
 (function () {
   var META = window.VIEWER;
-  var gd = document.getElementById('cloud');
-  var ORIG = null, ready = false, CACHE = {};
-  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false};
+  var host = document.getElementById('gl');
+  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false, size: META.point_size};
+  var ready = false, dirty = true, benchMode = /[?&]bench/.test(location.search);
 
-  // The page state is mirrored into the URL hash, so a view can be bookmarked or
-  // deep-linked (and so the render can be checked headlessly): #da3:dist
+  // ---------------------------------------------------------------- URL hash
+  // Everything the page shows is mirrored into the hash, so a view can be bookmarked
+  // and deep-linked (and so headless renders can ask for a specific state):
+  // #da3:dist:cams:2.5  ->  cloud : colour : camera centres : point size
   function fromHash() {
     var parts = (location.hash || '').replace('#', '').split(':');
-    if (parts[0] && (META.index[parts[0]] !== null || parts[0] === 'both')) { state.cloud = parts[0]; }
+    if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
     if (parts[1] === 'rgb' || parts[1] === 'dist') { state.colour = parts[1]; }
     if (parts[2] === 'cams') { state.cams = true; }
+    var size = parseFloat(parts[3]);
+    if (isFinite(size) && size > 0) { state.size = size; }
   }
   function toHash() {
-    var tail = state.cams ? ':cams' : '';
+    var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
     try { history.replaceState(null, '', '#' + state.cloud + ':' + state.colour + tail); } catch (e) {}
   }
 
-  function decode(b64) {
-    var s = atob(b64), n = s.length, buf = new ArrayBuffer(n), u = new Uint8Array(buf);
-    for (var i = 0; i < n; i++) { u[i] = s.charCodeAt(i); }
-    return Array.from(new Float32Array(buf));
+  // ------------------------------------------------------------ base64 / bytes
+  function bytes(b64) {
+    var s = atob(b64), out = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) { out[i] = s.charCodeAt(i); }
+    return out;
   }
-  function distOf(i) {
-    if (!CACHE[i]) { CACHE[i] = decode(META.traces[i].dist); }
-    return CACHE[i];
+  function floats(b64) {
+    var raw = bytes(b64);
+    return new Float32Array(raw.buffer, 0, raw.length >> 2);
   }
+  function texture(palette, size) {
+    var data = new Uint8Array(size * 4);
+    for (var i = 0; i < size; i++) {
+      data[4 * i] = palette[3 * i];
+      data[4 * i + 1] = palette[3 * i + 1];
+      data[4 * i + 2] = palette[3 * i + 2];
+      data[4 * i + 3] = 255;
+    }
+    var made = new THREE.DataTexture(data, size, 1, THREE.RGBAFormat);
+    made.magFilter = THREE.NearestFilter;
+    made.minFilter = THREE.NearestFilter;
+    made.wrapS = THREE.ClampToEdgeWrapping;
+    made.wrapT = THREE.ClampToEdgeWrapping;
+    made.generateMipmaps = false;
+    made.needsUpdate = true;
+    return made;
+  }
+  var RAMP = texture(bytes(META.ramp), META.ramp_size);
+
+  // ---------------------------------------------------------------- renderer
+  var renderer = null;
+  try { renderer = new THREE.WebGLRenderer({antialias: false}); } catch (error) { renderer = null; }
+  if (!renderer || !renderer.getContext()) {
+    host.innerHTML = "<div class='fail'>Эти страницы рисуют облака через WebGL, а браузер его не дал." +
+      " Обычно помогает включить аппаратное ускорение или открыть страницу в Chrome или Firefox.</div>";
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x14171c, 1);
+  host.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var root = new THREE.Group();
+  root.applyMatrix4(new THREE.Matrix4().fromArray(META.basis));
+  scene.add(root);
+  var camera = new THREE.PerspectiveCamera(META.fov, 1, 0.001, 1e6);
+
+  var VERTEX = [
+    'uniform vec3 uCentre;', 'uniform vec3 uHalf;', 'uniform float uSize;',
+    'uniform float uPixel;', 'uniform float uRefDist;',
+    'attribute float aIndex;', 'attribute float aDist;',
+    'varying float vIndex;', 'varying float vDist;',
+    'void main() {',
+    '  vIndex = aIndex; vDist = aDist / 255.0;',
+    '  vec4 view = modelViewMatrix * vec4(position * uHalf + uCentre, 1.0);',
+    '  gl_Position = projectionMatrix * view;',
+    '  gl_PointSize = clamp(uSize * uPixel * uRefDist / max(-view.z, 1e-9), 1.0, 40.0);',
+    '}'
+  ].join('\n');
+
+  var FRAGMENT = [
+    'uniform sampler2D uPalette;', 'uniform sampler2D uRamp;',
+    'uniform float uPalCount;', 'uniform float uMode;',
+    'varying float vIndex;', 'varying float vDist;',
+    'void main() {',
+    '  vec2 off = gl_PointCoord - vec2(0.5);',
+    '  if (dot(off, off) > 0.25) { discard; }',
+    '  vec4 col = (uMode < 0.5)',
+    '    ? texture2D(uPalette, vec2((vIndex + 0.5) / uPalCount, 0.5))',
+    '    : texture2D(uRamp, vec2((vDist * 255.0 + 0.5) / 256.0, 0.5));',
+    '  gl_FragColor = vec4(col.rgb, 1.0);',
+    '}'
+  ].join('\n');
+
+  function materialFor(spec) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uCentre: {value: new THREE.Vector3().fromArray(spec.centre)},
+        uHalf: {value: new THREE.Vector3().fromArray(spec.half)},
+        uSize: {value: state.size},
+        uPixel: {value: renderer.getPixelRatio()},
+        uRefDist: {value: 1.0},
+        uPalette: {value: texture(bytes(spec.pal), spec.pal_count)},
+        uRamp: {value: RAMP},
+        uPalCount: {value: spec.pal_count},
+        uMode: {value: 0}
+      },
+      vertexShader: VERTEX,
+      fragmentShader: FRAGMENT
+    });
+  }
+
+  // ------------------------------------------------------------- camera orbit
+  var control = {
+    target: new THREE.Vector3().fromArray(META.camera.target),
+    radius: META.camera.radius, theta: META.camera.theta, phi: META.camera.phi
+  };
+  function applyCamera() {
+    control.phi = Math.max(0.08, Math.min(Math.PI - 0.08, control.phi));
+    var s = control, sp = Math.sin(s.phi);
+    camera.position.set(
+      s.target.x + s.radius * sp * Math.sin(s.theta),
+      s.target.y + s.radius * Math.cos(s.phi),
+      s.target.z + s.radius * sp * Math.cos(s.theta));
+    camera.up.set(0, 1, 0);
+    camera.lookAt(s.target);
+    camera.near = Math.max(s.radius * 0.002, 1e-5);
+    camera.far = s.radius * 40.0;
+    camera.updateProjectionMatrix();
+    forEachObject(function (obj) { obj.material.uniforms.uRefDist.value = s.radius; });
+    dirty = true;
+  }
+  function forEachObject(visit) {
+    for (var key in META.traces) {
+      if (META.traces[key].object) { visit(META.traces[key].object); }
+    }
+  }
+  var drag = null;
+  host.addEventListener('contextmenu', function (event) { event.preventDefault(); });
+  host.addEventListener('pointerdown', function (event) {
+    drag = {x: event.clientX, y: event.clientY, button: event.button, shift: event.shiftKey};
+    try { host.setPointerCapture(event.pointerId); } catch (e) {}
+  });
+  host.addEventListener('pointerup', function (event) {
+    drag = null;
+    try { host.releasePointerCapture(event.pointerId); } catch (e) {}
+    toHash();
+  });
+  host.addEventListener('pointermove', function (event) {
+    if (!drag) { return; }
+    var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+    drag.x = event.clientX; drag.y = event.clientY;
+    if (drag.button === 2 || drag.shift) {
+      // pan: move the orbit target in the plane of the screen
+      var scale = 2.0 * control.radius * Math.tan(META.fov * Math.PI / 360.0) / host.clientHeight;
+      var right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      var up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      control.target.addScaledVector(right, -dx * scale).addScaledVector(up, dy * scale);
+    } else {
+      control.theta -= dx * 0.006;
+      control.phi -= dy * 0.006;
+    }
+    applyCamera();
+  });
+  host.addEventListener('wheel', function (event) {
+    event.preventDefault();
+    control.radius = Math.max(control.radius * Math.exp(event.deltaY * 0.0012), 1e-4);
+    applyCamera();
+  }, {passive: false});
+
+  // ------------------------------------------------------------- payload load
+  function loadPositions(key) {
+    var spec = META.traces[key];
+    if (!spec) { return Promise.resolve(null); }
+    if (spec.object) { return Promise.resolve(spec.object); }
+    if (spec.pending) { return spec.pending; }
+    var started = performance.now();
+    spec.pending = fetch(spec.pos).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + spec.pos); }
+      return response.arrayBuffer();
+    }).then(function (buffer) {
+      var n = spec.count;
+      if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Int16Array(buffer, 0, 3 * n), 3, true));
+      geo.setAttribute('aIndex', new THREE.BufferAttribute(new Uint8Array(buffer, 6 * n, n), 1, false));
+      geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
+      var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
+                             + spec.half[2] * spec.half[2]);
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
+      var object = new THREE.Points(geo, materialFor(spec));
+      object.material.uniforms.uRefDist.value = control.radius;
+      object.visible = false;
+      root.add(object);
+      spec.object = object;
+      spec.decode_ms = Math.round(performance.now() - started);
+      dirty = true;
+      return object;
+    });
+    return spec.pending;
+  }
+  function loadDistances(key) {
+    var spec = META.traces[key];
+    if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
+    if (spec.dist_pending) { return spec.dist_pending; }
+    spec.dist_pending = fetch(spec.dist).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + spec.dist); }
+      return response.arrayBuffer();
+    }).then(function (buffer) {
+      var values = new Uint8Array(buffer);
+      if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
+      spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
+      spec.dist_done = true;
+      dirty = true;
+    });
+    return spec.dist_pending;
+  }
+
+  // ----------------------------------------------------------------- drawing
+  var frustums = null;
+  if (META.frustums) {
+    var fgeo = new THREE.BufferGeometry();
+    fgeo.setAttribute('position', new THREE.BufferAttribute(floats(META.frustums.b64), 3));
+    // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
+    frustums = new THREE.LineSegments(fgeo, new THREE.LineBasicMaterial(
+      {color: 0xffb020, depthTest: false, transparent: true, opacity: 0.85}));
+    frustums.renderOrder = 1;
+    frustums.visible = false;
+    root.add(frustums);
+  }
+
   function chosen() {
     if (state.cloud === 'both') { return META.predictions.slice(); }
     return [state.cloud];
   }
-  function active(key) {
-    return chosen().indexOf(key) >= 0;
-  }
+  function hint(text) { document.getElementById('hint').textContent = text; }
   function syncButtons() {
     var buttons = document.querySelectorAll('.pick');
     for (var i = 0; i < buttons.length; i++) {
-      var b = buttons[i], on;
-      if (b.dataset.cloud) { on = state.cloud === b.dataset.cloud; }
-      else { on = state.colour === b.dataset.colour; }
-      b.classList.toggle('on', on);
+      var button = buttons[i];
+      button.classList.toggle('on', button.dataset.cloud
+        ? state.cloud === button.dataset.cloud : state.colour === button.dataset.colour);
     }
     document.getElementById('cams').checked = state.cams;
-    var hint = document.getElementById('hint');
-    if (state.colour === 'dist') {
-      hint.textContent = META.hint_dist;
-    } else {
-      hint.textContent = META.hint_rgb;
-    }
+    document.getElementById('size').value = state.size;
   }
   function apply() {
-    if (!ready) { return; }
-    var visible = gd.data.map(function () { return false; });
-    var keys = chosen(), indices = [], colours = [], scales = [], showscales = [];
-    var mins = [], maxs = [], titles = [], shown = false;
-    for (var k = 0; k < keys.length; k++) {
-      var key = keys[k], i = META.index[key];
-      if (i === null || i === undefined) { continue; }
-      visible[i] = true;
-      indices.push(i);
+    var keys = chosen(), loading = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (META.traces[keys[i]]) { loading.push(loadPositions(keys[i])); }
+    }
+    hint('загрузка точек…');
+    Promise.all(loading).then(function () {
+      var extra = [];
       if (state.colour === 'dist') {
-        colours.push(distOf(i));
-        scales.push(META.scale);
-        mins.push(0);
-        maxs.push(META.traces[i].tau);
-        titles.push(key === 'gt' ? META.title_gt : META.title_pred);
-        // A single colour bar is enough, even when both predictions are shown.
-        showscales.push(!shown);
-        shown = true;
-      } else {
-        colours.push(ORIG[i]);
-        scales.push(META.scale);
-        mins.push(0);
-        maxs.push(1);
-        titles.push('');
-        showscales.push(false);
+        for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
       }
-    }
-    if (state.cams) { visible[META.cams] = true; }
-    Plotly.restyle(gd, {'visible': visible});
-    if (indices.length) {
-      Plotly.restyle(gd, {
-        'marker.color': colours,
-        'marker.colorscale': scales,
-        'marker.cmin': mins,
-        'marker.cmax': maxs,
-        'marker.showscale': showscales,
-        'marker.colorbar.title.text': titles
-      }, indices);
-    }
-    syncButtons();
-    toHash();
+      return Promise.all(extra);
+    }).then(function () {
+      var shown = 0;
+      for (var key in META.traces) {
+        var spec = META.traces[key];
+        if (!spec.object) { continue; }
+        var on = keys.indexOf(key) >= 0;
+        spec.object.visible = on;
+        spec.object.material.uniforms.uSize.value = state.size;
+        spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
+        if (on) { shown += spec.count; }
+      }
+      if (frustums) { frustums.visible = state.cams; }
+      hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
+           + ' · ' + shown.toLocaleString('ru-RU') + ' точек');
+      syncButtons();
+      toHash();
+      dirty = true;
+      if (!ready) { ready = true; firstReady(); }
+    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
   }
-  function init() {
-    if (ready) { return; }
-    ready = true;
-    ORIG = gd.data.map(function (trace) {
-      return (trace.marker && Array.isArray(trace.marker.color)) ? trace.marker.color.slice() : null;
-    });
-    fromHash();
-    var buttons = document.querySelectorAll('.pick');
-    for (var i = 0; i < buttons.length; i++) {
-      buttons[i].addEventListener('click', function () {
-        if (this.dataset.cloud) { state.cloud = this.dataset.cloud; }
-        else { state.colour = this.dataset.colour; }
-        apply();
-      });
-    }
-    document.getElementById('cams').addEventListener('change', function () {
-      state.cams = this.checked;
+  document.getElementById('cams').addEventListener('change', function () {
+    state.cams = this.checked; apply();
+  });
+  document.getElementById('size').addEventListener('input', function () {
+    state.size = parseFloat(this.value);
+    forEachObject(function (obj) { obj.material.uniforms.uSize.value = state.size; });
+    dirty = true;
+    toHash();
+  });
+  var picks = document.querySelectorAll('.pick');
+  for (var p = 0; p < picks.length; p++) {
+    picks[p].addEventListener('click', function () {
+      if (this.disabled) { return; }
+      if (this.dataset.cloud) { state.cloud = this.dataset.cloud; }
+      else { state.colour = this.dataset.colour; }
       apply();
     });
-    apply();
   }
-  var timer = setInterval(function () {
-    if (gd && gd.data && gd.data.length) { clearInterval(timer); init(); }
-  }, 80);
+
+  // ------------------------------------------------------------------- frame
+  function render() { renderer.render(scene, camera); }
+  function loop() {
+    requestAnimationFrame(loop);
+    if (dirty && !benchMode) { dirty = false; render(); }
+  }
+  function resize() {
+    var width = host.clientWidth || 900, height = host.clientHeight || 600;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    forEachObject(function (obj) { obj.material.uniforms.uPixel.value = renderer.getPixelRatio(); });
+    dirty = true;
+  }
+  window.addEventListener('resize', resize);
+
+  // ------------------------------------------------------------------- bench
+  function rendererName() {
+    var gl = renderer.getContext();
+    var info = gl.getExtension('WEBGL_debug_renderer_info');
+    return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL))
+                : String(gl.getParameter(gl.RENDERER));
+  }
+  function firstReady() {
+    if (!benchMode || window.__BENCH_DONE) { return; }
+    window.__BENCH_DONE = true;
+    var stats = {webgl: rendererName(), decode_ms: {}, points: {}, first_paint_ms: null};
+    for (var key in META.traces) {
+      var spec = META.traces[key];
+      if (!spec.object) { continue; }
+      stats.decode_ms[key] = spec.decode_ms;
+      stats.points[key] = spec.count;
+    }
+    requestAnimationFrame(function () {
+      render();
+      stats.first_paint_ms = Math.round(performance.now());
+      var frames = [], index = 0, previous = performance.now();
+      function step() {
+        var now = performance.now();
+        if (index >= 4) { frames.push(now - previous); }
+        previous = now;
+        control.theta += 0.012;
+        applyCamera();
+        render();
+        if (++index < 124) { requestAnimationFrame(step); return; }
+        frames.sort(function (a, b) { return a - b; });
+        stats.frame_median_ms = Math.round(frames[Math.floor(frames.length / 2)] * 10) / 10;
+        stats.frame_p95_ms = Math.round(frames[Math.floor(frames.length * 0.95)] * 10) / 10;
+        stats.frame_count = frames.length;
+        window.__VIEWER_STATS = stats;
+        try { fetch('/__report', {method: 'POST', body: JSON.stringify(stats)}); } catch (e) {}
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // -------------------------------------------------------------------- init
+  fromHash();
+  resize();
+  applyCamera();
+  apply();
+  loop();
 })();
 </script>
 """
 
 
-def rounded(points):
-    """Two decimals is well below the cloud resolution and keeps the HTML small."""
-    return np.round(np.asarray(points, dtype=np.float64), 2).astype(np.float32)
+# ----------------------------------------------------------------- payload bits
+def ramp_table(stops, size=RAMP_SIZE):
+    """The distance colourscale as a 256-entry lookup table, so the shader can sample it."""
+    positions = np.array([stop[0] for stop in stops], dtype=np.float64)
+    rgb = np.array([[int(stop[1][channel:channel + 2], 16) for channel in (1, 3, 5)]
+                    for stop in stops], dtype=np.float64)
+    xs = np.linspace(0.0, 1.0, size)
+    return np.stack([np.interp(xs, positions, rgb[:, channel]) for channel in range(3)],
+                    axis=1).round().astype(np.uint8)
+
+
+def quantise(points):
+    """int16 grid over the cloud's own bounding box: 6 bytes per point."""
+    points = np.asarray(points, dtype=np.float64)
+    low, high = points.min(axis=0), points.max(axis=0)
+    centre = 0.5 * (low + high)
+    half = np.maximum(0.5 * (high - low), 1e-9)
+    scaled = np.clip((points - centre) / half, -1.0, 1.0) * 32767.0
+    return np.rint(scaled).astype(np.int16), centre, half
+
+
+def palette_index(colours, count):
+    """One palette byte per point instead of a per-point colour string."""
+    if colours is None:
+        palette = np.array([[0x9a, 0xa4, 0xb0]], dtype=np.uint8)
+        return np.zeros(count, dtype=np.uint8), palette, 0.0
+    from PIL import Image
+
+    pixels = np.ascontiguousarray(np.asarray(colours, dtype=np.uint8)[:, None, :])
+    image = Image.fromarray(pixels, "RGB")
+    dither = getattr(getattr(Image, "Dither", Image), "NONE", 0)
+    quantised = image.quantize(colors=256, method=Image.MEDIANCUT, dither=dither)
+    index = np.asarray(quantised, dtype=np.uint8).reshape(-1)
+    used = int(index.max()) + 1 if index.size else 1
+    palette = np.asarray(quantised.getpalette()[:3 * used], dtype=np.uint8).reshape(-1, 3).copy()
+    error = float(np.abs(palette[index].astype(np.int16)
+                         - np.asarray(colours, dtype=np.uint8)).mean())
+    return index, palette, error
+
+
+def write_payloads(out, stem, key, points, colours, distances, tau):
+    """Write data/<page>-<key>.bin (7 bytes/point) and, when asked, the distance byte per point."""
+    quantised, centre, half = quantise(points)
+    index, palette, error = palette_index(colours, len(points))
+    folder = Path(out, "data")
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / ("%s-%s.bin" % (stem, key))
+    with path.open("wb") as handle:
+        handle.write(np.ascontiguousarray(quantised, dtype="<i2").tobytes())
+        handle.write(np.ascontiguousarray(index, dtype=np.uint8).tobytes())
+    distance_path = None
+    if distances is not None:
+        unit = np.clip(np.asarray(distances, dtype=np.float64) / tau, 0.0, 1.0)
+        distance_path = folder / ("%s-%s-dist.bin" % (stem, key))
+        distance_path.write_bytes(np.rint(unit * 255.0).astype(np.uint8).tobytes())
+    spec = dict(
+        count=int(len(points)),
+        centre=[float(value) for value in centre],
+        half=[float(value) for value in half],
+        pal=base64.b64encode(palette.tobytes()).decode("ascii"),
+        pal_count=int(len(palette)),
+        pos="data/" + path.name,
+        dist=("data/" + distance_path.name) if distance_path is not None else None,
+        colour_error=round(error, 2),
+    )
+    size = path.stat().st_size
+    extra = distance_path.stat().st_size if distance_path is not None else 0
+    return spec, size, extra
+
+
+def budget(sizes, limit, page_limit):
+    """Per-cloud budget, then the hard page cap.
+
+    Entry 0 is the GT laser cloud: it only provides shape context, so when the page is over
+    budget the predictions keep their full share and the GT absorbs the overflow. Sharing the
+    cut proportionally spent a third of every page on ground truth that was already dense.
+    """
+    takes = [min(size, limit) for size in sizes]
+    total = sum(takes)
+    if page_limit and total > page_limit:
+        predictions = sum(takes[1:])
+        if len(takes) > 1 and predictions < page_limit:
+            takes[0] = max(1, page_limit - predictions)
+        else:
+            factor = page_limit / float(total)
+            takes = [max(1, int(round(take * factor))) for take in takes]
+    return takes
 
 
 def subsample(points, colours, limit, seed=0):
@@ -208,28 +546,7 @@ def subsample(points, colours, limit, seed=0):
     return points[index], None if colours is None else colours[index]
 
 
-def short_colours(colours, count):
-    """4 bits per channel as a CSS shorthand hex colour: much smaller than rgb() strings."""
-    if colours is None:
-        return ["#9aa4b0"] * count
-    palette = np.asarray(colours, dtype=np.uint16)[:, :3] // 17
-    codes = (palette[:, 0] << 8) | (palette[:, 1] << 4) | palette[:, 2]
-    table, out = {}, []
-    for code in codes:
-        code = int(code)
-        value = table.get(code)
-        if value is None:
-            value = "#" + SHORT_HEX[(code >> 8) & 15] + SHORT_HEX[(code >> 4) & 15] + SHORT_HEX[code & 15]
-            table[code] = value
-        out.append(value)
-    return out
-
-
-def encode(values):
-    """float32 in base64: compact enough to inline, decoded lazily in the page."""
-    return base64.b64encode(np.asarray(values, dtype=np.float32).tobytes()).decode("ascii")
-
-
+# ------------------------------------------------------------------- geometry
 def alignment(dataset, scene, method):
     path = OUTPUTS / dataset / scene / method / "evaluation.json"
     if path.exists():
@@ -240,8 +557,22 @@ def alignment(dataset, scene, method):
     return pose_sim3(dataset, scene, method), None
 
 
-def load_cloud(dataset, scene, method, params):
-    path = CLOUDS / dataset / scene / (method + ".ply")
+def cloud_path(dataset, scene, method, tag):
+    """The display cloud, falling back to the metric cloud when no display copy was built."""
+    if tag:
+        path = CLOUDS / dataset / scene / (method + tag + ".ply")
+        if path.exists():
+            return path
+        metric = CLOUDS / dataset / scene / (method + ".ply")
+        if metric.exists():
+            print("    (no %s%s.ply for %s, using the metric cloud)" % (method, tag, scene),
+                  flush=True)
+        return metric
+    return CLOUDS / dataset / scene / (method + ".ply")
+
+
+def load_cloud(dataset, scene, method, params, tag):
+    path = cloud_path(dataset, scene, method, tag)
     if not path.exists():
         return None
     points, colours = read_ply(path)
@@ -276,10 +607,71 @@ def three_quarter(towards_camera, up, yaw=32.0, pitch=20.0):
     return direction / np.linalg.norm(direction), _rodrigues(up, side, pitch)
 
 
-def crop_box(clouds, low_percentile=1.0, high_percentile=99.0, pad=0.04):
-    """Box around the predictions: it frames the view and crops the GT lidar to it."""
-    union = np.concatenate([points for points, _ in clouds])
-    return percentile_box(union, low_percentile, high_percentile, pad)
+def scene_basis(up):
+    """Rotation that maps the scene's up vector to +Y, so the orbit controls are Y-up."""
+    up = np.asarray(up, dtype=np.float64)
+    up = up / np.linalg.norm(up)
+    reference = np.array([1.0, 0.0, 0.0]) if abs(up[0]) < 0.9 else np.array([0.0, 0.0, 1.0])
+    xaxis = np.cross(reference, up)
+    xaxis = xaxis / np.linalg.norm(xaxis)
+    zaxis = np.cross(xaxis, up)
+    rotation = np.stack([xaxis, up, zaxis])
+    matrix = np.eye(4)
+    matrix[:3, :3] = rotation
+    return rotation, [float(value) for value in matrix.T.ravel()]
+
+
+def orbit_camera(rotation, centre, eye, radius):
+    """Spherical camera parameters (in the rotated frame) that open the page on a 3/4 view."""
+    direction = rotation @ np.asarray(eye, dtype=np.float64)
+    direction = direction / np.linalg.norm(direction)
+    target = rotation @ np.asarray(centre, dtype=np.float64)
+    return dict(target=[float(value) for value in target],
+                radius=float(radius),
+                theta=float(np.arctan2(direction[0], direction[2])),
+                phi=float(np.arccos(np.clip(direction[1], -1.0, 1.0))))
+
+
+def framing_radius(rotation, centre, eye, points, aspect=1.6, margin=1.06):
+    """Camera distance that actually fills the frame with the points that are drawn.
+
+    The bounding-box diagonal over-estimates the distance badly for flat, elongated scenes
+    (a barn is long and low), which left the cloud small in the middle of the page.
+    """
+    eye = np.asarray(eye, dtype=np.float64)
+    eye = eye / np.linalg.norm(eye)
+    reference = np.array([0.0, 1.0, 0.0])
+    right = np.cross(reference, eye)
+    right = right / np.linalg.norm(right)
+    up = np.cross(eye, right)
+    local = (np.asarray(points, dtype=np.float64) - centre) @ rotation.T
+    depth = local @ eye
+    tan_v = np.tan(np.radians(FOV) / 2.0)
+    tan_h = tan_v * aspect
+    need = np.maximum(depth + np.abs(local @ right) / tan_h,
+                      depth + np.abs(local @ up) / tan_v)
+    return float(np.percentile(need, 99.5) * margin)
+
+
+def frustum_wireframes(extrinsics, intrinsics, size):
+    """Camera frustum wireframes (apex plus four corners) for the GT camera toggle."""
+    segments = []
+    for rotation, translation, k in zip(extrinsics[:, :3, :3], extrinsics[:, :3, 3], intrinsics):
+        fx, fy, cx, cy = float(k[0, 0]), float(k[1, 1]), float(k[0, 2]), float(k[1, 2])
+        # images are resized so the principal point stays centred: width ~ 2*cx, height ~ 2*cy
+        half_width = max(cx / fx, 1e-6)
+        half_height = max(cy / fy, 1e-6)
+        depth = size / (2.0 * max(half_width, half_height))
+        corners = []
+        for sign_x, sign_y in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+            cam = np.array([sign_x * half_width * depth, sign_y * half_height * depth, depth])
+            corners.append(rotation.T @ (cam - translation))
+        apex = -rotation.T @ translation
+        for index in range(4):
+            segments.extend([apex, corners[index]])
+            segments.append(corners[index])
+            segments.append(corners[(index + 1) % 4])
+    return np.asarray(segments, dtype=np.float32)
 
 
 def nearest(query, reference):
@@ -287,25 +679,27 @@ def nearest(query, reference):
         np.asarray(query, dtype=np.float64))[0]
 
 
-def scene_figure(dataset, scene, methods, limit):
+# ----------------------------------------------------------------------- scene
+def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
         extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
-    cameras = centres(extrinsics)
-
+        intrinsics = (np.asarray(handle["intrinsics"], dtype=np.float64)
+                      if "intrinsics" in handle.files else None)
     clouds, scores = {}, {}
     for method in methods:
         params, score = alignment(dataset, scene, method)
-        loaded = load_cloud(dataset, scene, method, params)
+        loaded = load_cloud(dataset, scene, method, params, tag)
         if loaded is None:
             continue
         clouds[method], scores[method] = loaded, score
     if not clouds:
-        return None, None
+        return None
 
     # Frame the view by what was actually reconstructed: a robust box around the
     # predictions, which also gives the GT lidar its crop (it covers the whole scan
     # area, so without it the view is framed by empty terrain).
-    low, high = crop_box(list(clouds.values()))
+    union = np.concatenate([points for points, _ in clouds.values()])
+    low, high = percentile_box(union, 1.0, 99.0, 0.04)
     for method, (points, colours) in list(clouds.items()):
         keep = np.all((points > low) & (points < high), axis=1)
         clouds[method] = (points[keep], colours[keep])
@@ -326,119 +720,115 @@ def scene_figure(dataset, scene, methods, limit):
         tau = 0.01 * diagonal(np.concatenate([points for points, _ in clouds.values()]))
         tau_note = "1% диагонали предсказаний: GT-облака для этой сцены нет"
 
-    traces, meta = [], {"index": {"gt": None, "da3": None, "omega": None},
-                        "predictions": [], "cams": None, "default_cloud": "both",
-                        "traces": {}, "scale": DIST_SCALE,
-                        "title_pred": "d до GT", "title_gt": "d до предсказаний",
-                        "hint_dist": "зелёный — на поверхности GT, красный — дальше \u03c4",
-                        "hint_rgb": "цвет пикселей, из которых получены точки"}
-    shortcuts = {"da3-giant": "da3", "vggt-omega": "omega"}
-
-    gt_tree = cKDTree(gt_points) if gt_points is not None and len(gt_points) else None
-
+    # Distances are computed on the points that are actually drawn, so their count drives cost.
+    entries = []
     if gt_points is not None and len(gt_points):
-        points, colours = subsample(gt_points, gt_colours, limit, seed=0)
-        distances = None
-        if clouds:
-            distances = np.min([nearest(points, full) for full, _ in clouds.values()], axis=0)
-        traces.append(go.Scatter3d(
-            x=rounded(points)[:, 0], y=rounded(points)[:, 1], z=rounded(points)[:, 2],
-            mode="markers", name="GT: лидар",
-            marker=dict(size=1.3, color=short_colours(colours, len(points)), **COLORBAR),
-            hoverinfo="skip"))
-        index = len(traces) - 1
-        meta["index"]["gt"] = index
-        if distances is not None:
-            meta["traces"][str(index)] = {"dist": encode(np.minimum(distances, tau)), "tau": float(tau)}
-
+        entries.append(("gt", gt_points, gt_colours, "GT: лидар", len(gt_points)))
     for method in methods:
         if method not in clouds:
             continue
-        full, colours = clouds[method]
-        points, colours = subsample(full, colours, limit, seed=1)
         label = LABELS.get(method, method)
         if scores.get(method) is not None:
             label += " — F@1 = %.3f" % scores[method]
-        traces.append(go.Scatter3d(
-            x=rounded(points)[:, 0], y=rounded(points)[:, 1], z=rounded(points)[:, 2],
-            mode="markers", name=label,
-            marker=dict(size=1.3, color=short_colours(colours, len(points)), **COLORBAR),
-            hoverinfo="skip"))
-        index = len(traces) - 1
-        key = shortcuts.get(method)
-        if key:
-            meta["index"][key] = index
-            meta["predictions"].append(key)
-        if gt_tree is not None:
+        entries.append((SHORTCUTS.get(method, method), clouds[method][0], clouds[method][1],
+                        label, len(clouds[method][0])))
+
+    takes = budget([entry[4] for entry in entries], limit, page_limit)
+    gt_tree = cKDTree(gt_points) if gt_points is not None and len(gt_points) else None
+
+    traces, sizes = {}, {}
+    framed = []  # a sample of what is actually drawn, used to frame the opening view
+    payload = dist_bytes = 0
+    for seed, (key, points, colours, label, available), take in zip(range(len(entries)),
+                                                                   entries, takes):
+        points, colours = subsample(points, colours, take, seed=seed)
+        framed.append(points[::max(1, len(points) // 60000)])
+        if key == "gt":
+            distances = None
+            if clouds:
+                distances = np.min([nearest(points, full) for full, _ in clouds.values()], axis=0)
+        elif gt_tree is not None:
             distances = gt_tree.query(points)[0]
         else:
-            others = [other for name, (other, _) in clouds.items() if name != method]
+            others = [other for name, (other, _) in clouds.items()
+                      if SHORTCUTS.get(name, name) != key]
             distances = nearest(points, np.concatenate(others)) if others else np.zeros(len(points))
-        meta["traces"][str(index)] = {"dist": encode(np.minimum(distances, tau)), "tau": float(tau)}
+        if distances is not None:
+            distances = np.minimum(distances, tau)
+        spec, size, extra = write_payloads(out, "%s-%s" % (dataset, scene), key, points,
+                                           colours, distances, tau)
+        spec["label"] = label
+        traces[key] = spec
+        sizes[key] = len(points)
+        payload += size
+        dist_bytes += extra
+        print("    %-5s %8d / %8d pts  payload %.1f MB  colour error %.1f"
+              % (key, len(points), available, size / 1e6, spec["colour_error"]), flush=True)
 
-    traces.append(go.Scatter3d(
-        x=rounded(cameras)[:, 0], y=rounded(cameras)[:, 1], z=rounded(cameras)[:, 2],
-        mode="markers+lines", name="центры камер GT",
-        marker=dict(size=3.5, color="#ffb020"), line=dict(color="#ffb020", width=3),
-        hoverinfo="skip", visible=False))
-    meta["cams"] = len(traces) - 1
-
-    if len(meta["predictions"]) == 1:
-        meta["default_cloud"] = meta["predictions"][0]
-    if gt_points is None:
-        meta["default_cloud"] = meta["predictions"][0] if meta["predictions"] else "gt"
-        meta["title_pred"] = "d до другого метода"
-        meta["hint_dist"] = "зелёный — совпадение, красный — расхождение"
-
-    # Open the page from a three-quarter view built on camera 0 of the scene: the plotly
-    # default tends to look straight into a wall, and the exact camera-0 view is so
-    # frontal that a cloud reads as a flat picture instead of a 3D model.
+    # Open the page from a three-quarter view built on camera 0 of the scene: the axis-aligned
+    # default tends to look straight into a wall, and the exact camera-0 view is so frontal that
+    # a cloud reads as a flat picture instead of a 3D model.
     _, down, forward = view_basis(extrinsics[0])
     eye, up = three_quarter(-np.asarray(forward, dtype=np.float64),
                             -np.asarray(down, dtype=np.float64), yaw=32.0, pitch=20.0)
-    spans = np.maximum(high - low, 1e-6)
-    eye = 1.8 * (eye * spans) / np.linalg.norm(eye * spans)
-    up = up / np.linalg.norm(up)
+    rotation, basis = scene_basis(up)
+    span = float(np.linalg.norm(high - low))
+    drawn = np.concatenate(framed) if framed else 0.5 * (low + high)[None, :]
+    drawn_low, drawn_high = percentile_box(drawn, 1.0, 99.0, 0.0)
+    centre = 0.5 * (drawn_low + drawn_high)
+    camera = orbit_camera(rotation, centre, eye,
+                          framing_radius(rotation, centre, eye, drawn))
 
-    figure = go.Figure(data=traces)
-    figure.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="#14171c",
-        showlegend=False,
-        margin=dict(l=0, r=0, t=0, b=0),
-        scene=dict(aspectmode="data", xaxis=dict(visible=False), yaxis=dict(visible=False),
-                   zaxis=dict(visible=False), bgcolor="#14171c",
-                   camera=dict(eye=dict(x=float(eye[0]), y=float(eye[1]), z=float(eye[2])),
-                               up=dict(x=float(up[0]), y=float(up[1]), z=float(up[2])),
-                               center=dict(x=0.0, y=0.0, z=0.0))),
-        uirevision="keep",
+    frustums = None
+    if intrinsics is not None:
+        wire = frustum_wireframes(extrinsics, intrinsics, 0.025 * span)
+        frustums = dict(b64=base64.b64encode(wire.tobytes()).decode("ascii"), size=int(len(wire)))
+    predictions = [key for key in ("da3", "omega") if key in traces]
+    has_gt = "gt" in traces
+    meta = dict(
+        traces=traces,
+        predictions=predictions,
+        default_cloud="both" if len(predictions) == 2 else (predictions[0] if predictions else "gt"),
+        basis=basis,
+        camera=camera,
+        fov=FOV,
+        frustums=frustums,
+        ramp=base64.b64encode(ramp_table(DIST_SCALE).tobytes()).decode("ascii"),
+        ramp_size=RAMP_SIZE,
+        point_size=2.2,
+        tau=float(tau),
+        tau_note=tau_note,
+        hint_rgb="цвет пикселей, из которых получены точки",
+        hint_dist=("зелёный — на поверхности GT, красный — дальше \u03c4" if has_gt
+                   else "зелёный — совпадение, красный — расхождение"),
     )
-    meta["tau"] = float(tau)
-    meta["tau_note"] = tau_note
-    return figure, meta
+    return meta, sizes, payload, dist_bytes
 
 
-def write_viewer(path, figure, meta, heading, note):
-    cloud_buttons = []
+def write_page(path, meta, heading, note):
+    buttons = []
     for key, title in (("gt", "GT (лидар)"), ("da3", LABELS["da3-giant"]),
                        ("omega", LABELS["vggt-omega"])):
-        disabled = "" if meta["index"][key] is not None else " disabled"
-        cloud_buttons.append('<button class="pick" data-cloud="%s"%s>%s</button>' % (key, disabled, title))
+        disabled = "" if key in meta["traces"] else " disabled"
+        buttons.append('<button class="pick" data-cloud="%s"%s>%s</button>' % (key, disabled, title))
     if len(meta["predictions"]) == 2:
-        cloud_buttons.append('<button class="pick" data-cloud="both">оба предсказания</button>')
-    controls = CONTROLS.replace("__CLOUD_BUTTONS__", "\n  ".join(cloud_buttons))
+        buttons.append('<button class="pick" data-cloud="both">оба предсказания</button>')
+    controls = CONTROLS.replace("__CLOUD_BUTTONS__", "\n  ".join(buttons))
     controls = controls.replace("__DIST_LABEL__",
-                            "расстояние до GT" if meta["index"]["gt"] is not None
-                            else "расхождение с другим методом")
-
-    html = figure.to_html(include_plotlyjs=False, full_html=True, div_id="cloud",
-                          default_width="100%", default_height="86vh",
-                          config=dict(displaylogo=False, responsive=True))
-    html = html.replace("</head>", '<script src="plotly.min.js"></script>\n</head>')
-    html = html.replace("<body>", "<body>\n" + HEADER % (heading, note) + controls, 1)
-    payload = "<script>window.VIEWER = %s;</script>\n" % json.dumps(meta, ensure_ascii=False)
-    html = html.replace("</body>", payload + SCRIPT + "\n</body>")
+                                "расстояние до GT" if "gt" in meta["traces"]
+                                else "расхождение с другим методом")
+    html = (
+        "<!doctype html>\n<html lang='ru'>\n<head>\n<meta charset='utf-8'>\n"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>\n"
+        "<title>%s</title>\n<link rel='icon' href='data:,'>\n<style>%s</style>\n"
+        "<script src='three.min.js'></script>\n</head>\n<body>\n"
+        "%s%s\n<div id='gl'></div>\n"
+        "<script>window.VIEWER = %s;</script>\n%s\n"
+        "</body>\n</html>\n"
+    ) % (heading, CSS, HEADER % (heading, note), controls,
+         json.dumps(meta, ensure_ascii=False), SCRIPT)
     Path(path).write_text(html, encoding="utf-8")
+    return len(html.encode("utf-8"))
 
 
 def thousands(value):
@@ -475,12 +865,17 @@ INDEX_HEAD = """<!doctype html>
   code {{ background: #22262e; padding: 1px 5px; border-radius: 4px; }}
 </style>
 <h1>Облака точек: интерактивный просмотр</h1>
-<p>По одному файлу на сцену. Облака уже приведены в систему координат GT через sim(3) по центрам камер
-и раскрашены цветом пикселей. Кнопки сверху переключают, какое облако смотреть (GT, DA3-Giant,
-VGGT-Ω или оба предсказания) и как его красить — цветом пикселей или расстоянием до GT
-(зелёный — на поверхности, красный — дальше τ). Мышь вращает, колесо зумит, правая кнопка сдвигает.
-Файлы самодостаточны, кроме соседнего <code>plotly.min.js</code> — работает и по <code>file://</code>,
-без интернета.</p>
+<p>По одному файлу на сцену. Облака приведены в систему координат GT через sim(3) по центрам
+камер и раскрашены цветом пикселей. Кнопки сверху переключают, какое облако смотреть (GT,
+DA3-Giant, VGGT-Ω или оба предсказания), как его красить — цветом пикселей или расстоянием до
+GT (зелёный — на поверхности, красный — дальше τ) — и задают размер точки. Мышь вращает, колесо
+зумит, правая кнопка или Shift+перетаскивание сдвигает.</p>
+<p>Рендер — three.js: точки рисуются буфером WebGL, координаты упакованы в int16, цвет — один
+байт палитры, поэтому на странице сотни тысяч и миллионы точек, а не сто тысяч, как раньше в
+Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> и подгружается при
+первом включении облака, поэтому страницы нужно открывать по http (GitHub Pages) — из
+<code>file://</code> браузер не отдаёт соседние бинарные файлы. <code>three.min.js</code> лежит
+рядом, интернет не нужен.</p>
 <ul>
 """
 
@@ -506,37 +901,56 @@ def write_index(out):
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--scenes", nargs="+", required=True)
     parser.add_argument("--methods", nargs="+", default=["da3-giant", "vggt-omega"])
-    parser.add_argument("--points", type=int, default=100000)
+    parser.add_argument("--points", type=int, default=750000,
+                        help="point budget per cloud; three.js handles millions, the page cap "
+                             "below keeps one page's payload sane")
+    parser.add_argument("--page-points", type=int, default=2000000,
+                        help="hard cap of points on one page, shared between the clouds")
+    parser.add_argument("--cloud-tag", default="-display",
+                        help="suffix of the display clouds built with build_clouds.py "
+                             "--output-tag; the metric cloud is used when no display copy exists")
     parser.add_argument("--no-index", action="store_true")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    plotly_js = Path(__import__("plotly").__file__).parent / "package_data" / "plotly.min.js"
-    shutil.copyfile(plotly_js, out / "plotly.min.js")
+    shutil.copyfile(VENDOR / "three.min.js", out / "three.min.js")
+    rows = []
     for scene in args.scenes:
         present = [method for method in args.methods
-                   if (CLOUDS / args.dataset / scene / (method + ".ply")).exists()]
+                   if cloud_path(args.dataset, scene, method, args.cloud_tag).exists()]
         if not present:
             continue
-        figure, meta = scene_figure(args.dataset, scene, present, args.points)
-        if figure is None:
+        print("%s / %s: %s" % (args.dataset, scene, ", ".join(present)), flush=True)
+        built = scene_page(out, args.dataset, scene, present, args.cloud_tag,
+                           args.points, args.page_points)
+        if built is None:
             continue
+        meta, sizes, payload, dist_bytes = built
         name = "%s-%s.html" % (args.dataset, scene)
-        note = ("Облака после sim(3) по позам камер, до %s точек на облако. "
+        total = sum(sizes.values())
+        note = ("Облака после sim(3) по позам камер. Точек: %s (до %s на облако). "
                 "Раскраска «расстояние»: τ = %.3f ед. GT (%s), всё, что дальше, — одним красным."
-                % (thousands(args.points), meta["tau"], meta["tau_note"]))
+                % (thousands(total), thousands(args.points), meta["tau"], meta["tau_note"]))
         warnings = pose_warnings(args.dataset, scene, present)
         if warnings:
             note += " <span style='color:#ffb020'>Внимание: " + "; ".join(warnings) + ".</span>"
-        write_viewer(out / name, figure, meta, "%s / %s" % (args.dataset, scene), note)
-        print(name, "written", flush=True)
+        page_bytes = write_page(out / name, meta, "%s / %s" % (args.dataset, scene), note)
+        rows.append((name, sizes, page_bytes, payload, dist_bytes))
+        print("%s written: %d points, %.1f MB payload, %.0f kB html" % (
+            name, total, payload / 1e6, page_bytes / 1e3), flush=True)
     if not args.no_index:
         write_index(out)
+    if rows:
+        print("\n%-26s %9s %9s %9s %8s %8s" % ("page", "points", "payload", "html", "total", "dist"))
+        for name, sizes, page_bytes, payload, dist_bytes in rows:
+            print("%-26s %9d %8.1fM %7.0fkB %7.1fM %7.1fM" % (
+                name, sum(sizes.values()), payload / 1e6, page_bytes / 1e3,
+                (payload + page_bytes) / 1e6, dist_bytes / 1e6))
     return 0
 
 

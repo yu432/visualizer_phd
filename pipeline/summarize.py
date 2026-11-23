@@ -8,7 +8,10 @@ from common import OUTPUTS, read_json, write_json  # noqa: E402
 
 # tnt100 — the dense variation of the Tanks and Temples scenes: same scenes and the same laser
 # GT, 100 greedily selected frames instead of 16.
-DATASETS = ("eth3d", "tnt", "tnt100")
+# eth3d20 — the dense variation of the ETH3D scenes: same scenes, same camera poses and the same
+# lidar depth maps, but 20 frames instead of the official 10. eth3d20dense is the same 20-frame run
+# scored against a reference rebuilt from those 20 frames' own depth maps (see make_pdf).
+DATASETS = ("eth3d", "tnt", "tnt100", "eth3d20", "eth3d20dense")
 
 
 def scene_row(dataset, scene, method):

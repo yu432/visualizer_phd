@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang='ru'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>eth3d20 / delivery_area</title>
+<link rel='icon' href='data:,'>
+<style>
+html, body { margin: 0; background: #14171c; color: #e8e8e8; }
+#gl { width: 100%; height: 86vh; overflow: hidden; }
+#gl canvas { display: block; }
+.pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
+        padding:4px 11px; font:inherit; cursor:pointer; }
+.pick:hover { background:#262e38; }
+.pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
+.pick:disabled { opacity:.35; cursor:not-allowed; }
+.fail { padding:28px 24px; max-width:640px; color:#ffd08a; font-size:15px; line-height:1.5; }
+</style>
+<script src='three.min.js'></script>
+</head>
+<body>
+<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:9px 16px 4px;background:#14171c;color:#e8e8e8;font-size:13.5px;line-height:1.35'><div style='font-size:12px;margin-bottom:5px'><a href='../index.html' style='color:#6cb6ff;text-decoration:none'>&larr; все сцены</a></div><b>eth3d20 / delivery_area</b><br><span style='color:#a8b0ba'>Облака после sim(3) по позам камер. Точек: 1 461 401 (до 750 000 на облако). Раскраска «расстояние»: τ = 0.484 ед. GT (1% диагонали GT-облака), всё, что дальше, — одним красным. <span style='color:#ffb020'>Внимание: da3-giant: позы не сходятся (средняя ошибка поворота 12.6°), облако смещено относительно GT.</span></span></div>
+<div id="bar" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+     padding:6px 16px 10px;background:#14171c;color:#e8e8e8;
+     font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:13px">
+  <span style="color:#8f98a3">Облако:</span>
+  <button class="pick" data-cloud="gt">GT (лидар)</button>
+  <button class="pick" data-cloud="da3">DA3-Giant</button>
+  <button class="pick" data-cloud="omega">VGGT-Ω</button>
+  <button class="pick" data-cloud="both">оба предсказания</button>
+  <span style="width:1px;height:18px;background:#2b313a"></span>
+  <span style="color:#8f98a3">Раскраска:</span>
+  <button class="pick" data-colour="rgb">цвет пикселей</button>
+  <button class="pick" data-colour="dist">расстояние до GT</button>
+  <span style="width:1px;height:18px;background:#2b313a"></span>
+  <label style="cursor:pointer;color:#c3cad3"><input type="checkbox" id="cams"
+     style="vertical-align:-2px;margin-right:4px">центры камер GT</label>
+  <label style="cursor:pointer;color:#8f98a3">размер
+     <input type="range" id="size" min="1" max="8" step="0.1"
+            style="width:96px;vertical-align:-3px"></label>
+  <span id="hint" style="color:#8f98a3"></span>
+</div>
+
+<div id='gl'></div>
+<script>window.VIEWER = {"traces": {"gt": {"count": 750000, "centre": [-0.8626270294189453, 7.258179664611816, -2.431808326393366], "half": [16.55083465576172, 17.5024995803833, 2.5456820987164974], "pal": "9vb16ejp5+HZ3d3d2NfU1NXT09LS5NS928itz87Oy8rMzMi8yMfGxsTAxcK8wsC9vr29xb6pvrqxu7m2ube1x7R7urSdtrWytLKws7CvtLGmtK6UsK+srq2orKqmqKinrqugrKmfq6qOtKJhqqWSqKadqJ1pp6WfpqGOpKOfpKGVo5yCn56doJ2TnJuVm5iTnZmOnZh/nJFrmJeTlpWRlJOQl5SKl5OClJGHk46DlYx2l4pdkI+MjYyIh4qLkIx7j4l1iop0k4VjjoRmjIRriYZ9ioJphoWDhoV+g4J/hYJ4hYFxin5Zhn5iiXhRhX1khHdSgn1sgnZTgIB9fX16f310fHp3fHpxfnprfHdqgHlef3ZcfHRjfXRafnNVe3BWfnJQfnJEfG1IeHl1d3ZxdnRudHJudXFneHNed3BddG9gd25SdGxadWtQdWpLdWhAcG9qcG1kb2thaGxtbGhhaGdiYWZocGpVb2dOamhWbmVLaWRWb2JEamJKaGJPZGJeZGFaZWFRa15Cd00xZlxFZFxHYl5QYlhDYF9bXlxYX1xTX1tKXlhNX1dCXlI8WVlXWVhSWVdPVlRPUlNQWVdHWFRHV1JGU1BJUU9KU09EVk89Uk1AUkk3Q1NnTUxITEtGSkhERUdHTUs+TUk8Skg+S0c6SEY+RkRARkQ9QUNCSEQ5SUM0REI4RUA4QkA5QD88QD83Pzw3NTtDOzo2Ojk0RD4vPjsxPjguOjkwODYyOTYtQTEnNjUuNjIqNTQwNTMqNDAoMzIuMzAnMi4mMTAsMS8mMCwlLi8rLS0qLi4lLiwlLSsmLSoiLCghKisnKSkmKigjKCcjKikgKCYhKCYeKCUfJiUgJSQgJiQcJiMdJCMeJSIaJSAaICs7IiIfISEgIiEcIiMaIiAbISAbIiAZHyAZHx8dIB8aHx4aIR8ZHx4ZHx4XHR4YHh0ZHRwZGhweHRwXHBsXGxoXGhkXGxkVGBgYGBgUGBgTFxcSFRYSFhURFBQREhMQERAODw8NCwsK", "pal_count": 256, "pos": "data/eth3d20-delivery_area-gt.bin", "dist": "data/eth3d20-delivery_area-gt-dist.bin", "colour_error": 1.84, "label": "GT: лидар"}, "da3": {"count": 357619, "centre": [0.5414300495247604, 5.933628367378531, -2.5730760873328635], "half": [15.194401989458811, 16.065733758636224, 2.498208505791854], "pal": "+fj34eDd1dPKzczHx8XCycKqwr+5vry3u7iyt7Wxt7OqwbKMsrGsr62qsa6kr62Yr6qhramhrKmhqqiiqKWfraeZs6JsqKWaqKGQpqOco6OepKGaop+Zn52ao5+UoJ2ToKB5oZmMp5NenZiJnJmSm5SAmZiSmZWNmZSEmY94lpWPlZOMlJGLlZGFlZF+lI+Ck4x/lItwkI+Ij42Ej4yDjoqAi4qEiod/h4aCg4SDj41sjoh2jYZ1joVmiodvioNxiIVzg4VqiIJwiX9tj3xTh3xbhIF4hH9thHxlhHdYgYB6gH11gX1vgXxngHpogHdkgXdYgHJRfHt5e3p0e3lwfXprfHhre3dqeHVueXVpeXRnfHZjfHVZeXNhe3JWeHBdeW5PdHRxdXNqc3FrdXJkdHBkcm9mc25hcm1ib25rb25jb2xkbmtibWlhbGpkZ2lpZmVidW9YdG1Yc2xXcmpYc2pMbGxYbWlYbWhXbGZYamZZbWVQbmVFaWVbaWRTZWRZd11DaWBJZ19MZWFUZV1IY2FcY2FVY15VY15LY1lDYF9aX1xXYF1SYFxLX1lMX1c/W1taW1pVW1lTVlZUVlVRW1lPWFVPVVNOW1hLWVlDWlZHWVRJWlRCV1NIVFJKWFJAgD8rWks3VlFCVkw7U1BLU1BDU05AU0k5UE9NUE9JT01IUE1FUE0/T0tCUEo7T0Y3S0tJS0pFTEpDSkhDSEdDTEo9S0g9S0c8SUY/R0ZASkU4SEQ7SUQ1ST4xQ0hPRURAREM/QkE/Q0E8RUM3REE4QkA6REA0QT86Pz47QT43PT06Qj41Qz4wPz02PzwyPjs1PDs2Ozo2Ozk0PDkyPTktOzYtODg1OTcxODYxNjUyMjQ5ODUvODUrNTQtNTMtNDIsMjEtMzArMDAsLy4rNDAmMi0lLiwmKywsKyonKyomKCclKyojKSgjKSchJyYiKSQfJSQgJCMfIyIeICAgIB8cHR0dHh0ZHhoXGhkXGRgWFxcVFRQSEhIRDw8ODQ0LCAgG", "pal_count": 256, "pos": "data/eth3d20-delivery_area-da3.bin", "dist": "data/eth3d20-delivery_area-da3-dist.bin", "colour_error": 1.77, "label": "DA3-Giant — F@1 = 0.879"}, "omega": {"count": 353782, "centre": [0.5462345693095436, 5.933943349919759, -2.7130171357339563], "half": [15.19838232300462, 16.066269851972617, 2.5332851074261526], "pal": "6+rn1tXMzszEx8bBw8G9xb2mvLq0ubiyuLSttbKssrCrrq2qsq6ku66PraukrKuUraifq6ifqaefp6agpqOdqaSYpaKYrKGOsZ9do6GZop+WoJ+Zn5yVm5qXoJyRnJmQnpmNm5tmnJaLmZaMl5WMlZSNlZGJoJBomI93lZCAlYpwkpGKkY+GkY6GkI2Dj4qAkYx8kYtxj4d1kIVkjIuEjIl/i4h/ioZ8h4aAhoR8hYJ7goF9ioZ1iYdch4J0iYJnhYBziIBljntXh31ghX5rhXtbg31sg3lcgX51gXxugXpjgXZZfnx3fntufXltfXdrfXdlfnZbfXJVenlyeXdueXZseXVrd3Nsd3Jnd3JlenRheHJhd3FgeXJXeHBXdm9cdmxZd2xNc3Nrc3Bncm9mcm5kcG1lcWxgcGthbWxmbWpibGhhaWhjaWVgZGVlc21YcmtWcWpVcGhXcWhKamxXbGhZbGdXa2ZXa2RWaWRXbGRNbWNDZ2RbZ2NTY2NYcF5EZ19JZWBRZVxGY2BZY19TY11KY1lCX15bX11WYF1SXlpSX1pNX1lFXlZGX1U7W1pXV1dVWlhRVVRRWldOV1ROVFJNWldKWVhEWVVGV1NJWVNCVlJIU1FJV1FAeUUvWE05VU4+U1BFU0w9UU9KUk9DUU0/UUk5T05MT05ITkxIT0xET0w+TkpAT0k6TkY4SkpISkhES0lCSUdCR0ZCS0g/S0g5SkY8SEU9RkU/SUQ5SkQ1R0M6SEI1Rz4xQ0ZKRENAQkI/RUM5REE4QkI4QUA9Qj86Qz83Qz8zPz46QD04QD03PDw5QT00QjwvPzwzPTszPTo0Ozo1Ojk1Ozg0PDkyNzc3ODczODcyNjUxPTkvOTcvPTgqOTYqNzUvNjQvNzUqNTMuMzIvNTIrMzEsMTAsNjEmMjAnMi0lLS4tLSwpLSwoLSwnKikmLiwjLCojKykjKigiKyYfKCYhJyYhJiUhJSMcIyMgISAeIiEbIB8aIB0ZHRwYGhoXFxcUFBQSDg4M", "pal_count": 256, "pos": "data/eth3d20-delivery_area-omega.bin", "dist": "data/eth3d20-delivery_area-omega-dist.bin", "colour_error": 1.65, "label": "VGGT-Ω — F@1 = 0.971"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, -0.44472075068033445, -0.8956692770851973, 0.0, -0.9769307165921395, -0.19127598818455913, 0.09497300312609526, 0.0, -0.21355649130562362, 0.8750068286924053, -0.43446136164553334, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [-6.366894675904427, -4.254794817549067, 0.6494533429556707], "radius": 28.228090620646682, "theta": 0.6261644417372636, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 320}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.48446215219800026, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
+
+<script>
+(function () {
+  var META = window.VIEWER;
+  var host = document.getElementById('gl');
+  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false, size: META.point_size};
+  var ready = false, dirty = true, benchMode = /[?&]bench/.test(location.search);
+
+  // ---------------------------------------------------------------- URL hash
+  // Everything the page shows is mirrored into the hash, so a view can be bookmarked
+  // and deep-linked (and so headless renders can ask for a specific state):
+  // #da3:dist:cams:2.5  ->  cloud : colour : camera centres : point size
+  function fromHash() {
+    var parts = (location.hash || '').replace('#', '').split(':');
+    if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
+    if (parts[1] === 'rgb' || parts[1] === 'dist') { state.colour = parts[1]; }
+    if (parts[2] === 'cams') { state.cams = true; }
+    var size = parseFloat(parts[3]);
+    if (isFinite(size) && size > 0) { state.size = size; }
+  }
+  function toHash() {
+    var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
+    try { history.replaceState(null, '', '#' + state.cloud + ':' + state.colour + tail); } catch (e) {}
+  }
+
+  // ------------------------------------------------------------ base64 / bytes
+  function bytes(b64) {
+    var s = atob(b64), out = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) { out[i] = s.charCodeAt(i); }
+    return out;
+  }
+  function floats(b64) {
+    var raw = bytes(b64);
+    return new Float32Array(raw.buffer, 0, raw.length >> 2);
+  }
+  function texture(palette, size) {
+    var data = new Uint8Array(size * 4);
+    for (var i = 0; i < size; i++) {
+      data[4 * i] = palette[3 * i];
+      data[4 * i + 1] = palette[3 * i + 1];
+      data[4 * i + 2] = palette[3 * i + 2];
+      data[4 * i + 3] = 255;
+    }
+    var made = new THREE.DataTexture(data, size, 1, THREE.RGBAFormat);
+    made.magFilter = THREE.NearestFilter;
+    made.minFilter = THREE.NearestFilter;
+    made.wrapS = THREE.ClampToEdgeWrapping;
+    made.wrapT = THREE.ClampToEdgeWrapping;
+    made.generateMipmaps = false;
+    made.needsUpdate = true;
+    return made;
+  }
+  var RAMP = texture(bytes(META.ramp), META.ramp_size);
+
+  // ---------------------------------------------------------------- renderer
+  var renderer = null;
+  try { renderer = new THREE.WebGLRenderer({antialias: false}); } catch (error) { renderer = null; }
+  if (!renderer || !renderer.getContext()) {
+    host.innerHTML = "<div class='fail'>Эти страницы рисуют облака через WebGL, а браузер его не дал." +
+      " Обычно помогает включить аппаратное ускорение или открыть страницу в Chrome или Firefox.</div>";
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(0x14171c, 1);
+  host.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var root = new THREE.Group();
+  root.applyMatrix4(new THREE.Matrix4().fromArray(META.basis));
+  scene.add(root);
+  var camera = new THREE.PerspectiveCamera(META.fov, 1, 0.001, 1e6);
+
+  var VERTEX = [
+    'uniform vec3 uCentre;', 'uniform vec3 uHalf;', 'uniform float uSize;',
+    'uniform float uPixel;', 'uniform float uRefDist;',
+    'attribute float aIndex;', 'attribute float aDist;',
+    'varying float vIndex;', 'varying float vDist;',
+    'void main() {',
+    '  vIndex = aIndex; vDist = aDist / 255.0;',
+    '  vec4 view = modelViewMatrix * vec4(position * uHalf + uCentre, 1.0);',
+    '  gl_Position = projectionMatrix * view;',
+    '  gl_PointSize = clamp(uSize * uPixel * uRefDist / max(-view.z, 1e-9), 1.0, 40.0);',
+    '}'
+  ].join('\n');
+
+  var FRAGMENT = [
+    'uniform sampler2D uPalette;', 'uniform sampler2D uRamp;',
+    'uniform float uPalCount;', 'uniform float uMode;',
+    'varying float vIndex;', 'varying float vDist;',
+    'void main() {',
+    '  vec2 off = gl_PointCoord - vec2(0.5);',
+    '  if (dot(off, off) > 0.25) { discard; }',
+    '  vec4 col = (uMode < 0.5)',
+    '    ? texture2D(uPalette, vec2((vIndex + 0.5) / uPalCount, 0.5))',
+    '    : texture2D(uRamp, vec2((vDist * 255.0 + 0.5) / 256.0, 0.5));',
+    '  gl_FragColor = vec4(col.rgb, 1.0);',
+    '}'
+  ].join('\n');
+
+  function materialFor(spec) {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uCentre: {value: new THREE.Vector3().fromArray(spec.centre)},
+        uHalf: {value: new THREE.Vector3().fromArray(spec.half)},
+        uSize: {value: state.size},
+        uPixel: {value: renderer.getPixelRatio()},
+        uRefDist: {value: 1.0},
+        uPalette: {value: texture(bytes(spec.pal), spec.pal_count)},
+        uRamp: {value: RAMP},
+        uPalCount: {value: spec.pal_count},
+        uMode: {value: 0}
+      },
+      vertexShader: VERTEX,
+      fragmentShader: FRAGMENT
+    });
+  }
+
+  // ------------------------------------------------------------- camera orbit
+  var control = {
+    target: new THREE.Vector3().fromArray(META.camera.target),
+    radius: META.camera.radius, theta: META.camera.theta, phi: META.camera.phi
+  };
+  function applyCamera() {
+    control.phi = Math.max(0.08, Math.min(Math.PI - 0.08, control.phi));
+    var s = control, sp = Math.sin(s.phi);
+    camera.position.set(
+      s.target.x + s.radius * sp * Math.sin(s.theta),
+      s.target.y + s.radius * Math.cos(s.phi),
+      s.target.z + s.radius * sp * Math.cos(s.theta));
+    camera.up.set(0, 1, 0);
+    camera.lookAt(s.target);
+    camera.near = Math.max(s.radius * 0.002, 1e-5);
+    camera.far = s.radius * 40.0;
+    camera.updateProjectionMatrix();
+    forEachObject(function (obj) { obj.material.uniforms.uRefDist.value = s.radius; });
+    dirty = true;
+  }
+  function forEachObject(visit) {
+    for (var key in META.traces) {
+      if (META.traces[key].object) { visit(META.traces[key].object); }
+    }
+  }
+  var drag = null;
+  host.addEventListener('contextmenu', function (event) { event.preventDefault(); });
+  host.addEventListener('pointerdown', function (event) {
+    drag = {x: event.clientX, y: event.clientY, button: event.button, shift: event.shiftKey};
+    try { host.setPointerCapture(event.pointerId); } catch (e) {}
+  });
+  host.addEventListener('pointerup', function (event) {
+    drag = null;
+    try { host.releasePointerCapture(event.pointerId); } catch (e) {}
+    toHash();
+  });
+  host.addEventListener('pointermove', function (event) {
+    if (!drag) { return; }
+    var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+    drag.x = event.clientX; drag.y = event.clientY;
+    if (drag.button === 2 || drag.shift) {
+      // pan: move the orbit target in the plane of the screen
+      var scale = 2.0 * control.radius * Math.tan(META.fov * Math.PI / 360.0) / host.clientHeight;
+      var right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      var up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      control.target.addScaledVector(right, -dx * scale).addScaledVector(up, dy * scale);
+    } else {
+      control.theta -= dx * 0.006;
+      control.phi -= dy * 0.006;
+    }
+    applyCamera();
+  });
+  host.addEventListener('wheel', function (event) {
+    event.preventDefault();
+    control.radius = Math.max(control.radius * Math.exp(event.deltaY * 0.0012), 1e-4);
+    applyCamera();
+  }, {passive: false});
+
+  // ------------------------------------------------------------- payload load
+  function loadPositions(key) {
+    var spec = META.traces[key];
+    if (!spec) { return Promise.resolve(null); }
+    if (spec.object) { return Promise.resolve(spec.object); }
+    if (spec.pending) { return spec.pending; }
+    var started = performance.now();
+    spec.pending = fetch(spec.pos).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + spec.pos); }
+      return response.arrayBuffer();
+    }).then(function (buffer) {
+      var n = spec.count;
+      if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
+      var geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Int16Array(buffer, 0, 3 * n), 3, true));
+      geo.setAttribute('aIndex', new THREE.BufferAttribute(new Uint8Array(buffer, 6 * n, n), 1, false));
+      geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
+      var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
+                             + spec.half[2] * spec.half[2]);
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
+      var object = new THREE.Points(geo, materialFor(spec));
+      object.material.uniforms.uRefDist.value = control.radius;
+      object.visible = false;
+      root.add(object);
+      spec.object = object;
+      spec.decode_ms = Math.round(performance.now() - started);
+      dirty = true;
+      return object;
+    });
+    return spec.pending;
+  }
+  function loadDistances(key) {
+    var spec = META.traces[key];
+    if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
+    if (spec.dist_pending) { return spec.dist_pending; }
+    spec.dist_pending = fetch(spec.dist).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + spec.dist); }
+      return response.arrayBuffer();
+    }).then(function (buffer) {
+      var values = new Uint8Array(buffer);
+      if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
+      spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
+      spec.dist_done = true;
+      dirty = true;
+    });
+    return spec.dist_pending;
+  }
+
+  // ----------------------------------------------------------------- drawing
+  var frustums = null;
+  if (META.frustums) {
+    var fgeo = new THREE.BufferGeometry();
+    fgeo.setAttribute('position', new THREE.BufferAttribute(floats(META.frustums.b64), 3));
+    // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
+    frustums = new THREE.LineSegments(fgeo, new THREE.LineBasicMaterial(
+      {color: 0xffb020, depthTest: false, transparent: true, opacity: 0.85}));
+    frustums.renderOrder = 1;
+    frustums.visible = false;
+    root.add(frustums);
+  }
+
+  function chosen() {
+    if (state.cloud === 'both') { return META.predictions.slice(); }
+    return [state.cloud];
+  }
+  function hint(text) { document.getElementById('hint').textContent = text; }
+  function syncButtons() {
+    var buttons = document.querySelectorAll('.pick');
+    for (var i = 0; i < buttons.length; i++) {
+      var button = buttons[i];
+      button.classList.toggle('on', button.dataset.cloud
+        ? state.cloud === button.dataset.cloud : state.colour === button.dataset.colour);
+    }
+    document.getElementById('cams').checked = state.cams;
+    document.getElementById('size').value = state.size;
+  }
+  function apply() {
+    var keys = chosen(), loading = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (META.traces[keys[i]]) { loading.push(loadPositions(keys[i])); }
+    }
+    hint('загрузка точек…');
+    Promise.all(loading).then(function () {
+      var extra = [];
+      if (state.colour === 'dist') {
+        for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
+      }
+      return Promise.all(extra);
+    }).then(function () {
+      var shown = 0;
+      for (var key in META.traces) {
+        var spec = META.traces[key];
+        if (!spec.object) { continue; }
+        var on = keys.indexOf(key) >= 0;
+        spec.object.visible = on;
+        spec.object.material.uniforms.uSize.value = state.size;
+        spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
+        if (on) { shown += spec.count; }
+      }
+      if (frustums) { frustums.visible = state.cams; }
+      hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
+           + ' · ' + shown.toLocaleString('ru-RU') + ' точек');
+      syncButtons();
+      toHash();
+      dirty = true;
+      if (!ready) { ready = true; firstReady(); }
+    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+  }
+  document.getElementById('cams').addEventListener('change', function () {
+    state.cams = this.checked; apply();
+  });
+  document.getElementById('size').addEventListener('input', function () {
+    state.size = parseFloat(this.value);
+    forEachObject(function (obj) { obj.material.uniforms.uSize.value = state.size; });
+    dirty = true;
+    toHash();
+  });
+  var picks = document.querySelectorAll('.pick');
+  for (var p = 0; p < picks.length; p++) {
+    picks[p].addEventListener('click', function () {
+      if (this.disabled) { return; }
+      if (this.dataset.cloud) { state.cloud = this.dataset.cloud; }
+      else { state.colour = this.dataset.colour; }
+      apply();
+    });
+  }
+
+  // ------------------------------------------------------------------- frame
+  function render() { renderer.render(scene, camera); }
+  function loop() {
+    requestAnimationFrame(loop);
+    if (dirty && !benchMode) { dirty = false; render(); }
+  }
+  function resize() {
+    var width = host.clientWidth || 900, height = host.clientHeight || 600;
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    forEachObject(function (obj) { obj.material.uniforms.uPixel.value = renderer.getPixelRatio(); });
+    dirty = true;
+  }
+  window.addEventListener('resize', resize);
+
+  // ------------------------------------------------------------------- bench
+  function rendererName() {
+    var gl = renderer.getContext();
+    var info = gl.getExtension('WEBGL_debug_renderer_info');
+    return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL))
+                : String(gl.getParameter(gl.RENDERER));
+  }
+  function firstReady() {
+    if (!benchMode || window.__BENCH_DONE) { return; }
+    window.__BENCH_DONE = true;
+    var stats = {webgl: rendererName(), decode_ms: {}, points: {}, first_paint_ms: null};
+    for (var key in META.traces) {
+      var spec = META.traces[key];
+      if (!spec.object) { continue; }
+      stats.decode_ms[key] = spec.decode_ms;
+      stats.points[key] = spec.count;
+    }
+    requestAnimationFrame(function () {
+      render();
+      stats.first_paint_ms = Math.round(performance.now());
+      var frames = [], index = 0, previous = performance.now();
+      function step() {
+        var now = performance.now();
+        if (index >= 4) { frames.push(now - previous); }
+        previous = now;
+        control.theta += 0.012;
+        applyCamera();
+        render();
+        if (++index < 124) { requestAnimationFrame(step); return; }
+        frames.sort(function (a, b) { return a - b; });
+        stats.frame_median_ms = Math.round(frames[Math.floor(frames.length / 2)] * 10) / 10;
+        stats.frame_p95_ms = Math.round(frames[Math.floor(frames.length * 0.95)] * 10) / 10;
+        stats.frame_count = frames.length;
+        window.__VIEWER_STATS = stats;
+        try { fetch('/__report', {method: 'POST', body: JSON.stringify(stats)}); } catch (e) {}
+      }
+      requestAnimationFrame(step);
+    });
+  }
+
+  // -------------------------------------------------------------------- init
+  fromHash();
+  resize();
+  applyCamera();
+  apply();
+  loop();
+})();
+</script>
+
+</body>
+</html>

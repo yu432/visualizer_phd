@@ -1,6 +1,6 @@
 {
   "ablation_markdown": "| \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043d\u0435\u0431\u043e, % \u043a\u0430\u0434\u0440\u0430 | F@1% \u0441 \u0444\u0438\u043b\u044c\u0442\u0440\u043e\u043c | F@1% \u0431\u0435\u0437 \u0444\u0438\u043b\u044c\u0442\u0440\u0430 | \u0394F@1% | prec@1% \u0441 | prec@1% \u0431\u0435\u0437 | rec@1% \u0441 | rec@1% \u0431\u0435\u0437 |\n|---|---|---|---|---|---|---|---|---|---|\n| courtyard | da3-giant | 0.8 | 0.965 | 0.965 | +0.000 | 0.987 | 0.987 | 0.944 | 0.944 |\n| courtyard | vggt-omega | 0.8 | 0.970 | 0.970 | +0.000 | 0.992 | 0.992 | 0.948 | 0.948 |\n| delivery_area | da3-giant | 0.4 | 0.881 | 0.881 | +0.000 | 0.997 | 0.997 | 0.789 | 0.789 |\n| delivery_area | vggt-omega | 0.4 | 0.972 | 0.972 | -0.000 | 0.987 | 0.987 | 0.958 | 0.958 |\n| facade | da3-giant | 8.5 | 0.976 | 0.975 | +0.001 | 0.984 | 0.982 | 0.967 | 0.967 |\n| facade | vggt-omega | 8.5 | 0.978 | 0.975 | +0.003 | 0.987 | 0.981 | 0.969 | 0.969 |\n| office | da3-giant | 0.0 | 0.935 | 0.935 | +0.000 | 0.952 | 0.952 | 0.919 | 0.919 |\n| office | vggt-omega | 0.0 | 0.964 | 0.964 | +0.000 | 0.966 | 0.966 | 0.962 | 0.962 |\n| terrace | da3-giant | 7.2 | 0.975 | 0.975 | -0.000 | 0.974 | 0.974 | 0.976 | 0.976 |\n| terrace | vggt-omega | 7.2 | 0.976 | 0.977 | -0.000 | 0.973 | 0.973 | 0.980 | 0.980 |\n",
-  "markdown": "| \u0434\u0430\u0442\u0430\u0441\u0435\u0442 | \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043a\u0430\u0434\u0440\u043e\u0432 | F@0.5% | F@1% | prec@1% | rec@1% | AbsRel (s+t) | AbsRel raw | \u043f\u043e\u0432\u043e\u0440\u043e\u0442, \u00b0 | \u0446\u0435\u043d\u0442\u0440, %\u0434\u0438\u0430\u0433 |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| eth3d | courtyard | da3-giant | 10 | 0.931 | 0.966 | 0.989 | 0.944 | 0.0085 | 0.902 | 1.11 | 0.88 |\n| eth3d | courtyard | vggt-omega | 10 | 0.928 | 0.970 | 0.994 | 0.948 | 0.0056 | 0.907 | 0.55 | 0.78 |\n| eth3d | delivery_area | da3-giant | 10 | 0.855 | 0.881 | 0.998 | 0.789 | 0.0273 | 0.892 | 6.86 | 5.85 |\n| eth3d | delivery_area | vggt-omega | 10 | 0.928 | 0.972 | 0.987 | 0.958 | 0.0112 | 0.880 | 2.91 | 2.24 |\n| eth3d | facade | da3-giant | 10 | 0.961 | 0.976 | 0.986 | 0.967 | 0.0105 | 0.947 | 0.43 | 0.64 |\n| eth3d | facade | vggt-omega | 10 | 0.965 | 0.979 | 0.988 | 0.969 | 0.0082 | 0.946 | 1.40 | 0.66 |\n| eth3d | office | da3-giant | 10 | 0.807 | 0.937 | 0.954 | 0.919 | 0.0096 | 0.569 | 1.82 | 2.81 |\n| eth3d | office | vggt-omega | 10 | 0.898 | 0.966 | 0.969 | 0.963 | 0.0067 | 0.557 | 0.77 | 1.92 |\n| eth3d | terrace | da3-giant | 10 | 0.952 | 0.975 | 0.975 | 0.976 | 0.0268 | 0.877 | 1.30 | 1.02 |\n| eth3d | terrace | vggt-omega | 10 | 0.967 | 0.978 | 0.976 | 0.980 | 0.0059 | 0.837 | 0.44 | 0.40 |\n| tnt | barn | da3-giant | 16 | 0.462 | 0.677 | 0.925 | 0.533 | - | - | 0.48 | 0.33 |\n| tnt | barn | vggt-omega | 16 | 0.527 | 0.767 | 0.920 | 0.658 | - | - | 0.64 | 0.31 |\n| tnt | courthouse | da3-giant | 16 | 0.276 | 0.423 | 0.513 | 0.360 | - | - | 3.51 | 1.02 |\n| tnt | courthouse | vggt-omega | 16 | 0.028 | 0.055 | 0.082 | 0.042 | - | - | 47.32 | 13.83 |\n| tnt | ignatius | da3-giant | 16 | - | - | - | - | - | - | 0.54 | 0.29 |\n| tnt | ignatius | vggt-omega | 16 | - | - | - | - | - | - | 0.44 | 0.29 |\n| tnt | meetingroom | da3-giant | 16 | - | - | - | - | - | - | 0.46 | 0.26 |\n| tnt | meetingroom | vggt-omega | 16 | - | - | - | - | - | - | 0.54 | 0.31 |\n| tnt100 | barn | da3-giant | 100 | 0.471 | 0.753 | 0.618 | 0.963 | - | - | 0.39 | 0.22 |\n| tnt100 | barn | vggt-omega | 100 | 0.585 | 0.834 | 0.740 | 0.956 | - | - | 0.55 | 0.23 |\n| tnt100 | courthouse | da3-giant | 100 | 0.384 | 0.586 | 0.674 | 0.518 | - | - | 1.69 | 0.34 |\n| tnt100 | courthouse | vggt-omega | 100 | 0.379 | 0.546 | 0.687 | 0.452 | - | - | 3.68 | 2.01 |\n| tnt100 | ignatius | da3-giant | 100 | - | - | - | - | - | - | 0.81 | 0.36 |\n| tnt100 | ignatius | vggt-omega | 100 | - | - | - | - | - | - | 0.36 | 0.20 |\n| tnt100 | meetingroom | da3-giant | 100 | - | - | - | - | - | - | 0.32 | 0.19 |\n| tnt100 | meetingroom | vggt-omega | 100 | - | - | - | - | - | - | 0.23 | 0.24 |\n",
+  "markdown": "| \u0434\u0430\u0442\u0430\u0441\u0435\u0442 | \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043a\u0430\u0434\u0440\u043e\u0432 | F@0.5% | F@1% | prec@1% | rec@1% | AbsRel (s+t) | AbsRel raw | \u043f\u043e\u0432\u043e\u0440\u043e\u0442, \u00b0 | \u0446\u0435\u043d\u0442\u0440, %\u0434\u0438\u0430\u0433 |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| eth3d | courtyard | da3-giant | 10 | 0.931 | 0.966 | 0.989 | 0.944 | 0.0085 | 0.902 | 1.11 | 0.88 |\n| eth3d | courtyard | vggt-omega | 10 | 0.928 | 0.970 | 0.994 | 0.948 | 0.0056 | 0.907 | 0.55 | 0.78 |\n| eth3d | delivery_area | da3-giant | 10 | 0.855 | 0.881 | 0.998 | 0.789 | 0.0273 | 0.892 | 6.86 | 5.85 |\n| eth3d | delivery_area | vggt-omega | 10 | 0.928 | 0.972 | 0.987 | 0.958 | 0.0112 | 0.880 | 2.91 | 2.24 |\n| eth3d | facade | da3-giant | 10 | 0.961 | 0.976 | 0.986 | 0.967 | 0.0105 | 0.947 | 0.43 | 0.64 |\n| eth3d | facade | vggt-omega | 10 | 0.965 | 0.979 | 0.988 | 0.969 | 0.0082 | 0.946 | 1.40 | 0.66 |\n| eth3d | office | da3-giant | 10 | 0.807 | 0.937 | 0.954 | 0.919 | 0.0096 | 0.569 | 1.82 | 2.81 |\n| eth3d | office | vggt-omega | 10 | 0.898 | 0.966 | 0.969 | 0.963 | 0.0067 | 0.557 | 0.77 | 1.92 |\n| eth3d | terrace | da3-giant | 10 | 0.952 | 0.975 | 0.975 | 0.976 | 0.0268 | 0.877 | 1.30 | 1.02 |\n| eth3d | terrace | vggt-omega | 10 | 0.967 | 0.978 | 0.976 | 0.980 | 0.0059 | 0.837 | 0.44 | 0.40 |\n| tnt | barn | da3-giant | 16 | 0.462 | 0.677 | 0.925 | 0.533 | - | - | 0.48 | 0.33 |\n| tnt | barn | vggt-omega | 16 | 0.527 | 0.767 | 0.920 | 0.658 | - | - | 0.64 | 0.31 |\n| tnt | courthouse | da3-giant | 16 | 0.276 | 0.423 | 0.513 | 0.360 | - | - | 3.51 | 1.02 |\n| tnt | courthouse | vggt-omega | 16 | 0.028 | 0.055 | 0.082 | 0.042 | - | - | 47.32 | 13.83 |\n| tnt | ignatius | da3-giant | 16 | - | - | - | - | - | - | 0.54 | 0.29 |\n| tnt | ignatius | vggt-omega | 16 | - | - | - | - | - | - | 0.44 | 0.29 |\n| tnt | meetingroom | da3-giant | 16 | - | - | - | - | - | - | 0.46 | 0.26 |\n| tnt | meetingroom | vggt-omega | 16 | - | - | - | - | - | - | 0.54 | 0.31 |\n| tnt100 | barn | da3-giant | 100 | 0.471 | 0.753 | 0.618 | 0.963 | - | - | 0.39 | 0.22 |\n| tnt100 | barn | vggt-omega | 100 | 0.585 | 0.834 | 0.740 | 0.956 | - | - | 0.55 | 0.23 |\n| tnt100 | courthouse | da3-giant | 100 | 0.384 | 0.586 | 0.674 | 0.518 | - | - | 1.69 | 0.34 |\n| tnt100 | courthouse | vggt-omega | 100 | 0.379 | 0.546 | 0.687 | 0.452 | - | - | 3.68 | 2.01 |\n| tnt100 | ignatius | da3-giant | 100 | - | - | - | - | - | - | 0.81 | 0.36 |\n| tnt100 | ignatius | vggt-omega | 100 | - | - | - | - | - | - | 0.36 | 0.20 |\n| tnt100 | meetingroom | da3-giant | 100 | - | - | - | - | - | - | 0.32 | 0.19 |\n| tnt100 | meetingroom | vggt-omega | 100 | - | - | - | - | - | - | 0.23 | 0.24 |\n| eth3d20 | courtyard | da3-giant | 20 | 0.867 | 0.914 | 0.871 | 0.960 | 0.0076 | 0.900 | 0.57 | 0.33 |\n| eth3d20 | courtyard | vggt-omega | 20 | 0.862 | 0.920 | 0.866 | 0.981 | 0.0051 | 0.911 | 0.33 | 0.37 |\n| eth3d20 | delivery_area | da3-giant | 20 | 0.850 | 0.879 | 0.966 | 0.806 | 0.0207 | 0.898 | 12.60 | 2.42 |\n| eth3d20 | delivery_area | vggt-omega | 20 | 0.950 | 0.971 | 0.967 | 0.975 | 0.0101 | 0.881 | 0.87 | 0.52 |\n| eth3d20 | facade | da3-giant | 20 | 0.947 | 0.970 | 0.946 | 0.996 | 0.0106 | 0.946 | 0.39 | 0.30 |\n| eth3d20 | facade | vggt-omega | 20 | 0.937 | 0.970 | 0.943 | 0.998 | 0.0081 | 0.949 | 0.90 | 0.61 |\n| eth3d20 | office | da3-giant | 20 | 0.818 | 0.854 | 0.880 | 0.829 | 0.0061 | 0.605 | 0.86 | 0.77 |\n| eth3d20 | office | vggt-omega | 20 | 0.879 | 0.936 | 0.917 | 0.956 | 0.0049 | 0.548 | 0.51 | 0.70 |\n| eth3d20 | terrace | da3-giant | 20 | 0.936 | 0.971 | 0.967 | 0.975 | 0.0236 | 0.871 | 0.90 | 0.70 |\n| eth3d20 | terrace | vggt-omega | 20 | 0.961 | 0.976 | 0.972 | 0.981 | 0.0055 | 0.841 | 0.43 | 0.31 |\n| eth3d20dense | courtyard | da3-giant | 20 | 0.932 | 0.967 | 0.986 | 0.950 | 0.0076 | 0.900 | - | - |\n| eth3d20dense | courtyard | vggt-omega | 20 | 0.943 | 0.983 | 0.987 | 0.979 | 0.0051 | 0.911 | - | - |\n| eth3d20dense | delivery_area | da3-giant | 20 | 0.868 | 0.884 | 1.000 | 0.792 | 0.0207 | 0.898 | - | - |\n| eth3d20dense | delivery_area | vggt-omega | 20 | 0.979 | 0.984 | 1.000 | 0.969 | 0.0101 | 0.881 | - | - |\n| eth3d20dense | facade | da3-giant | 20 | 0.995 | 0.998 | 0.999 | 0.997 | 0.0106 | 0.946 | - | - |\n| eth3d20dense | facade | vggt-omega | 20 | 0.989 | 0.998 | 0.998 | 0.998 | 0.0081 | 0.949 | - | - |\n| eth3d20dense | office | da3-giant | 20 | 0.862 | 0.893 | 0.900 | 0.886 | 0.0061 | 0.605 | - | - |\n| eth3d20dense | office | vggt-omega | 20 | 0.902 | 0.951 | 0.934 | 0.968 | 0.0049 | 0.548 | - | - |\n| eth3d20dense | terrace | da3-giant | 20 | 0.938 | 0.972 | 0.969 | 0.974 | 0.0236 | 0.871 | - | - |\n| eth3d20dense | terrace | vggt-omega | 20 | 0.962 | 0.976 | 0.973 | 0.979 | 0.0055 | 0.841 | - | - |\n",
   "methods": [
     "da3-giant",
     "vggt-omega"
@@ -17,6 +17,26 @@
       "eth3d/office/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d/office/vggt-omega",
       "eth3d/terrace/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d/terrace/da3-giant",
       "eth3d/terrace/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d/terrace/vggt-omega",
+      "eth3d20/courtyard/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20/courtyard/da3-giant",
+      "eth3d20/courtyard/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20/courtyard/vggt-omega",
+      "eth3d20/delivery_area/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20/delivery_area/da3-giant",
+      "eth3d20/delivery_area/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20/delivery_area/vggt-omega",
+      "eth3d20/facade/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20/facade/da3-giant",
+      "eth3d20/facade/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20/facade/vggt-omega",
+      "eth3d20/office/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20/office/da3-giant",
+      "eth3d20/office/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20/office/vggt-omega",
+      "eth3d20/terrace/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20/terrace/da3-giant",
+      "eth3d20/terrace/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20/terrace/vggt-omega",
+      "eth3d20dense/courtyard/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20dense/courtyard/da3-giant",
+      "eth3d20dense/courtyard/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20dense/courtyard/vggt-omega",
+      "eth3d20dense/delivery_area/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20dense/delivery_area/da3-giant",
+      "eth3d20dense/delivery_area/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20dense/delivery_area/vggt-omega",
+      "eth3d20dense/facade/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20dense/facade/da3-giant",
+      "eth3d20dense/facade/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20dense/facade/vggt-omega",
+      "eth3d20dense/office/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20dense/office/da3-giant",
+      "eth3d20dense/office/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20dense/office/vggt-omega",
+      "eth3d20dense/terrace/da3-giant": "/Users/yuapotapov/phd/outputs/eth3d20dense/terrace/da3-giant",
+      "eth3d20dense/terrace/vggt-omega": "/Users/yuapotapov/phd/outputs/eth3d20dense/terrace/vggt-omega",
       "tnt/barn/da3-giant": "/Users/yuapotapov/phd/outputs/tnt/barn/da3-giant",
       "tnt/barn/vggt-omega": "/Users/yuapotapov/phd/outputs/tnt/barn/vggt-omega",
       "tnt/courthouse/da3-giant": "/Users/yuapotapov/phd/outputs/tnt/courthouse/da3-giant",
@@ -4405,6 +4425,2386 @@
           0.0,
           0.0,
           0.0
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.054082811544749254,
+        "scale": 10.031971551018275,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.3675807668160851,
+        "completeness": 0.11404460649537933,
+        "fscore_half": 0.8674480544840839,
+        "fscore_one": 0.9135338251060673,
+        "gt_diagonal": 43.3708781297787,
+        "gt_points": 2004851,
+        "precision_one": 0.8714152289383061,
+        "pred_points": 698092,
+        "recall_one": 0.9599306881159747
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.9004042564310195,
+        "absrel_scale_shift": 0.007628931696878597,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.999472444049019,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "pose": {
+        "gt_camera_extent": 14.91560973896648,
+        "rotation_mean_deg": 0.5732784378565997,
+        "rotation_median_deg": 0.523697166929352,
+        "translation_mean_fraction": 0.003255216756507257,
+        "translation_median_fraction": 0.0028544454453068744
+      },
+      "scene": "courtyard",
+      "seconds": 32.451,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0286.JPG",
+          "DSC_0288.JPG",
+          "DSC_0290.JPG",
+          "DSC_0292.JPG",
+          "DSC_0294.JPG",
+          "DSC_0296.JPG",
+          "DSC_0298.JPG",
+          "DSC_0300.JPG",
+          "DSC_0302.JPG",
+          "DSC_0304.JPG",
+          "DSC_0305.JPG",
+          "DSC_0307.JPG",
+          "DSC_0309.JPG",
+          "DSC_0311.JPG",
+          "DSC_0313.JPG",
+          "DSC_0315.JPG",
+          "DSC_0317.JPG",
+          "DSC_0319.JPG",
+          "DSC_0321.JPG",
+          "DSC_0323.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "courtyard",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.011741780045351475,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.030311082766439908,
+          0.04296579743008314,
+          0.03458049886621315,
+          0.004812688964474679,
+          0.0,
+          0.013487339380196523,
+          0.0020845143613000758,
+          0.0,
+          0.0,
+          0.00561578798185941,
+          0.02848639455782313,
+          0.07249149659863946
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 2.5321537695370453,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 8.057935803029658,
+            "accuracy_p90_cm": 90.34229813940269,
+            "auc_precision": 0.605942687999301,
+            "auc_recall": 0.8044745749382209,
+            "completeness_median_cm": 4.045718940331009,
+            "cover90_cm": 9.310700375308151,
+            "fscore_at_5": null,
+            "precision@5": 0.3101553949909181,
+            "recall@5": 0.6405204177268037
+          },
+          "pose": {
+            "accuracy_median_cm": 9.583525674575572,
+            "accuracy_p90_cm": 95.26475673951602,
+            "auc_precision": 0.5821716475578705,
+            "auc_recall": 0.7881267469841027,
+            "completeness_median_cm": 4.342258640596944,
+            "cover90_cm": 11.388078481759397,
+            "fscore_at_5": null,
+            "precision@5": 0.26765383359213396,
+            "recall@5": 0.5625659961762745
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.05880739510158387,
+        "scale": 11.281166936593861,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.41594370035723804,
+        "completeness": 0.08037514919481914,
+        "fscore_half": 0.8623845527300692,
+        "fscore_one": 0.9199755543939171,
+        "gt_diagonal": 43.3708781297787,
+        "gt_points": 2004851,
+        "precision_one": 0.865922590108383,
+        "pred_points": 786747,
+        "recall_one": 0.9812260362490779
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.9110316483144526,
+        "absrel_scale_shift": 0.00506327566090024,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9993018367268085,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "pose": {
+        "gt_camera_extent": 14.91560973896648,
+        "rotation_mean_deg": 0.3345335156601131,
+        "rotation_median_deg": 0.254013791063641,
+        "translation_mean_fraction": 0.0037439794742307277,
+        "translation_median_fraction": 0.004063408533048724
+      },
+      "scene": "courtyard",
+      "seconds": 33.694,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0286.JPG",
+          "DSC_0288.JPG",
+          "DSC_0290.JPG",
+          "DSC_0292.JPG",
+          "DSC_0294.JPG",
+          "DSC_0296.JPG",
+          "DSC_0298.JPG",
+          "DSC_0300.JPG",
+          "DSC_0302.JPG",
+          "DSC_0304.JPG",
+          "DSC_0305.JPG",
+          "DSC_0307.JPG",
+          "DSC_0309.JPG",
+          "DSC_0311.JPG",
+          "DSC_0313.JPG",
+          "DSC_0315.JPG",
+          "DSC_0317.JPG",
+          "DSC_0319.JPG",
+          "DSC_0321.JPG",
+          "DSC_0323.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "courtyard",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.011514577169625246,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02972448224852071,
+          0.04212894477317554,
+          0.033911951429980276,
+          0.004684418145956607,
+          0.0,
+          0.01312099358974359,
+          0.0019261587771203157,
+          0.0,
+          0.0,
+          0.005466438609467455,
+          0.027613412228796843,
+          0.07171474358974358
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 2.5321537695370453,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 9.325778462441631,
+            "accuracy_p90_cm": 111.16265363497149,
+            "auc_precision": 0.5786673566441052,
+            "auc_recall": 0.8031178852577407,
+            "completeness_median_cm": 3.8316565368762032,
+            "cover90_cm": 12.544816008139895,
+            "fscore_at_5": null,
+            "precision@5": 0.28542720849269204,
+            "recall@5": 0.6480686095874456
+          },
+          "pose": {
+            "accuracy_median_cm": 10.620482554467214,
+            "accuracy_p90_cm": 119.43196422228037,
+            "auc_precision": 0.552307918454977,
+            "auc_recall": 0.829471224015608,
+            "completeness_median_cm": 3.514421129851792,
+            "cover90_cm": 9.417933106704545,
+            "fscore_at_5": null,
+            "precision@5": 0.2562272242537944,
+            "recall@5": 0.7321895741878075
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.45663283820425576,
+        "scale": 9.871004535130888,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.1545117029608253,
+        "completeness": 0.6587434171627431,
+        "fscore_half": 0.8500939927564496,
+        "fscore_one": 0.878819578742274,
+        "gt_diagonal": 78.74361994852869,
+        "gt_points": 1686014,
+        "precision_one": 0.965685375142468,
+        "pred_points": 359730,
+        "recall_one": 0.8062916440788748
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.8982521840951346,
+        "absrel_scale_shift": 0.020704641163501104,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9981968858337039,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "pose": {
+        "gt_camera_extent": 10.923773650874779,
+        "rotation_mean_deg": 12.598135085060921,
+        "rotation_median_deg": 5.485967386007335,
+        "translation_mean_fraction": 0.024225942180476738,
+        "translation_median_fraction": 0.012673154592045242
+      },
+      "scene": "delivery_area",
+      "seconds": 26.801,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0675.JPG",
+          "DSC_0677.JPG",
+          "DSC_0680.JPG",
+          "DSC_0682.JPG",
+          "DSC_0684.JPG",
+          "DSC_0686.JPG",
+          "DSC_0689.JPG",
+          "DSC_0691.JPG",
+          "DSC_0693.JPG",
+          "DSC_0695.JPG",
+          "DSC_0698.JPG",
+          "DSC_0700.JPG",
+          "DSC_0702.JPG",
+          "DSC_0704.JPG",
+          "DSC_0707.JPG",
+          "DSC_0709.JPG",
+          "DSC_0711.JPG",
+          "DSC_0713.JPG",
+          "DSC_0716.JPG",
+          "DSC_0718.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "delivery_area",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.0037211238662131518,
+        "sky_fraction_per_frame": [
+          7.676681783824642e-05,
+          0.0,
+          0.001936885865457294,
+          0.009330120937263795,
+          0.0002657312925170068,
+          0.0050134637188208615,
+          0.0005905139833711263,
+          7.676681783824642e-05,
+          0.003560799319727891,
+          0.0,
+          0.036753590325018896,
+          0.012855489417989419,
+          0.002881708238851096,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0008267195767195767,
+          0.0002539210128495843
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 1.928986521814336,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 7.1562563579137,
+            "accuracy_p90_cm": 30.803797854794123,
+            "auc_precision": 0.6445638035231429,
+            "auc_recall": 0.6369739539166245,
+            "completeness_median_cm": 5.772514096145792,
+            "cover90_cm": 276.9924498396455,
+            "fscore_at_5": null,
+            "precision@5": 0.3465710393906541,
+            "recall@5": 0.42173137352358875
+          },
+          "pose": {
+            "accuracy_median_cm": 42.13579753294373,
+            "accuracy_p90_cm": 101.4483643507415,
+            "auc_precision": 0.1937331889656489,
+            "auc_recall": 0.35010111179821507,
+            "completeness_median_cm": 23.011265697530895,
+            "cover90_cm": 259.238962878309,
+            "fscore_at_5": null,
+            "precision@5": 0.06303894587607373,
+            "recall@5": 0.16854189822860308
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.06680541512111088,
+        "scale": 8.407557898876279,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.13891348220985975,
+        "completeness": 0.19172726444630653,
+        "fscore_half": 0.9504381426118715,
+        "fscore_one": 0.9710722065667203,
+        "gt_diagonal": 78.74361994852869,
+        "gt_points": 1686014,
+        "precision_one": 0.9674916809969404,
+        "pred_points": 358216,
+        "recall_one": 0.9746793324373344
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.8807669333761353,
+        "absrel_scale_shift": 0.01014471883411438,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9995652466846316,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "pose": {
+        "gt_camera_extent": 10.923773650874779,
+        "rotation_mean_deg": 0.8719957186889671,
+        "rotation_median_deg": 0.8495741687509993,
+        "translation_mean_fraction": 0.005234519179556532,
+        "translation_median_fraction": 0.004488695028872019
+      },
+      "scene": "delivery_area",
+      "seconds": 33.8,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0675.JPG",
+          "DSC_0677.JPG",
+          "DSC_0680.JPG",
+          "DSC_0682.JPG",
+          "DSC_0684.JPG",
+          "DSC_0686.JPG",
+          "DSC_0689.JPG",
+          "DSC_0691.JPG",
+          "DSC_0693.JPG",
+          "DSC_0695.JPG",
+          "DSC_0698.JPG",
+          "DSC_0700.JPG",
+          "DSC_0702.JPG",
+          "DSC_0704.JPG",
+          "DSC_0707.JPG",
+          "DSC_0709.JPG",
+          "DSC_0711.JPG",
+          "DSC_0713.JPG",
+          "DSC_0716.JPG",
+          "DSC_0718.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "delivery_area",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.0035618528106508883,
+        "sky_fraction_per_frame": [
+          5.0080128205128203e-05,
+          0.0,
+          0.0018182938856015779,
+          0.008952785996055227,
+          0.000250400641025641,
+          0.004853920118343195,
+          0.000512358234714004,
+          6.934171597633136e-05,
+          0.003093410996055227,
+          0.0,
+          0.035660903599605526,
+          0.012173323471400394,
+          0.0026272805719921104,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0008937376725838264,
+          0.0002812191814595661
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 1.928986521814336,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 6.121155384122628,
+            "accuracy_p90_cm": 25.072571668518208,
+            "auc_precision": 0.6895041771241198,
+            "auc_recall": 0.8049035512933157,
+            "completeness_median_cm": 4.039673241812421,
+            "cover90_cm": 9.99914456019469,
+            "fscore_at_5": null,
+            "precision@5": 0.39584217343725575,
+            "recall@5": 0.6637874893091041
+          },
+          "pose": {
+            "accuracy_median_cm": 7.585001646033975,
+            "accuracy_p90_cm": 28.62764999802988,
+            "auc_precision": 0.6403347206743917,
+            "auc_recall": 0.7783064224154898,
+            "completeness_median_cm": 4.477805082825027,
+            "cover90_cm": 13.324717332529826,
+            "fscore_at_5": null,
+            "precision@5": 0.3093357080644081,
+            "recall@5": 0.5759145534971833
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.11816031073931237,
+        "scale": 18.46360612975212,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.2658146268791721,
+        "completeness": 0.0768409672394865,
+        "fscore_half": 0.9471785369924621,
+        "fscore_one": 0.9704633312589338,
+        "gt_diagonal": 93.66876709679856,
+        "gt_points": 2369230,
+        "precision_one": 0.9457665478744067,
+        "pred_points": 296035,
+        "recall_one": 0.9964845118456207
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.9462415749647335,
+        "absrel_scale_shift": 0.010602875846267108,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9941181616032837,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "pose": {
+        "gt_camera_extent": 32.29267480874931,
+        "rotation_mean_deg": 0.3934587266349343,
+        "rotation_median_deg": 0.23428195936699137,
+        "translation_mean_fraction": 0.0030272707734524695,
+        "translation_median_fraction": 0.002589203804302712
+      },
+      "scene": "facade",
+      "seconds": 27.328,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0324.JPG",
+          "DSC_0328.JPG",
+          "DSC_0332.JPG",
+          "DSC_0336.JPG",
+          "DSC_0340.JPG",
+          "DSC_0344.JPG",
+          "DSC_0348.JPG",
+          "DSC_0352.JPG",
+          "DSC_0356.JPG",
+          "DSC_0360.JPG",
+          "DSC_0363.JPG",
+          "DSC_0386.JPG",
+          "DSC_0390.JPG",
+          "DSC_0394.JPG",
+          "DSC_0398.JPG",
+          "DSC_0402.JPG",
+          "DSC_0407.JPG",
+          "DSC_0411.JPG",
+          "DSC_0415.JPG",
+          "DSC_0422.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "facade",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.08838636148904006,
+        "sky_fraction_per_frame": [
+          0.1573483560090703,
+          0.023419784580498867,
+          0.07638298374905518,
+          0.08564224300831444,
+          0.034881660997732426,
+          0.07719789304610733,
+          0.08388251133786848,
+          0.08188066893424037,
+          0.03608040438397581,
+          0.13699333900226757,
+          0.12522439531368104,
+          0.09765329743008315,
+          0.0,
+          0.2678630479969766,
+          0.0,
+          0.0,
+          0.0,
+          0.03136810279667423,
+          0.1869744425547997,
+          0.2649340986394558
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 3.1764333061370906,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 9.676637644184357,
+            "accuracy_p90_cm": 44.47808929863751,
+            "auc_precision": 0.5736750774888848,
+            "auc_recall": 0.7768043450208849,
+            "completeness_median_cm": 6.046356862733493,
+            "cover90_cm": 9.826398668780667,
+            "fscore_at_5": null,
+            "precision@5": 0.27688617899910484,
+            "recall@5": 0.3134385433242024
+          },
+          "pose": {
+            "accuracy_median_cm": 11.946573143396305,
+            "accuracy_p90_cm": 46.30679482622295,
+            "auc_precision": 0.5231331709379528,
+            "auc_recall": 0.726055537092791,
+            "completeness_median_cm": 7.125260481909709,
+            "cover90_cm": 14.072106006016474,
+            "fscore_at_5": null,
+            "precision@5": 0.2040670866620501,
+            "recall@5": 0.2171034471115088
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.2525145987228435,
+        "scale": 19.386100222320216,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.2991332573226465,
+        "completeness": 0.08589238965187186,
+        "fscore_half": 0.9369515798528097,
+        "fscore_one": 0.9696768007871005,
+        "gt_diagonal": 93.66876709679856,
+        "gt_points": 2369230,
+        "precision_one": 0.9430029825056014,
+        "pred_points": 336965,
+        "recall_one": 0.9979035382803696
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.9487721948573313,
+        "absrel_scale_shift": 0.008143861343756973,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9976835895191855,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "pose": {
+        "gt_camera_extent": 32.29267480874931,
+        "rotation_mean_deg": 0.9028940091466344,
+        "rotation_median_deg": 0.7864154689612133,
+        "translation_mean_fraction": 0.006091021048596639,
+        "translation_median_fraction": 0.004286652516403134
+      },
+      "scene": "facade",
+      "seconds": 34.372,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0324.JPG",
+          "DSC_0328.JPG",
+          "DSC_0332.JPG",
+          "DSC_0336.JPG",
+          "DSC_0340.JPG",
+          "DSC_0344.JPG",
+          "DSC_0348.JPG",
+          "DSC_0352.JPG",
+          "DSC_0356.JPG",
+          "DSC_0360.JPG",
+          "DSC_0363.JPG",
+          "DSC_0386.JPG",
+          "DSC_0390.JPG",
+          "DSC_0394.JPG",
+          "DSC_0398.JPG",
+          "DSC_0402.JPG",
+          "DSC_0407.JPG",
+          "DSC_0411.JPG",
+          "DSC_0415.JPG",
+          "DSC_0422.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "facade",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.08757550542406314,
+        "sky_fraction_per_frame": [
+          0.15598804240631164,
+          0.023129314595660748,
+          0.07569418762327416,
+          0.08425788954635108,
+          0.03370007396449704,
+          0.07604474852071005,
+          0.08299047707100592,
+          0.08128775271203156,
+          0.03539124137080868,
+          0.13615631163708086,
+          0.12396757889546352,
+          0.09655833949704141,
+          0.0,
+          0.2669232310157791,
+          0.0,
+          0.0,
+          0.0,
+          0.029874722633136095,
+          0.1861247226331361,
+          0.26342147435897434
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 3.1764333061370906,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 14.32542156929327,
+            "accuracy_p90_cm": 53.84027963074193,
+            "auc_precision": 0.4655597159535644,
+            "auc_recall": 0.7329530370747872,
+            "completeness_median_cm": 6.879662213548084,
+            "cover90_cm": 13.230269450809391,
+            "fscore_at_5": null,
+            "precision@5": 0.1519861113171991,
+            "recall@5": 0.2137036083453274
+          },
+          "pose": {
+            "accuracy_median_cm": 16.075812166583137,
+            "accuracy_p90_cm": 62.152416171111696,
+            "auc_precision": 0.4303590331095814,
+            "auc_recall": 0.7171993325696383,
+            "completeness_median_cm": 7.0626426875633985,
+            "cover90_cm": 14.60797045114647,
+            "fscore_at_5": null,
+            "precision@5": 0.139705904174024,
+            "recall@5": 0.20896662628786566
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.0225844595836774,
+        "scale": 2.5287301113432004,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.04423599724849906,
+        "completeness": 0.07568857815938435,
+        "fscore_half": 0.8182924736655708,
+        "fscore_one": 0.8536678944328564,
+        "gt_diagonal": 7.382401104836371,
+        "gt_points": 4191770,
+        "precision_one": 0.8803894614525819,
+        "pred_points": 526676,
+        "recall_one": 0.8285206487951391
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.6053476004206239,
+        "absrel_scale_shift": 0.0061346602324809565,
+        "delta125_metric": 1.5387689707096936e-05,
+        "delta125_scale_shift": 0.9993090886480717,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "pose": {
+        "gt_camera_extent": 2.0846325514344795,
+        "rotation_mean_deg": 0.8576752890664727,
+        "rotation_median_deg": 0.7349702419562849,
+        "translation_mean_fraction": 0.0076708007478658,
+        "translation_median_fraction": 0.004946777143491912
+      },
+      "scene": "office",
+      "seconds": 26.86,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0219.JPG",
+          "DSC_0220.JPG",
+          "DSC_0222.JPG",
+          "DSC_0223.JPG",
+          "DSC_0228.JPG",
+          "DSC_0230.JPG",
+          "DSC_0231.JPG",
+          "DSC_0235.JPG",
+          "DSC_0237.JPG",
+          "DSC_0238.JPG",
+          "DSC_0239.JPG",
+          "DSC_0240.JPG",
+          "DSC_0242.JPG",
+          "DSC_0243.JPG",
+          "DSC_0248.JPG",
+          "DSC_0250.JPG",
+          "DSC_0251.JPG",
+          "DSC_0252.JPG",
+          "DSC_0254.JPG",
+          "DSC_0255.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "office",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.0,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 0.6677388750411393,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 1.22793119243617,
+            "accuracy_p90_cm": 10.359010561271193,
+            "auc_precision": 0.8783461205305302,
+            "auc_recall": 0.8352617451180382,
+            "completeness_median_cm": 0.8614677193908029,
+            "cover90_cm": 24.774127835250418,
+            "fscore_at_5": null,
+            "precision@5": 0.8581120081416279,
+            "recall@5": 0.8150482970201133
+          },
+          "pose": {
+            "accuracy_median_cm": 1.8395039650072165,
+            "accuracy_p90_cm": 11.046833688708386,
+            "auc_precision": 0.8606627898662013,
+            "auc_recall": 0.8269932249624061,
+            "completeness_median_cm": 1.1595576619695662,
+            "cover90_cm": 24.759921150442928,
+            "fscore_at_5": null,
+            "precision@5": 0.834799763042174,
+            "recall@5": 0.8101496503863523
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.018103540343898935,
+        "scale": 2.2099332220324315,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.03708675481197793,
+        "completeness": 0.0183718640306241,
+        "fscore_half": 0.8789734099951925,
+        "fscore_one": 0.9358619979389444,
+        "gt_diagonal": 7.382401104836371,
+        "gt_points": 4191770,
+        "precision_one": 0.9169603080870423,
+        "pred_points": 824702,
+        "recall_one": 0.9555593460519065
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.5478094111676802,
+        "absrel_scale_shift": 0.004926016249022554,
+        "delta125_metric": 2.1923847288638522e-05,
+        "delta125_scale_shift": 0.9993641320655767,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "pose": {
+        "gt_camera_extent": 2.0846325514344795,
+        "rotation_mean_deg": 0.5086760379910754,
+        "rotation_median_deg": 0.3723884943479324,
+        "translation_mean_fraction": 0.006967566192289052,
+        "translation_median_fraction": 0.004675952585212511
+      },
+      "scene": "office",
+      "seconds": 33.621,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0219.JPG",
+          "DSC_0220.JPG",
+          "DSC_0222.JPG",
+          "DSC_0223.JPG",
+          "DSC_0228.JPG",
+          "DSC_0230.JPG",
+          "DSC_0231.JPG",
+          "DSC_0235.JPG",
+          "DSC_0237.JPG",
+          "DSC_0238.JPG",
+          "DSC_0239.JPG",
+          "DSC_0240.JPG",
+          "DSC_0242.JPG",
+          "DSC_0243.JPG",
+          "DSC_0248.JPG",
+          "DSC_0250.JPG",
+          "DSC_0251.JPG",
+          "DSC_0252.JPG",
+          "DSC_0254.JPG",
+          "DSC_0255.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "office",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.0,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 0.6677388750411393,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 1.3217162377539151,
+            "accuracy_p90_cm": 5.341722612286405,
+            "auc_precision": 0.8963779942635737,
+            "auc_recall": 0.9395872893572635,
+            "completeness_median_cm": 0.7828867995387438,
+            "cover90_cm": 3.2011522476385053,
+            "fscore_at_5": null,
+            "precision@5": 0.8935385145179714,
+            "recall@5": 0.9386824658795688
+          },
+          "pose": {
+            "accuracy_median_cm": 1.8368233219751722,
+            "accuracy_p90_cm": 5.761654883948805,
+            "auc_precision": 0.8835097933982681,
+            "auc_recall": 0.9247546336050804,
+            "completeness_median_cm": 1.1921548794481396,
+            "cover90_cm": 4.07721700857764,
+            "fscore_at_5": null,
+            "precision@5": 0.8751912812143053,
+            "recall@5": 0.9288577379006959
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.05775891099521244,
+        "scale": 7.507872152851987,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.1441381899980753,
+        "completeness": 0.4649164657251094,
+        "fscore_half": 0.9362749512244614,
+        "fscore_one": 0.97099097733732,
+        "gt_diagonal": 58.76502668173305,
+        "gt_points": 4106909,
+        "precision_one": 0.9668656794611139,
+        "pred_points": 496283,
+        "recall_one": 0.9751516286336025
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.8712169628827053,
+        "absrel_scale_shift": 0.02363540076409035,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9971279831164965,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "pose": {
+        "gt_camera_extent": 7.645249111402259,
+        "rotation_mean_deg": 0.8963209500720157,
+        "rotation_median_deg": 0.8384386254200189,
+        "translation_mean_fraction": 0.007026099477033328,
+        "translation_median_fraction": 0.0058863695269103684
+      },
+      "scene": "terrace",
+      "seconds": 28.023,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0259.JPG",
+          "DSC_0260.JPG",
+          "DSC_0261.JPG",
+          "DSC_0262.JPG",
+          "DSC_0264.JPG",
+          "DSC_0266.JPG",
+          "DSC_0267.JPG",
+          "DSC_0268.JPG",
+          "DSC_0269.JPG",
+          "DSC_0270.JPG",
+          "DSC_0272.JPG",
+          "DSC_0273.JPG",
+          "DSC_0274.JPG",
+          "DSC_0275.JPG",
+          "DSC_0276.JPG",
+          "DSC_0277.JPG",
+          "DSC_0279.JPG",
+          "DSC_0283.JPG",
+          "DSC_0284.JPG",
+          "DSC_0285.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "terrace",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.07020443594104307,
+        "sky_fraction_per_frame": [
+          0.1641746976568405,
+          0.21597458427815572,
+          0.13535171012849584,
+          0.07089710884353742,
+          0.0076353458049886625,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03984197845804989,
+          0.03101379440665155,
+          0.07772345049130763,
+          0.09061437074829932,
+          0.1521636432350718,
+          0.11911257558578987,
+          0.16120441232048374,
+          0.13838104686318972
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 1.3291374329188896,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 7.948021359514803,
+            "accuracy_p90_cm": 28.844836676604935,
+            "auc_precision": 0.6407831072421148,
+            "auc_recall": 0.8366479679701224,
+            "completeness_median_cm": 2.959693921620441,
+            "cover90_cm": 10.475553891729515,
+            "fscore_at_5": null,
+            "precision@5": 0.3338458097496791,
+            "recall@5": 0.7308596319032148
+          },
+          "pose": {
+            "accuracy_median_cm": 12.978865483958959,
+            "accuracy_p90_cm": 33.123603999628365,
+            "auc_precision": 0.5149480607914189,
+            "auc_recall": 0.7403620159474597,
+            "completeness_median_cm": 6.338146602782108,
+            "cover90_cm": 14.80787137315809,
+            "fscore_at_5": null,
+            "precision@5": 0.14657564333253406,
+            "recall@5": 0.3878805203621507
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.027398767476565812,
+        "scale": 6.257322645845106,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.10261431364308853,
+        "completeness": 0.30123144319009226,
+        "fscore_half": 0.9610004821859058,
+        "fscore_one": 0.9764654364772969,
+        "gt_diagonal": 58.76502668173305,
+        "gt_points": 4106909,
+        "precision_one": 0.9723830621915891,
+        "pred_points": 275809,
+        "recall_one": 0.9805822334996953
+      },
+      "dataset": "eth3d20",
+      "depth": {
+        "absrel_metric": 0.8409824644879524,
+        "absrel_scale_shift": 0.005458024687704144,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.999749809588371,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "pose": {
+        "gt_camera_extent": 7.645249111402259,
+        "rotation_mean_deg": 0.43379846766736063,
+        "rotation_median_deg": 0.3032531008940952,
+        "translation_mean_fraction": 0.0030695434864811575,
+        "translation_median_fraction": 0.002968335238359451
+      },
+      "scene": "terrace",
+      "seconds": 33.451,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0259.JPG",
+          "DSC_0260.JPG",
+          "DSC_0261.JPG",
+          "DSC_0262.JPG",
+          "DSC_0264.JPG",
+          "DSC_0266.JPG",
+          "DSC_0267.JPG",
+          "DSC_0268.JPG",
+          "DSC_0269.JPG",
+          "DSC_0270.JPG",
+          "DSC_0272.JPG",
+          "DSC_0273.JPG",
+          "DSC_0274.JPG",
+          "DSC_0275.JPG",
+          "DSC_0276.JPG",
+          "DSC_0277.JPG",
+          "DSC_0279.JPG",
+          "DSC_0283.JPG",
+          "DSC_0284.JPG",
+          "DSC_0285.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "terrace",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.06965105707593687,
+        "sky_fraction_per_frame": [
+          0.1629992603550296,
+          0.2144739275147929,
+          0.13421474358974358,
+          0.06972694773175542,
+          0.0074234159270216964,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.039509368836291914,
+          0.030718380177514795,
+          0.07720429610453648,
+          0.08992850098619329,
+          0.151111008382643,
+          0.11835089990138067,
+          0.16005608974358973,
+          0.13730430226824458
+        ],
+        "threshold": 0.5
+      },
+      "tolerance": {
+        "lidar_spacing_cm": 1.3291374329188896,
+        "primary": "icp",
+        "variants": {
+          "icp": {
+            "accuracy_median_cm": 4.4507294830698845,
+            "accuracy_p90_cm": 21.140870905838153,
+            "auc_precision": 0.7383486586230699,
+            "auc_recall": 0.8777870799564672,
+            "completeness_median_cm": 2.8992656302594084,
+            "cover90_cm": 5.189271092721616,
+            "fscore_at_5": null,
+            "precision@5": 0.5353849946883532,
+            "recall@5": 0.8911017994311538
+          },
+          "pose": {
+            "accuracy_median_cm": 4.929287921600171,
+            "accuracy_p90_cm": 21.75176114982314,
+            "auc_precision": 0.7296058895847792,
+            "auc_recall": 0.8839076188629815,
+            "completeness_median_cm": 2.812873794877171,
+            "cover90_cm": 4.332566511578097,
+            "fscore_at_5": null,
+            "precision@5": 0.5042330018237259,
+            "recall@5": 0.934597041229791
+          }
+        }
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.054082811544749254,
+        "scale": 10.041480295794898,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.09163665069372379,
+        "completeness": 0.12082216349151567,
+        "fscore_half": 0.931575958764154,
+        "fscore_one": 0.9673451792884121,
+        "gt_diagonal": 43.384391790412444,
+        "gt_points": 5186934,
+        "precision_one": 0.9857525942139431,
+        "pred_points": 698092,
+        "recall_one": 0.9496126227941207
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.9004042564310195,
+        "absrel_scale_shift": 0.007628931696878597,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.999472444049019,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "scene": "courtyard",
+      "seconds": 32.451,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0286.JPG",
+          "DSC_0288.JPG",
+          "DSC_0290.JPG",
+          "DSC_0292.JPG",
+          "DSC_0294.JPG",
+          "DSC_0296.JPG",
+          "DSC_0298.JPG",
+          "DSC_0300.JPG",
+          "DSC_0302.JPG",
+          "DSC_0304.JPG",
+          "DSC_0305.JPG",
+          "DSC_0307.JPG",
+          "DSC_0309.JPG",
+          "DSC_0311.JPG",
+          "DSC_0313.JPG",
+          "DSC_0315.JPG",
+          "DSC_0317.JPG",
+          "DSC_0319.JPG",
+          "DSC_0321.JPG",
+          "DSC_0323.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "courtyard",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.011741780045351475,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.030311082766439908,
+          0.04296579743008314,
+          0.03458049886621315,
+          0.004812688964474679,
+          0.0,
+          0.013487339380196523,
+          0.0020845143613000758,
+          0.0,
+          0.0,
+          0.00561578798185941,
+          0.02848639455782313,
+          0.07249149659863946
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.05880739510158387,
+        "scale": 11.282452263199616,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.09393240265320235,
+        "completeness": 0.07082185415217536,
+        "fscore_half": 0.942635762526392,
+        "fscore_one": 0.9830649466759365,
+        "gt_diagonal": 43.384391790412444,
+        "gt_points": 5186934,
+        "precision_one": 0.9868496479808629,
+        "pred_points": 786747,
+        "recall_one": 0.9793091641420538
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.9110316483144526,
+        "absrel_scale_shift": 0.00506327566090024,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9993018367268085,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "scene": "courtyard",
+      "seconds": 33.694,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0286.JPG",
+          "DSC_0288.JPG",
+          "DSC_0290.JPG",
+          "DSC_0292.JPG",
+          "DSC_0294.JPG",
+          "DSC_0296.JPG",
+          "DSC_0298.JPG",
+          "DSC_0300.JPG",
+          "DSC_0302.JPG",
+          "DSC_0304.JPG",
+          "DSC_0305.JPG",
+          "DSC_0307.JPG",
+          "DSC_0309.JPG",
+          "DSC_0311.JPG",
+          "DSC_0313.JPG",
+          "DSC_0315.JPG",
+          "DSC_0317.JPG",
+          "DSC_0319.JPG",
+          "DSC_0321.JPG",
+          "DSC_0323.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "courtyard",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.011514577169625246,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02972448224852071,
+          0.04212894477317554,
+          0.033911951429980276,
+          0.004684418145956607,
+          0.0,
+          0.01312099358974359,
+          0.0019261587771203157,
+          0.0,
+          0.0,
+          0.005466438609467455,
+          0.027613412228796843,
+          0.07171474358974358
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.45663283820425576,
+        "scale": 9.886220148862545,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.08109479710185392,
+        "completeness": 0.7776979186181807,
+        "fscore_half": 0.8675115876322463,
+        "fscore_one": 0.8836691218371182,
+        "gt_diagonal": 85.06865154334312,
+        "gt_points": 3592365,
+        "precision_one": 0.9998276485141634,
+        "pred_points": 359730,
+        "recall_one": 0.7916915458200935
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.8982521840951346,
+        "absrel_scale_shift": 0.020704641163501104,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9981968858337039,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "scene": "delivery_area",
+      "seconds": 26.801,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0675.JPG",
+          "DSC_0677.JPG",
+          "DSC_0680.JPG",
+          "DSC_0682.JPG",
+          "DSC_0684.JPG",
+          "DSC_0686.JPG",
+          "DSC_0689.JPG",
+          "DSC_0691.JPG",
+          "DSC_0693.JPG",
+          "DSC_0695.JPG",
+          "DSC_0698.JPG",
+          "DSC_0700.JPG",
+          "DSC_0702.JPG",
+          "DSC_0704.JPG",
+          "DSC_0707.JPG",
+          "DSC_0709.JPG",
+          "DSC_0711.JPG",
+          "DSC_0713.JPG",
+          "DSC_0716.JPG",
+          "DSC_0718.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "delivery_area",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.0037211238662131518,
+        "sky_fraction_per_frame": [
+          7.676681783824642e-05,
+          0.0,
+          0.001936885865457294,
+          0.009330120937263795,
+          0.0002657312925170068,
+          0.0050134637188208615,
+          0.0005905139833711263,
+          7.676681783824642e-05,
+          0.003560799319727891,
+          0.0,
+          0.036753590325018896,
+          0.012855489417989419,
+          0.002881708238851096,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0008267195767195767,
+          0.0002539210128495843
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.06680541512111088,
+        "scale": 8.424320811664623,
+        "variant": "mutual_icp"
+      },
+      "cloud": {
+        "accuracy": 0.06797748214846708,
+        "completeness": 0.2603558653546742,
+        "fscore_half": 0.978614136882029,
+        "fscore_one": 0.9840451893767529,
+        "gt_diagonal": 85.06865154334312,
+        "gt_points": 3592365,
+        "precision_one": 0.9996845478705585,
+        "pred_points": 358216,
+        "recall_one": 0.9688876269532745
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.8807669333761353,
+        "absrel_scale_shift": 0.01014471883411438,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9995652466846316,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "scene": "delivery_area",
+      "seconds": 33.8,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0675.JPG",
+          "DSC_0677.JPG",
+          "DSC_0680.JPG",
+          "DSC_0682.JPG",
+          "DSC_0684.JPG",
+          "DSC_0686.JPG",
+          "DSC_0689.JPG",
+          "DSC_0691.JPG",
+          "DSC_0693.JPG",
+          "DSC_0695.JPG",
+          "DSC_0698.JPG",
+          "DSC_0700.JPG",
+          "DSC_0702.JPG",
+          "DSC_0704.JPG",
+          "DSC_0707.JPG",
+          "DSC_0709.JPG",
+          "DSC_0711.JPG",
+          "DSC_0713.JPG",
+          "DSC_0716.JPG",
+          "DSC_0718.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "delivery_area",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.0035618528106508883,
+        "sky_fraction_per_frame": [
+          5.0080128205128203e-05,
+          0.0,
+          0.0018182938856015779,
+          0.008952785996055227,
+          0.000250400641025641,
+          0.004853920118343195,
+          0.000512358234714004,
+          6.934171597633136e-05,
+          0.003093410996055227,
+          0.0,
+          0.035660903599605526,
+          0.012173323471400394,
+          0.0026272805719921104,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0008937376725838264,
+          0.0002812191814595661
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.11816031073931237,
+        "scale": 18.480248549780796,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.10418049890711657,
+        "completeness": 0.07876171711910859,
+        "fscore_half": 0.9953170696611657,
+        "fscore_one": 0.9981898979701754,
+        "gt_diagonal": 108.52316363788881,
+        "gt_points": 4626201,
+        "precision_one": 0.9989122907764285,
+        "pred_points": 296035,
+        "recall_one": 0.9974685492480764
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.9462415749647335,
+        "absrel_scale_shift": 0.010602875846267108,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9941181616032837,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "scene": "facade",
+      "seconds": 27.328,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0324.JPG",
+          "DSC_0328.JPG",
+          "DSC_0332.JPG",
+          "DSC_0336.JPG",
+          "DSC_0340.JPG",
+          "DSC_0344.JPG",
+          "DSC_0348.JPG",
+          "DSC_0352.JPG",
+          "DSC_0356.JPG",
+          "DSC_0360.JPG",
+          "DSC_0363.JPG",
+          "DSC_0386.JPG",
+          "DSC_0390.JPG",
+          "DSC_0394.JPG",
+          "DSC_0398.JPG",
+          "DSC_0402.JPG",
+          "DSC_0407.JPG",
+          "DSC_0411.JPG",
+          "DSC_0415.JPG",
+          "DSC_0422.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "facade",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.08838636148904006,
+        "sky_fraction_per_frame": [
+          0.1573483560090703,
+          0.023419784580498867,
+          0.07638298374905518,
+          0.08564224300831444,
+          0.034881660997732426,
+          0.07719789304610733,
+          0.08388251133786848,
+          0.08188066893424037,
+          0.03608040438397581,
+          0.13699333900226757,
+          0.12522439531368104,
+          0.09765329743008315,
+          0.0,
+          0.2678630479969766,
+          0.0,
+          0.0,
+          0.0,
+          0.03136810279667423,
+          0.1869744425547997,
+          0.2649340986394558
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.2525145987228435,
+        "scale": 19.419807157585915,
+        "variant": "mutual_icp"
+      },
+      "cloud": {
+        "accuracy": 0.1595735990538288,
+        "completeness": 0.09000456838436974,
+        "fscore_half": 0.9893473706809334,
+        "fscore_one": 0.998019710336236,
+        "gt_diagonal": 108.52316363788881,
+        "gt_points": 4626201,
+        "precision_one": 0.9976941225349814,
+        "pred_points": 336965,
+        "recall_one": 0.998345510711705
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.9487721948573313,
+        "absrel_scale_shift": 0.008143861343756973,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9976835895191855,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "scene": "facade",
+      "seconds": 34.372,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0324.JPG",
+          "DSC_0328.JPG",
+          "DSC_0332.JPG",
+          "DSC_0336.JPG",
+          "DSC_0340.JPG",
+          "DSC_0344.JPG",
+          "DSC_0348.JPG",
+          "DSC_0352.JPG",
+          "DSC_0356.JPG",
+          "DSC_0360.JPG",
+          "DSC_0363.JPG",
+          "DSC_0386.JPG",
+          "DSC_0390.JPG",
+          "DSC_0394.JPG",
+          "DSC_0398.JPG",
+          "DSC_0402.JPG",
+          "DSC_0407.JPG",
+          "DSC_0411.JPG",
+          "DSC_0415.JPG",
+          "DSC_0422.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "facade",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.08757550542406314,
+        "sky_fraction_per_frame": [
+          0.15598804240631164,
+          0.023129314595660748,
+          0.07569418762327416,
+          0.08425788954635108,
+          0.03370007396449704,
+          0.07604474852071005,
+          0.08299047707100592,
+          0.08128775271203156,
+          0.03539124137080868,
+          0.13615631163708086,
+          0.12396757889546352,
+          0.09655833949704141,
+          0.0,
+          0.2669232310157791,
+          0.0,
+          0.0,
+          0.0,
+          0.029874722633136095,
+          0.1861247226331361,
+          0.26342147435897434
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.0225844595836774,
+        "scale": 2.530369192173533,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.03363359958332028,
+        "completeness": 0.04946616682991567,
+        "fscore_half": 0.8624275514863414,
+        "fscore_one": 0.892857343557912,
+        "gt_diagonal": 7.382502114004507,
+        "gt_points": 7088110,
+        "precision_one": 0.8996631705260919,
+        "pred_points": 526676,
+        "recall_one": 0.8861537137544423
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.6053476004206239,
+        "absrel_scale_shift": 0.0061346602324809565,
+        "delta125_metric": 1.5387689707096936e-05,
+        "delta125_scale_shift": 0.9993090886480717,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "scene": "office",
+      "seconds": 26.86,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0219.JPG",
+          "DSC_0220.JPG",
+          "DSC_0222.JPG",
+          "DSC_0223.JPG",
+          "DSC_0228.JPG",
+          "DSC_0230.JPG",
+          "DSC_0231.JPG",
+          "DSC_0235.JPG",
+          "DSC_0237.JPG",
+          "DSC_0238.JPG",
+          "DSC_0239.JPG",
+          "DSC_0240.JPG",
+          "DSC_0242.JPG",
+          "DSC_0243.JPG",
+          "DSC_0248.JPG",
+          "DSC_0250.JPG",
+          "DSC_0251.JPG",
+          "DSC_0252.JPG",
+          "DSC_0254.JPG",
+          "DSC_0255.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "office",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.0,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.018103540343898935,
+        "scale": 2.2101155265718266,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.028156342689559948,
+        "completeness": 0.015536158342058985,
+        "fscore_half": 0.9016778117327664,
+        "fscore_one": 0.950818163332816,
+        "gt_diagonal": 7.382502114004507,
+        "gt_points": 7088110,
+        "precision_one": 0.9341956246013712,
+        "pred_points": 824702,
+        "recall_one": 0.9680429620872136
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.5478094111676802,
+        "absrel_scale_shift": 0.004926016249022554,
+        "delta125_metric": 2.1923847288638522e-05,
+        "delta125_scale_shift": 0.9993641320655767,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "scene": "office",
+      "seconds": 33.621,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0219.JPG",
+          "DSC_0220.JPG",
+          "DSC_0222.JPG",
+          "DSC_0223.JPG",
+          "DSC_0228.JPG",
+          "DSC_0230.JPG",
+          "DSC_0231.JPG",
+          "DSC_0235.JPG",
+          "DSC_0237.JPG",
+          "DSC_0238.JPG",
+          "DSC_0239.JPG",
+          "DSC_0240.JPG",
+          "DSC_0242.JPG",
+          "DSC_0243.JPG",
+          "DSC_0248.JPG",
+          "DSC_0250.JPG",
+          "DSC_0251.JPG",
+          "DSC_0252.JPG",
+          "DSC_0254.JPG",
+          "DSC_0255.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "office",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.0,
+        "sky_fraction_per_frame": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.05775891099521244,
+        "scale": 7.509498532047369,
+        "variant": "plain_icp"
+      },
+      "cloud": {
+        "accuracy": 0.14018010161384042,
+        "completeness": 0.49901118633495367,
+        "fscore_half": 0.9378510461584758,
+        "fscore_one": 0.9715515409433862,
+        "gt_diagonal": 58.98887688786606,
+        "gt_points": 7572872,
+        "precision_one": 0.9691667858862786,
+        "pred_points": 496283,
+        "recall_one": 0.9739480609206124
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.8712169628827053,
+        "absrel_scale_shift": 0.02363540076409035,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.9971279831164965,
+        "grid": [
+          336,
+          504
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        1,
+        20,
+        3,
+        336,
+        504
+      ],
+      "method": "da3-giant",
+      "scene": "terrace",
+      "seconds": 28.023,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0259.JPG",
+          "DSC_0260.JPG",
+          "DSC_0261.JPG",
+          "DSC_0262.JPG",
+          "DSC_0264.JPG",
+          "DSC_0266.JPG",
+          "DSC_0267.JPG",
+          "DSC_0268.JPG",
+          "DSC_0269.JPG",
+          "DSC_0270.JPG",
+          "DSC_0272.JPG",
+          "DSC_0273.JPG",
+          "DSC_0274.JPG",
+          "DSC_0275.JPG",
+          "DSC_0276.JPG",
+          "DSC_0277.JPG",
+          "DSC_0279.JPG",
+          "DSC_0283.JPG",
+          "DSC_0284.JPG",
+          "DSC_0285.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "da3-giant",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "terrace",
+        "shape": [
+          20,
+          336,
+          504
+        ],
+        "sky_fraction_mean": 0.07020443594104307,
+        "sky_fraction_per_frame": [
+          0.1641746976568405,
+          0.21597458427815572,
+          0.13535171012849584,
+          0.07089710884353742,
+          0.0076353458049886625,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03984197845804989,
+          0.03101379440665155,
+          0.07772345049130763,
+          0.09061437074829932,
+          0.1521636432350718,
+          0.11911257558578987,
+          0.16120441232048374,
+          0.13838104686318972
+        ],
+        "threshold": 0.5
+      }
+    },
+    {
+      "alignment": {
+        "centre_rms": 0.027398767476565812,
+        "scale": 6.277276999395916,
+        "variant": "mutual_icp"
+      },
+      "cloud": {
+        "accuracy": 0.09618546262818811,
+        "completeness": 0.3182867286103317,
+        "fscore_half": 0.9615091842301406,
+        "fscore_one": 0.9760474892609977,
+        "gt_diagonal": 58.98887688786606,
+        "gt_points": 7572872,
+        "precision_one": 0.9729559223955708,
+        "pred_points": 275809,
+        "recall_one": 0.9791587656572037
+      },
+      "dataset": "eth3d20dense",
+      "depth": {
+        "absrel_metric": 0.8409824644879524,
+        "absrel_scale_shift": 0.005458024687704144,
+        "delta125_metric": 0.0,
+        "delta125_scale_shift": 0.999749809588371,
+        "grid": [
+          416,
+          624
+        ]
+      },
+      "device": "mps",
+      "frames": 20,
+      "input_shape": [
+        20,
+        3,
+        416,
+        624
+      ],
+      "method": "vggt-omega",
+      "scene": "terrace",
+      "seconds": 33.451,
+      "sky": {
+        "dataset": "eth3d20",
+        "device": "mps",
+        "dilation_px": 2,
+        "frames": [
+          "DSC_0259.JPG",
+          "DSC_0260.JPG",
+          "DSC_0261.JPG",
+          "DSC_0262.JPG",
+          "DSC_0264.JPG",
+          "DSC_0266.JPG",
+          "DSC_0267.JPG",
+          "DSC_0268.JPG",
+          "DSC_0269.JPG",
+          "DSC_0270.JPG",
+          "DSC_0272.JPG",
+          "DSC_0273.JPG",
+          "DSC_0274.JPG",
+          "DSC_0275.JPG",
+          "DSC_0276.JPG",
+          "DSC_0277.JPG",
+          "DSC_0279.JPG",
+          "DSC_0283.JPG",
+          "DSC_0284.JPG",
+          "DSC_0285.JPG"
+        ],
+        "label": "sky",
+        "masks_sha256": null,
+        "method": "vggt-omega",
+        "model": "nvidia/segformer-b1-finetuned-cityscapes-1024-1024",
+        "scene": "terrace",
+        "shape": [
+          20,
+          416,
+          624
+        ],
+        "sky_fraction_mean": 0.06965105707593687,
+        "sky_fraction_per_frame": [
+          0.1629992603550296,
+          0.2144739275147929,
+          0.13421474358974358,
+          0.06972694773175542,
+          0.0074234159270216964,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.039509368836291914,
+          0.030718380177514795,
+          0.07720429610453648,
+          0.08992850098619329,
+          0.151111008382643,
+          0.11835089990138067,
+          0.16005608974358973,
+          0.13730430226824458
         ],
         "threshold": 0.5
       }

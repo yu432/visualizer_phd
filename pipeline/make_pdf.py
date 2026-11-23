@@ -1,5 +1,7 @@
 """Build the Russian PDF report from summary.json plus rendered figures."""
 import argparse
+import contextlib
+import io
 import sys
 import textwrap
 from pathlib import Path
@@ -9,7 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from matplotlib.backends.backend_pdf import PdfPages  # noqa: E402
+from matplotlib.backends.backend_pdf import Name, PdfFile, PdfPages  # noqa: E402
 from matplotlib.colors import to_hex  # noqa: E402
 from PIL import Image  # noqa: E402
 
@@ -18,6 +20,73 @@ from common import read_json  # noqa: E402
 
 PAGE = (11.69, 8.27)
 FONT = "DejaVu Sans"
+
+# --- image encoding ----------------------------------------------------------
+# matplotlib's PDF backend can only Flate-compress rasters, and Flate on a photo costs
+# about 2.5x what the same pixels cost as JPEG. The figures here are photographs and 3D
+# renders, so image pages are written as DCT (JPEG, 4:4:4, quality 95, ~42 dB PSNR on
+# these rasters — invisible at the size they are placed), while every other page keeps
+# the lossless Flate path. Setting the flag around savefig() is exact: the image objects
+# are registered during the draw and encoded later, at finalize().
+JPEG_QUALITY = 95
+PHOTOS_AS_JPEG = False
+
+
+@contextlib.contextmanager
+def jpeg_rasters():
+    global PHOTOS_AS_JPEG
+    PHOTOS_AS_JPEG = True
+    try:
+        yield
+    finally:
+        PHOTOS_AS_JPEG = False
+
+
+class ImagePdfFile(PdfFile):
+    """PdfFile that stores rasters as JPEG while PHOTOS_AS_JPEG is set."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._photo_objects = set()
+
+    def imageObject(self, image):
+        name = super().imageObject(image)
+        if PHOTOS_AS_JPEG:
+            self._photo_objects.add(self._images[id(image)][2].id)
+        return name
+
+    def _writeImg(self, data, id, smask=None):
+        if id in self._photo_objects and smask is None and data.ndim == 3 and data.shape[2] == 3:
+            height, width, _ = data.shape
+            buffer = io.BytesIO()
+            Image.fromarray(data).save(buffer, format="JPEG", quality=JPEG_QUALITY,
+                                       subsampling=0, optimize=True)
+            # Stream() overwrites /Filter with FlateDecode and compresses whatever is
+            # written while pdf.compression is on, so switch it off for this one stream.
+            with matplotlib.rc_context({"pdf.compression": 0}):
+                self.beginStream(id, self.reserveObject("length of image stream"), {
+                    "Type": Name("XObject"),
+                    "Subtype": Name("Image"),
+                    "Width": width,
+                    "Height": height,
+                    "ColorSpace": Name("DeviceRGB"),
+                    "BitsPerComponent": 8,
+                    "Filter": Name("DCTDecode"),
+                })
+                self.currentstream.write(buffer.getvalue())
+                self.endStream()
+            return
+        super()._writeImg(data, id, smask)
+
+
+class ImagePdfPages(PdfPages):
+    """PdfPages whose backing file is ImagePdfFile: PdfPages builds the PdfFile itself."""
+
+    def _ensure_file(self):
+        if self._file is None:
+            self._file = ImagePdfFile(self._filename, metadata=self._metadata)
+        return self._file
+
 
 # How a printed value relates to quality. "high" — больше лучше, "low" — меньше лучше,
 # "abs" — меньше по модулю лучше, None — колонка не красится (счётчики, текст, «—»).
@@ -43,24 +112,37 @@ LINE_STEP = 0.026
 BODY_SIZE = 10.5
 
 
-def count_lines(blocks, width=118):
+def count_lines(blocks, width=118, step=LINE_STEP):
     """How many text rows a block list needs, so a page can be checked before it spills."""
     rows = 0.0
     for block in blocks:
         if block.startswith("## "):
-            rows += 0.035 / LINE_STEP + 0.012 / LINE_STEP
+            rows += 0.035 / step + 0.012 / step
         elif block.startswith("- "):
-            rows += len(textwrap.wrap(block[2:], width=width - 4)) + 0.006 / LINE_STEP
+            rows += len(textwrap.wrap(block[2:], width=width - 4)) + 0.006 / step
         else:
-            rows += len(textwrap.wrap(block, width=width)) + 0.012 / LINE_STEP
+            rows += len(textwrap.wrap(block, width=width)) + 0.012 / step
     return rows
 
 
+# A long text page shrinks its leading and font down to this factor instead of spilling a few
+# orphan rows onto a second page. Everything below MIN_TIGHT is left to spill.
+MIN_TIGHT = 0.82
+
+
 def text_page(pdf, heading, blocks, width=118, size=BODY_SIZE):
-    capacity = (0.88 - 0.10) / LINE_STEP
-    needed = count_lines(blocks, width)
+    height = count_lines(blocks, width) * LINE_STEP
+    tight = 1.0
+    if height > 0.74:
+        # Aim at 0.74 of the free height, not 0.78: count_lines rounds per block, so the real
+        # text ends up a couple of rows longer than the estimate.
+        tight = max(MIN_TIGHT, 0.74 / height)
+        size = size * tight
+    capacity = (0.88 - 0.10) / (LINE_STEP * tight)
+    needed = count_lines(blocks, width, LINE_STEP * tight)
     if needed > capacity:
         print("WARNING: %r needs %.1f rows of %.0f — will spill" % (heading, needed, capacity), flush=True)
+    LINE = LINE_STEP * tight
     state = dict(figure=new_page(pdf, heading), y=0.88)
 
     def page_break():
@@ -68,7 +150,7 @@ def text_page(pdf, heading, blocks, width=118, size=BODY_SIZE):
         state["figure"] = new_page(pdf, heading)
         state["y"] = 0.88
 
-    def emit(text, left=0.05, step=LINE_STEP, point_size=None, **kwargs):
+    def emit(text, left=0.05, step=LINE, point_size=None, **kwargs):
         if state["y"] < 0.10:
             page_break()
         state["figure"].text(left, state["y"], text, fontsize=point_size or size, family=FONT, **kwargs)
@@ -77,18 +159,18 @@ def text_page(pdf, heading, blocks, width=118, size=BODY_SIZE):
     for block in blocks:
         if block.startswith("## "):
             state["y"] -= 0.012
-            emit(block[3:], step=0.035, point_size=12, weight="bold")
+            emit(block[3:], step=0.035 * tight, point_size=12 * tight, weight="bold")
             continue
         if block.startswith("- "):
             lines = textwrap.wrap(block[2:], width=width - 4)
-            if state["y"] - len(lines) * LINE_STEP < 0.10:
+            if state["y"] - len(lines) * LINE < 0.10:
                 page_break()
             for line_number, line in enumerate(lines):
                 emit(("• " + line) if line_number == 0 else ("   " + line), left=0.06)
             state["y"] -= 0.006
             continue
         lines = textwrap.wrap(block, width=width)
-        if state["y"] - len(lines) * LINE_STEP < 0.10:
+        if state["y"] - len(lines) * LINE < 0.10:
             page_break()
         for line in lines:
             emit(line)
@@ -174,7 +256,7 @@ def table_page(pdf, heading, header, rows, kinds, note=None, size=9.0, top=0.30,
     for (row, column), cell in table.get_celld().items():
         cell.set_text_props(family=FONT)
         if row == 0:
-            cell.set_text_props(weight="bold", family=FONT, size=size - 0.6)
+            cell.set_text_props(weight="bold", family=FONT, size=size - 1.2)
             cell.set_facecolor("#e8e8e8")
             continue
         face, text = styles[column][row - 1]
@@ -258,7 +340,8 @@ def image_page(pdf, heading, entries, tolerance=1.25, subtitle=None):
                             color="#333333", ha="center", va="top")
                 top -= caption_fraction
             top -= height_fraction + 0.012
-        finish(pdf, figure)
+        with jpeg_rasters():
+            finish(pdf, figure)
 
 
 def value(row, key, path=(), spec="%.3f", missing="—", scale=1.0):
@@ -350,6 +433,43 @@ def scheme_table(sparse, dense):
     return header, body, kinds
 
 
+def eth3d_scheme_table(sparse, dense, coverage_matched):
+    """The same ETH3D scenes at 10 official frames and at 20, scored on two references.
+
+    Against the published 10-frame reference the extra frames look worse, because they also
+    reconstruct surface the ten official views never saw and that surface is counted as
+    imprecision. The last metric column removes that bias: the same 20-frame clouds scored against
+    a reference rebuilt from the 20 frames' own depth maps.
+    """
+    index = {(row["scene"], row["method"]): row for row in sparse}
+    reference = {(row["scene"], row["method"]): row for row in coverage_matched}
+    header = ["сцена", "метод", "кадров", "F@1% · GT 10", "prec@1% 10→20", "rec@1% 10→20",
+              "AbsRel 10→20", "rot, ° 10→20", "F@1% · GT 20"]
+    kinds = [None] * len(header)
+
+    def cell(row, key):
+        return value(row, key, ("cloud",))
+
+    body = []
+    for row in dense:
+        old = index.get((row["scene"], row["method"]))
+        if old is None:
+            continue
+        matched = reference.get((row["scene"], row["method"]))
+        body.append([
+            row["scene"], row["method"], "%d → %d" % (old["frames"], row["frames"]),
+            "%s → %s" % (cell(old, "fscore_one"), cell(row, "fscore_one")),
+            "%s → %s" % (cell(old, "precision_one"), cell(row, "precision_one")),
+            "%s → %s" % (cell(old, "recall_one"), cell(row, "recall_one")),
+            "%s → %s" % (value(old, "absrel_scale_shift", ("depth",), "%.4f"),
+                         value(row, "absrel_scale_shift", ("depth",), "%.4f")),
+            "%s → %s" % (value(old, "rotation_mean_deg", ("pose",), "%.2f"),
+                         value(row, "rotation_mean_deg", ("pose",), "%.2f")),
+            cell(matched, "fscore_one") if matched else "—",
+        ])
+    return header, body, kinds
+
+
 def tnt_table(rows):
     header = ["сцена", "метод", "кадров", "F@0.5%", "F@1%", "prec@1%", "rec@1%",
               "точн. мед., см", "покр.90, см", "rot, °", "trans, %diag", "GT-облако"]
@@ -410,16 +530,21 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--summary", required=True)
     parser.add_argument("--figures", required=True)
+    parser.add_argument("--figures-dense", default=None,
+                        help="figures for the dense ETH3D scheme (eth3d20-*.png); scene pages skipped without it")
     parser.add_argument("--out", required=True)
-    parser.add_argument("--title", default="DA3-Giant-1.1 и VGGT-Omega: облака точек на ETH3D-10 и Tanks and Temples")
+    parser.add_argument("--title", default="DA3-Giant-1.1 и VGGT-Omega: облака точек на ETH3D и Tanks and Temples")
     args = parser.parse_args()
     plt.rcParams["font.family"] = FONT
     summary = read_json(args.summary)
     figures = Path(args.figures)
+    figures_dense = Path(args.figures_dense) if args.figures_dense else None
     rows = summary["rows"]
     eth3d = [row for row in rows if row["dataset"] == "eth3d"]
     tnt = [row for row in rows if row["dataset"] == "tnt"]
     tnt100 = [row for row in rows if row["dataset"] == "tnt100"]
+    eth3d20 = [row for row in rows if row["dataset"] == "eth3d20"]
+    eth3d20dense = [row for row in rows if row["dataset"] == "eth3d20dense"]
     methods = summary.get("methods") or [summary.get("method", "da3-giant")]
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -431,7 +556,9 @@ def main() -> int:
         per_method[name] = dict(
             eth3d=[row for row in eth3d if row["method"] == name],
             tnt=[row for row in tnt if row["method"] == name],
-            tnt100=[row for row in tnt100 if row["method"] == name])
+            tnt100=[row for row in tnt100 if row["method"] == name],
+            eth3d20=[row for row in eth3d20 if row["method"] == name],
+            eth3d20dense=[row for row in eth3d20dense if row["method"] == name])
     short = {"da3-giant": "DA3", "vggt-omega": "Ω"}
 
     def render(pdf, plan):
@@ -453,7 +580,7 @@ def main() -> int:
         figure.text(0.05, base, "Отчёт по локальному прогону: облака точек, глубина и позы, сравнение с GT",
                     fontsize=12.5, family=FONT)
         figure.text(0.05, base - 0.036,
-                    "ETH3D (10-кадровый протокол, 5 сцен со зданиями) и Tanks and Temples (4 сцены, схемы 16 и 100 кадров)",
+                    "ETH3D (5 сцен со зданиями, схемы 10 и 20 кадров) и Tanks and Temples (4 сцены, схемы 16 и 100 кадров)",
                     fontsize=12.5, family=FONT)
 
         top = base - 0.10
@@ -469,6 +596,10 @@ def main() -> int:
                                                                      "depth", "absrel_scale_shift", "%.4f") for name in methods]),
                    ("ошибка поворота, ETH3D", [range_of([row for row in per_method[name]["eth3d"] if "pose" in row],
                                                         "pose", "rotation_mean_deg", "%.2f") + "°" for name in methods]),
+                   ("ETH3D, 20 кадров: F@1% (GT из 20 кадров)",
+                    [range_of([row for row in per_method[name]["eth3d20dense"] if "cloud" in row],
+                              "cloud", "fscore_one") for name in methods])
+                   if eth3d20dense else None,
                    ("T&T: точность, м (barn / courthouse), 16 кадров",
                     [" / ".join(tolerance_metres(row) for row in (scene_row(per_method[name]["tnt"], scene)
                                                                  for scene in ("barn", "courthouse")))
@@ -478,7 +609,10 @@ def main() -> int:
                                 for scene in ("barn", "courthouse"))
                      if per_method[name]["tnt100"] else "—" for name in methods])]
         y = top - 0.048
-        for label, values in metrics:
+        for metric in metrics:
+            if not metric:
+                continue
+            label, values = metric
             figure.text(column_x, y, label, fontsize=11.5, family=FONT)
             for index, numbers in enumerate(values):
                 figure.text((numbers_x, second_x)[index], y, numbers, fontsize=11.5, family=FONT, weight="bold")
@@ -510,6 +644,11 @@ def main() -> int:
             "- ETH3D: официальный 10-кадровый протокол (courtyard, delivery_area, facade, terrace, office). "
             "GT-глубина — недисторсированный лидар в родном разрешении (валидно ~8% пикселей), GT-облако — "
             "обратная проекция валидных пикселей, stride 4.",
+            "- Вторая схема ETH3D — плотная: те же сцены и камеры, но 20 кадров вместо официальных 10 "
+            "(data/inference/eth3d20, outputs/eth3d20). Всё, что за пределами 10 кадров, доснято из того же "
+            "сырого набора ETH3D и недисторсировано теми же камерами COLMAP; позы и глубины новых кадров легли "
+            "на 8–10 мм от 10-кадрового GT-облака (у отобранных — 6–7 мм), то есть геометрия согласована. "
+            "Почему 20, а не 30 — см. «Ограничения».",
             "- Tanks and Temples: barn, courthouse, ignatius, meetingroom. Кадры выбраны жадно по покрытию точек, "
             "бюджет 16; у ETH3D — фиксированные 10.",
             "- Вторая схема T&T — плотная: те же четыре сцены и тот же лазерный GT, но бюджет 100 кадров. "
@@ -521,9 +660,10 @@ def main() -> int:
             "официальным SelectionPolygonVolume и переведён в COLMAP файлом <Scene>_trans.txt, как в официальном "
             "скрипте оценки; для ignatius и meetingroom GT-облака нет.",
             "## Инференс",
-            "- DA3-Giant-1.1 (1B), process_res 504, fp16 autocast, MPS (M3 Max, 36 GB): ~10.3 GiB RSS, ~25 с на сцену.",
+            "- DA3-Giant-1.1 (1B), process_res 504, fp16 autocast, MPS (M3 Max, 36 GB): ~10.3 GiB RSS, ~25 с на сцену "
+            "(20 кадров ETH3D — 27–33 с, 100 кадров T&T — ~2 мин).",
             "- VGGT-Omega-1B, image_resolution 512 в режиме balanced, fp32 без autocast, тот же MPS, ~65–75 с на "
-            "сцену. Веса — из байт-в-байт зеркала 1kaiser/vggt-omega-jax (официальный репозиторий gated).",
+            "сцену (20 кадров ETH3D — 34 с: время растёт с числом кадров слабее, чем у DA3). Веса — из байт-в-байт зеркала 1kaiser/vggt-omega-jax (официальный репозиторий gated).",
             "- Шаги ограничены по времени и памяти (run_bounded); логи — в outputs/<dataset>/<scene>/logs/.",
             "## Фильтрация и выравнивание",
             "- Отбрасываются 20% наименее уверенных и 5% самых далёких пикселей каждого кадра; небо вырезает внешняя "
@@ -555,6 +695,25 @@ def main() -> int:
                    note="τ задан относительно диагонали GT-облака. AbsRel (s+t) — протокол с подгонкой масштаба и сдвига "
                         "на кадр, AbsRel (raw) — без подгонки. Заливка: белый — лучшее значение в колонке, красный — "
                         "худшее; «кадров» не красится. Визуальный пример к каждой строке — на странице сцены.")
+        if eth3d20:
+            mark("ETH3D: 10 кадров против 20")
+            header, body, kinds = eth3d_scheme_table(eth3d, eth3d20, eth3d20dense)
+            table_page(pdf, "ETH3D: 10 кадров против 20", header, body, kinds,
+                       note="Официальный протокол ETH3D — ровно 10 кадров на сцену; плотная схема берёт те же "
+                            "сцены и те же камеры, но 20 кадров (вдвое больше), и живёт в отдельном наборе "
+                            "(outputs/eth3d20). Первый столбец F@1% сравнивает обе схемы на ОДНОМ и том же "
+                            "GT-облаке из 10 кадров. На нём плотная схема выглядит хуже — и это ожидаемо: "
+                            "лишние кадры видят поверхность, которой в 10-кадровом GT просто нет, и она "
+                            "засчитывается как imprecision (recall растёт, precision падает). Последний столбец — "
+                            "честный тест: те же предсказания против GT, пересобранного из собственных глубин "
+                            "20 кадров (набор eth3d20dense, тот же воксель, что и у 10-кадрового GT). "
+                            "У dense-GT больше и диагональ (facade 93.7 → 108.5), поэтому порог 1% в метрах там "
+                            "шире; пересчёт при фиксированном пороге 1% диагонали 10-кадрового GT "
+                            "(fixed_tau_metrics.py, outputs/eth3d20/fixed_tau_dense.json) даёт те же F@1 в "
+                            "пределах 0.003, то есть рост — от precision, а не от порога: courtyard 0.871 → 0.986, "
+                            "facade 0.946 → 0.998, delivery_area 0.966 → 1.000. "
+                            "Число кадров ограничено памятью: 6.2-мегапиксельные кадры ETH3D на 30+ кадрах "
+                            "упираются в 36 ГБ машины (см. memory-envelope.md).")
         if tnt:
             mark("Tanks and Temples: сводная таблица")
             header, body, kinds = tnt_table(tnt)
@@ -582,8 +741,13 @@ def main() -> int:
                             "помогла; если упало — модель начала путаться в лишних кадрах или ухудшился масштаб.")
 
         # --- 5. one page per scene --------------------------------------------------
-        for dataset, subset, title in (("eth3d", eth3d, "ETH3D"), ("tnt", tnt, "Tanks and Temples"),
-                                       ("tnt100", tnt100, "T&T · 100 кадров")):
+        # Group by dataset: the dense ETH3D pages sit right after the ten-frame ETH3D ones.
+        scene_pages = [("eth3d", eth3d, "ETH3D", figures)]
+        if eth3d20 and figures_dense is not None:
+            scene_pages.append(("eth3d20", eth3d20, "ETH3D · 20 кадров", figures_dense))
+        scene_pages += [("tnt", tnt, "Tanks and Temples", figures),
+                        ("tnt100", tnt100, "T&T · 100 кадров", figures)]
+        for dataset, subset, title, source in scene_pages:
             seen = []
             for row in subset:
                 scene = row["scene"]
@@ -591,18 +755,32 @@ def main() -> int:
                     continue
                 seen.append(scene)
                 entries = []
-                inputs = figures / ("%s-%s-inputs.png" % (dataset, scene))
-                compare = figures / ("%s-%s-compare.png" % (dataset, scene))
-                check = figures / ("%s-%s-check.png" % (dataset, scene))
+                signature = scene_signature(rows, scene, dataset)
+                if dataset == "eth3d20":
+                    # Same clouds, second reference: the two numbers answer different questions.
+                    matched = []
+                    for method in ("da3-giant", "vggt-omega"):
+                        row_ = next((r for r in eth3d20dense
+                                     if r["scene"] == scene and r["method"] == method), None)
+                        if row_ and "cloud" in row_:
+                            matched.append("%s %s" % ("da3" if method == "da3-giant" else "Ω",
+                                                      value(row_, "fscore_one", ("cloud",))))
+                    if matched:
+                        signature += " · к GT 20 кадров: " + ", ".join(matched)
+                inputs = source / ("%s-%s-inputs.png" % (dataset, scene))
+                compare = source / ("%s-%s-compare.png" % (dataset, scene))
+                check = source / ("%s-%s-check.png" % (dataset, scene))
                 if inputs.exists():
                     entries.append((str(inputs), ""))
                 if check.exists():
                     # laser GT present: the orthographic overlay states the agreement better than
-                    # a third 3D panel, whose dark pixel colours hide the walls
-                    entries.append((str(check), scene_signature(rows, scene, dataset)
-                                    + " · чёрный контур — лазерный скан, облака обрезаны полигоном GT"))
+                    # a third 3D panel, whose dark pixel colours hide the walls. The dense ETH3D
+                    # caption already carries two reference numbers, so it drops this phrase.
+                    tail = "" if dataset == "eth3d20" else (
+                        " · чёрный контур — лазерный скан, облака обрезаны полигоном GT")
+                    entries.append((str(check), signature + tail))
                 elif compare.exists():
-                    entries.append((str(compare), scene_signature(rows, scene, dataset)))
+                    entries.append((str(compare), signature))
                 if entries:
                     mark("%s / %s" % (title, scene))
                     image_page(pdf, "%s / %s" % (title, scene), entries, tolerance=1.75)
@@ -623,6 +801,12 @@ def main() -> int:
             "фасада), F@1% 0.055. На 100 кадрах — 3.7° и 0.546: провал был следствием нехватки кадров.",
             "- Плотная схема дороже: кадров ×6, инференс ×6–11 (DA3 ~2 мин, VGGT-Ω ~5.5 мин на сцену), а на barn "
             "медианная точность хуже при росте F@1% (p90 23 → 131 см) — лишние кадры добавляют дальние виды.",
+            "- Плотная схема ETH3D упирается в память, а не в качество: 6.2-мегапиксельные кадры на MPS занимают "
+            "11–14 ГиБ уже на 20 кадрах, 30 кадров дают 14.4 ГиБ с разбросом ±4 ГиБ между прогонами, 38 — "
+            "гарантированный килл (16.4 ГиБ). Поэтому 20 кадров (×2 к протоколу), с автоматическим откатом на 16.",
+            "- Сравнение 10 → 20 на одном GT некорректно в пользу 10 кадров: GT покрывает только площадь, "
+            "которую видят 10 кадров. Честная версия — столбец «GT из 20 кадров»; абсолютные значения там выше "
+            "у обеих схем, сравнивать между собой можно только строки.",
             "- Небо вырезает внешний сегментатор (SegFormer-B1, Cityscapes): класс sky не покрывает пересветы, дымку "
             "и часть растительности у горизонта, поэтому остаточные артефакты сохраняются.",
             "- Веса VGGT-Omega — из публичного зеркала (официальный facebook/VGGT-Omega gated, запрос отклонён); файл "
@@ -648,6 +832,14 @@ def main() -> int:
             "- prepare_tnt_gt.py --scene barn --cloud <Barn.ply> --crop-json <Barn.json> --transform <Barn_trans.txt>"
             "  (лазерный GT: обрезка официальным полигоном + перевод в COLMAP)",
             "- tolerance_metrics.py --dataset tnt --scenes barn courthouse --methods da3-giant vggt-omega --out <dir>/tolerance.json",
+            "- prepare_eth3d_geometry.py --dataset eth3d20 --budget 20 --force  (докачивает 10 лишних кадров "
+            "из сырого набора и недисторсирует их глубины)",
+            "- sh run_dense_eth3d.sh  (20 кадров, откат на 16 при нехватке памяти)",
+            "- sh run_dense_eth3d_metrics.sh  (небо, облака, позы, метрики, tolerance, рисунки для eth3d20)",
+            "- sh build_dense_reference.sh  (GT из тех же 20 кадров и оценка против него: eth3d20dense)",
+            "- fixed_tau_metrics.py --scenes ... --out outputs/eth3d20/fixed_tau_dense.json  (F@1 при пороге в "
+            "метрах, чтобы diag разных GT не влиял)",
+            "- make_pdf.py ... --figures-dense <dir>/figures-eth3d20",
             "- run_pipeline.py --dataset eth3d --method da3-giant",
             "- omega_worker.py --dataset eth3d --scene <scene>  (VGGT-Omega, MPS, fp32)",
             "- sky_segment.py --dataset eth3d --scenes ... --method <method>",
@@ -729,11 +921,9 @@ def main() -> int:
         return recorded
 
     # два прохода: первый считает страницы, второй рисует содержание с верными номерами
-    import io
-
-    with PdfPages(io.BytesIO()) as scratch:
+    with ImagePdfPages(io.BytesIO()) as scratch:
         plan = render(scratch, None)
-    with PdfPages(out) as pdf:
+    with ImagePdfPages(out) as pdf:
         render(pdf, plan)
         built = pdf.get_pagecount()
     promised = plan[-1][1] if plan else built
