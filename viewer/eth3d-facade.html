@@ -15,6 +15,14 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 .pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
 .pick:disabled { opacity:.35; cursor:not-allowed; }
 .fail { padding:28px 24px; max-width:640px; color:#ffd08a; font-size:15px; line-height:1.5; }
+#camshot { display:none; position:fixed; z-index:9; pointer-events:none; padding:6px 6px 4px;
+           background:#0b0e12; border:1px solid #3a4450; border-radius:8px;
+           box-shadow:0 12px 30px rgba(0,0,0,.6);
+           font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+#camshotimg { width:224px; height:168px; background-repeat:no-repeat; background-color:#0b0e12;
+              border-radius:5px; }
+#camshotcap { color:#c3cad3; font-size:11.5px; margin-top:5px; padding:0 2px;
+              font-variant-numeric:tabular-nums; white-space:nowrap; }
 </style>
 <script src='three.min.js'></script>
 </head>
@@ -35,6 +43,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   <span style="width:1px;height:18px;background:#2b313a"></span>
   <label style="cursor:pointer;color:#c3cad3"><input type="checkbox" id="cams"
      style="vertical-align:-2px;margin-right:4px">центры камер GT</label>
+  <span style="color:#6b7480">наведите на пирамидку — покажется её кадр</span>
   <label style="cursor:pointer;color:#8f98a3">размер
      <input type="range" id="size" min="1" max="8" step="0.1"
             style="width:96px;vertical-align:-3px"></label>
@@ -56,13 +65,17 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   </span>
 </div>
 </div>
-<script>window.VIEWER = {"traces": {"gt": {"count": 750000, "centre": [-0.44231700897216797, 7.328278541564941, 7.42986536026001], "half": [20.265759468078613, 29.616965293884277, 9.466315746307373], "pal": "9e/d8urY8uXF7uTJ6OLN7Nq859m969iu5Ne73tbB6dCs5NCw48+x4c+x3tC43s6t2s621M6/48mr5caZ3sin3Mip2smw2cax2cek2cOh1cmy1ces1cSw1cWl1MKk0Ma00MOny8Sz4ryQ27yT18Cf17iR08Cm07+d07mWz8Ctz7+j0L6dz7mdz7aQzL+qy7ymzLydy7eby7SQxr6rxrumxbijx7mbxraaxbSdxbOYxbOXxbKUxrKOwLemwLGXvLSjtrOpz6uExayKwa2RwaqGvq6TvaqRvqqJvaaFtq2esKyjuaySt6iRsaeWuamKt6aItqSHx596uaCAtaGFtZ56saGHsJ2EsJx6z4tgwIhks5JxtINlvHpSuHFJsHJQq6ebq56Fqpl+qpd1o6CWoZmIoZWAo5F3pZBtoopvoohklo59l4hqjop9hIiGo39jpXZbj4Foj3ldp29TqWxIl29ZmW1Ofn57gXtqfXRlgG9UdHVyc25ja21sq2ZComREmGVMmmE/hGNNbmVUZWZjZWJWmVo7hlpDiFM5gUowalhHbE1Aa0Y3ajwoXWFiWl1dVVldXFpTWFZRVFRSUVJSTVJWVlJHTk5MSkxNV0w+TEpDW0M5TkQ4WjouTjowRVBaRkpORkhKQ0dMRkZEREVGRkQ+PkRLQ0JDQEJFQ0E7PkFGOUFKPkBBPz5CPT5CPD1BPj49QT00Oj1CNT1GOjw9Ozo9OTo+ODk8QTguOTgzNzk9NjY0NDk/MzY8MTc+LjY/MjU4NDUyUi4gQywiOzAoOyYdMzIyNDApNCYgLzI4LzE0MC8tLysmLyIcLDE4Ky40LC0tKyooKykjKyEcKC82KCwzJysxJSkwKCorJigrKCglJScpJyckJyYiJSQjJSQhJiMdJiAcJhoVIictISQoISMmIyIfHiInISEeHSAkIB8eIB4aHB4hHh0aHhoZGhscHxoWGhkWGBodGBkXGxcUHBMPFhUUFRUVFBIQEhMUEhIQEBAQDw4NDQ0MCwsKBwgIBAQE", "pal_count": 256, "pos": "data/eth3d-facade-gt.bin", "dist": "data/eth3d-facade-gt-dist.bin", "colour_error": 2.17, "label": "GT: лидар"}, "da3": {"count": 315803, "centre": [0.046188679636127716, 7.330595705006608, 7.622150049628289], "half": [19.092338390926837, 25.482934331578342, 9.786082930398454], "pal": "7OfU5tvB5Ne95dSy3dO+5M6m4M6t382u3M2x08y93sef2saj2MWk1cWq1sKd0sSt0sGfzsOuxMO517yW0rya0Lybzr2gzrqXzLyizLucy7iczLmXy7aWyLulyLmcx7ecyLeXw7mluLmy0q+DzLCJyrGOyLKRxrSWxq6MxbSZxbOTxK6PwrOcwrKWwrGTwa+SwayRwauJu7OlvbGZvK6Yvq+RvayQu6uQuqiOvKiIuqWGta+ltaqUtaWMr6mco6ioyphwvpp4uJt8sqGGspZ4qqGSrJ6Eqpl/qpF1np6ZmJaToJeDnZN/m49+no1ykI2EwYBXs39dpoRnp3lckIZ5lIVskH9pkHlisHFMpXBRqGpHpWRClm9Wl2ZLlF9CgZSfg4mNgYWHg4J8eIGHgH13hHtoeXt6bHuEfXRqdXNufXFgf29XcXJzcW5la29wX3B+fWhVcWhaf19KcV9PaWlnamZbaV9SYmZoYmJcYV1VWGNuS2B0Wl5cWVpYhlU7cFVDXlZQYFRDVldXU1NTVVNMU1FJeEw2YEw/bUIuXj8wU0xIVEo8VEI3VDcqSFViTFJUSU1STk9KTExJSkpIRkhLRkdGSEdES0c+RkREQkRFSkM5Q0I8Rzw3SDssRzMpPU1dO0VQQEVGP0JEPEFGP0A+PT9BPz46OD5FOjxAOjs8Ozs4PToyNjtBMTpENjk6Nzc2MzY7NzQzMjQ1PDMqNDIsOC8nMDU7LzI3LDI5Ki82LzEwLS4uQykfOCggMiskMiIbLSwpLikiLSIcKSwwKSotKikmKSYhKR8aJiswJiktJScrJicmJSUjJSQgJSIeJRwXIiYrIiQlICMlIiIfISEfHiAjISAcHx8eIB4aHhwbHhwZHxsWHhcTGh0gGhoaGRkWFhgaGBcVGBYSFBYYFxUSFRQTEhQVFhIPExIREhAOEREREBAPEA8OEA8MDxARDg8PDg4NDwwKDQ0MDAwLDAoICwwMCwsKCgoJCgkHCQoKCQkIBwgJCAgHBwcGBQUFAgIC", "pal_count": 256, "pos": "data/eth3d-facade-da3.bin", "dist": "data/eth3d-facade-da3-dist.bin", "colour_error": 2.13, "label": "DA3-Giant — F@1 = 0.976"}, "omega": {"count": 260937, "centre": [0.06601810366443672, 7.333116705441029, 7.884553600366798], "half": [19.112613627722816, 25.486136509317518, 9.810317417220473], "pal": "6+XP5dm/49W75dGr4dC22tC94cuk3Mqp2sqt0Mq63MWd2MSh1sSi1MOj0sOq0sGfysKy17yU0r2a0Lybzr2gzrqXzLyizLudy7iezLmZy7eXyLylyLidx7ecyLeXw7mluLmy07GD0at6y6+IyLGPxrSWxqyJxLSZxbOTxK6NwbOdwrOWwLCYwbCUwrGRwK6QwK2RwKqPwKiFubKmu7CZuayYvK2Qu6qPuamPuKaNuaWFs66is6eTs6SLraeboaenwZ55w5Frtph5sJ+FsJR2qJ+RqpyDqJd+qI9ympuan5mJlpONnZJ8mY18nItwjouEvn5Vsnxbo4JmpXdajoR3koNqjXxqkHldr29KpG5PpGVEk25WlWZMl19BjV1DgI6XgoeJgISGgoF8doCGfnt1gnlmd3l4a3mDe3Jpc3FsgXBZd21bb3Fyb21laW1vXG58eWZTbmZZfV1Ib11MZ2dlaGRZZ11QX2NlXF1gU19pR111YF5WX1pQWVpWglM6a1NDXFROXVJBVFVUUVFRU1JJUU9IcUo1XUo9ZEMyYDooUUpGUkg5UkA0UjUoRlNiSlBSR0tRSUtMSktHSEhGRkZHQkVIR0U/QkJFQ0I/SEA2QUA6RTo1RjkqRTEmO0lYOUJNPkNFPUBDPT8/OT5EPD08NzxCODo+OTk5OTg2OzgwNDk/LzhBNDc4NTU0MTQ5NDIxMDIzOjEnMjAqNS0lLjM5LTE1KS83Ky4zLS8uLSwpKSwvPycdNSYeMSYfLSolLSMcKSosKiklKSYhKR8ZJiowJiksJScqJiYkJSUjJiQgJSIgJSEbJRwXIicsIiUoICMnIiQjIiIhHyEjISEeISAcHx8eIB4aHxwaHRwaHxsWHhcTGh0fGhoaGRkXGhgUFhgZFxcVGBYSFBYYFxURFRQTExQVFhIOExIREhANEREREBAPERANEA8MDxARDw8ODg4NDQ4ODw4LDwwKDQ0MDAwKDAoICwsLCgoJCgkGCQoJCAkICAgHBwgIBwcGBQUFAgIC", "pal_count": 256, "pos": "data/eth3d-facade-omega.bin", "dist": "data/eth3d-facade-omega-dist.bin", "colour_error": 2.08, "label": "VGGT-Ω — F@1 = 0.979"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, -0.008068657415541709, -0.9999674478539343, 0.0, -0.805136682396777, -0.59306999778829, 0.00478543441174975, 0.0, -0.5930893041179476, 0.8051104734698888, -0.006496372062945404, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [-10.358304353054798, 1.7398324561798457, -1.324150109487239], "radius": 75.20560135030497, "theta": 1.8525242176825252, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 160}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.7430368183030008, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
+
+<div id="camshot"><div id="camshotimg"></div><div id="camshotcap"></div></div>
+
+<script>window.VIEWER = {"traces": {"gt": {"count": 750000, "centre": [-0.44231700897216797, 7.328278541564941, 7.42986536026001], "half": [20.265759468078613, 29.616965293884277, 9.466315746307373], "pal": "9e/d8urY8uXF7uTJ6OLN7Nq859m969iu5Ne73tbB6dCs5NCw48+x4c+x3tC43s6t2s621M6/48mr5caZ3sin3Mip2smw2cax2cek2cOh1cmy1ces1cSw1cWl1MKk0Ma00MOny8Sz4ryQ27yT18Cf17iR08Cm07+d07mWz8Ctz7+j0L6dz7mdz7aQzL+qy7ymzLydy7eby7SQxr6rxrumxbijx7mbxraaxbSdxbOYxbOXxbKUxrKOwLemwLGXvLSjtrOpz6uExayKwa2RwaqGvq6TvaqRvqqJvaaFtq2esKyjuaySt6iRsaeWuamKt6aItqSHx596uaCAtaGFtZ56saGHsJ2EsJx6z4tgwIhks5JxtINlvHpSuHFJsHJQq6ebq56Fqpl+qpd1o6CWoZmIoZWAo5F3pZBtoopvoohklo59l4hqjop9hIiGo39jpXZbj4Foj3ldp29TqWxIl29ZmW1Ofn57gXtqfXRlgG9UdHVyc25ja21sq2ZComREmGVMmmE/hGNNbmVUZWZjZWJWmVo7hlpDiFM5gUowalhHbE1Aa0Y3ajwoXWFiWl1dVVldXFpTWFZRVFRSUVJSTVJWVlJHTk5MSkxNV0w+TEpDW0M5TkQ4WjouTjowRVBaRkpORkhKQ0dMRkZEREVGRkQ+PkRLQ0JDQEJFQ0E7PkFGOUFKPkBBPz5CPT5CPD1BPj49QT00Oj1CNT1GOjw9Ozo9OTo+ODk8QTguOTgzNzk9NjY0NDk/MzY8MTc+LjY/MjU4NDUyUi4gQywiOzAoOyYdMzIyNDApNCYgLzI4LzE0MC8tLysmLyIcLDE4Ky40LC0tKyooKykjKyEcKC82KCwzJysxJSkwKCorJigrKCglJScpJyckJyYiJSQjJSQhJiMdJiAcJhoVIictISQoISMmIyIfHiInISEeHSAkIB8eIB4aHB4hHh0aHhoZGhscHxoWGhkWGBodGBkXGxcUHBMPFhUUFRUVFBIQEhMUEhIQEBAQDw4NDQ0MCwsKBwgIBAQE", "pal_count": 256, "pos": "data/eth3d-facade-gt.bin", "dist": "data/eth3d-facade-gt-dist.bin", "colour_error": 2.17, "label": "GT: лидар"}, "da3": {"count": 315803, "centre": [0.046188679636127716, 7.330595705006608, 7.622150049628289], "half": [19.092338390926837, 25.482934331578342, 9.786082930398454], "pal": "7OfU5tvB5Ne95dSy3dO+5M6m4M6t382u3M2x08y93sef2saj2MWk1cWq1sKd0sSt0sGfzsOuxMO517yW0rya0Lybzr2gzrqXzLyizLucy7iczLmXy7aWyLulyLmcx7ecyLeXw7mluLmy0q+DzLCJyrGOyLKRxrSWxq6MxbSZxbOTxK6PwrOcwrKWwrGTwa+SwayRwauJu7OlvbGZvK6Yvq+RvayQu6uQuqiOvKiIuqWGta+ltaqUtaWMr6mco6ioyphwvpp4uJt8sqGGspZ4qqGSrJ6Eqpl/qpF1np6ZmJaToJeDnZN/m49+no1ykI2EwYBXs39dpoRnp3lckIZ5lIVskH9pkHlisHFMpXBRqGpHpWRClm9Wl2ZLlF9CgZSfg4mNgYWHg4J8eIGHgH13hHtoeXt6bHuEfXRqdXNufXFgf29XcXJzcW5la29wX3B+fWhVcWhaf19KcV9PaWlnamZbaV9SYmZoYmJcYV1VWGNuS2B0Wl5cWVpYhlU7cFVDXlZQYFRDVldXU1NTVVNMU1FJeEw2YEw/bUIuXj8wU0xIVEo8VEI3VDcqSFViTFJUSU1STk9KTExJSkpIRkhLRkdGSEdES0c+RkREQkRFSkM5Q0I8Rzw3SDssRzMpPU1dO0VQQEVGP0JEPEFGP0A+PT9BPz46OD5FOjxAOjs8Ozs4PToyNjtBMTpENjk6Nzc2MzY7NzQzMjQ1PDMqNDIsOC8nMDU7LzI3LDI5Ki82LzEwLS4uQykfOCggMiskMiIbLSwpLikiLSIcKSwwKSotKikmKSYhKR8aJiswJiktJScrJicmJSUjJSQgJSIeJRwXIiYrIiQlICMlIiIfISEfHiAjISAcHx8eIB4aHhwbHhwZHxsWHhcTGh0gGhoaGRkWFhgaGBcVGBYSFBYYFxUSFRQTEhQVFhIPExIREhAOEREREBAPEA8OEA8MDxARDg8PDg4NDwwKDQ0MDAwLDAoICwwMCwsKCgoJCgkHCQoKCQkIBwgJCAgHBwcGBQUFAgIC", "pal_count": 256, "pos": "data/eth3d-facade-da3.bin", "dist": "data/eth3d-facade-da3-dist.bin", "colour_error": 2.13, "label": "DA3-Giant — F@1 = 0.976"}, "omega": {"count": 260937, "centre": [0.06601810366443672, 7.333116705441029, 7.884553600366798], "half": [19.112613627722816, 25.486136509317518, 9.810317417220473], "pal": "6+XP5dm/49W75dGr4dC22tC94cuk3Mqp2sqt0Mq63MWd2MSh1sSi1MOj0sOq0sGfysKy17yU0r2a0Lybzr2gzrqXzLyizLudy7iezLmZy7eXyLylyLidx7ecyLeXw7mluLmy07GD0at6y6+IyLGPxrSWxqyJxLSZxbOTxK6NwbOdwrOWwLCYwbCUwrGRwK6QwK2RwKqPwKiFubKmu7CZuayYvK2Qu6qPuamPuKaNuaWFs66is6eTs6SLraeboaenwZ55w5Frtph5sJ+FsJR2qJ+RqpyDqJd+qI9ympuan5mJlpONnZJ8mY18nItwjouEvn5Vsnxbo4JmpXdajoR3koNqjXxqkHldr29KpG5PpGVEk25WlWZMl19BjV1DgI6XgoeJgISGgoF8doCGfnt1gnlmd3l4a3mDe3Jpc3FsgXBZd21bb3Fyb21laW1vXG58eWZTbmZZfV1Ib11MZ2dlaGRZZ11QX2NlXF1gU19pR111YF5WX1pQWVpWglM6a1NDXFROXVJBVFVUUVFRU1JJUU9IcUo1XUo9ZEMyYDooUUpGUkg5UkA0UjUoRlNiSlBSR0tRSUtMSktHSEhGRkZHQkVIR0U/QkJFQ0I/SEA2QUA6RTo1RjkqRTEmO0lYOUJNPkNFPUBDPT8/OT5EPD08NzxCODo+OTk5OTg2OzgwNDk/LzhBNDc4NTU0MTQ5NDIxMDIzOjEnMjAqNS0lLjM5LTE1KS83Ky4zLS8uLSwpKSwvPycdNSYeMSYfLSolLSMcKSosKiklKSYhKR8ZJiowJiksJScqJiYkJSUjJiQgJSIgJSEbJRwXIicsIiUoICMnIiQjIiIhHyEjISEeISAcHx8eIB4aHxwaHRwaHxsWHhcTGh0fGhoaGRkXGhgUFhgZFxcVGBYSFBYYFxURFRQTExQVFhIOExIREhANEREREBAPERANEA8MDxARDw8ODg4NDQ4ODw4LDwwKDQ0MDAwKDAoICwsLCgoJCgkGCQoJCAkICAgHBwgIBwcGBQUFAgIC", "pal_count": 256, "pos": "data/eth3d-facade-omega.bin", "dist": "data/eth3d-facade-omega-dist.bin", "colour_error": 2.08, "label": "VGGT-Ω — F@1 = 0.979"}}, "predictions": ["da3", "omega"], "default_cloud": "omega", "cams": true, "camshots": {"url": "data/eth3d-facade-cams.jpg", "cols": 5, "rows": 2, "w": 256, "h": 192, "tile": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1]], "names": ["DSC_0326.JPG", "DSC_0337.JPG", "DSC_0344.JPG", "DSC_0350.JPG", "DSC_0355.JPG", "DSC_0386.JPG", "DSC_0389.JPG", "DSC_0399.JPG", "DSC_0409.JPG", "DSC_0422.JPG"]}, "basis": [0.0, -0.008068657415541709, -0.9999674478539343, 0.0, -0.805136682396777, -0.59306999778829, 0.00478543441174975, 0.0, -0.5930893041179476, 0.8051104734698888, -0.006496372062945404, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [-10.358304353054798, 1.7398324561798457, -1.324150109487239], "radius": 75.20560135030497, "theta": 1.8525242176825252, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 10, "per": 48, "edge": 2.4131856317046605}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.7430368183030008, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
 (function () {
   var META = window.VIEWER;
   var host = document.getElementById('gl');
-  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false, size: META.point_size};
+  var state = {cloud: META.default_cloud, colour: 'rgb', cams: META.cams !== false,
+               size: META.point_size};
   var ready = false, dirty = true, benchMode = /[?&]bench/.test(location.search);
 
   // ---------------------------------------------------------------- URL hash
@@ -75,6 +88,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
     if (parts[1] === 'rgb' || parts[1] === 'dist') { state.colour = parts[1]; }
     if (parts[2] === 'cams') { state.cams = true; }
+    if (parts[2] === 'nocams') { state.cams = false; }
     var size = parseFloat(parts[3]);
     if (isFinite(size) && size > 0) { state.size = size; }
     for (var i = 4; i < parts.length; i++) {
@@ -89,7 +103,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     }
   }
   function toHash() {
-    var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
+    var tail = (state.cams ? ':cams' : ':nocams') + ':' + state.size.toFixed(1);
     if (control) {
       // the point we orbit around is part of the view: share or reload it, not just the rotation
       tail += ':@' + [control.target.x, control.target.y, control.target.z, control.radius,
@@ -234,7 +248,14 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     toHash();
   });
   host.addEventListener('pointermove', function (event) {
-    if (!drag) { return; }
+    if (!drag) {
+      // idle hover: is the cursor on a camera pyramid?
+      var over = cameraUnder(event);
+      showCamShot(over, event.clientX, event.clientY);
+      host.style.cursor = over === null ? 'grab' : 'help';
+      return;
+    }
+    hideCamShot();
     var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     drag.x = event.clientX; drag.y = event.clientY;
     if (drag.pan || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
@@ -364,16 +385,85 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   }
 
   // ----------------------------------------------------------------- drawing
-  var frustums = null;
+  // One pyramid per GT camera rather than a single merged wireframe: a pyramid can then be picked
+  // with the mouse, which is what makes "по наведению картинка из этой пирамидки" possible.
+  var camGroup = null, raycaster = new THREE.Raycaster();
   if (META.frustums) {
-    var fgeo = new THREE.BufferGeometry();
-    fgeo.setAttribute('position', new THREE.BufferAttribute(floats(META.frustums.b64), 3));
-    // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
-    frustums = new THREE.LineSegments(fgeo, new THREE.LineBasicMaterial(
-      {color: 0xffb020, depthTest: false, transparent: true, opacity: 0.85}));
-    frustums.renderOrder = 1;
-    frustums.visible = false;
-    root.add(frustums);
+    camGroup = new THREE.Group();
+    var raw = floats(META.frustums.b64), per = META.frustums.per;
+    var apexOf = function (slice) {
+      var point = new THREE.Vector3();
+      for (var v = 0; v < slice.length; v += 3) {
+        point.x += slice[v]; point.y += slice[v + 1]; point.z += slice[v + 2];
+      }
+      return point.multiplyScalar(3 / slice.length);
+    };
+    // A pyramid seen head-on is a handful of thin lines, so an invisible sphere sits inside each
+    // one: the cursor lands on it from any angle, the drawing stays a wireframe.
+    var hitGeometry = new THREE.SphereGeometry(1, 10, 8);
+    var hitMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0, depthWrite: false});
+    // A hundred pyramids in one place turn into an orange tangle over the cloud, so the denser the
+    // camera path, the fainter the wireframe: hovering still works, reading the cloud still works.
+    var cameras = raw.length / per;
+    var wireOpacity = cameras > 40 ? 0.35 : (cameras > 18 ? 0.55 : 0.85);
+    for (var c = 0; c < raw.length / per; c++) {
+      var slice = raw.subarray(c * per, (c + 1) * per);
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(slice.slice(), 3));
+      // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
+      var wire = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial(
+        {color: 0xffb020, depthTest: false, transparent: true, opacity: wireOpacity}));
+      wire.renderOrder = 1;
+      wire.userData.cam = c;
+      camGroup.add(wire);
+      var hit = new THREE.Mesh(hitGeometry, hitMaterial);
+      hit.position.copy(apexOf(slice));
+      hit.scale.setScalar(META.frustums.edge * 0.9);
+      hit.userData.cam = c;
+      camGroup.add(hit);
+    }
+    camGroup.visible = state.cams;
+    root.add(camGroup);
+    raycaster.params.Line = {threshold: META.frustums.edge * 0.12};
+  }
+
+  // --------------------------------------------------------------- frame hover
+  var camTip = document.getElementById('camshot'), camTipImg = document.getElementById('camshotimg'),
+      camTipCap = document.getElementById('camshotcap'), camShown = null;
+  function hideCamShot() {
+    if (camTip && camShown !== null) { camTip.style.display = 'none'; camShown = null; }
+  }
+  function showCamShot(index, x, y) {
+    var sheet = META.camshots;
+    if (!camTip) { return; }
+    if (!sheet || index === null || !sheet.tile[index]) { camShown = null; camTip.style.display = 'none'; return; }
+    if (camShown !== index) {
+      var cell = sheet.tile[index];
+      camTipImg.style.backgroundImage = "url('" + sheet.url + "')";
+      camTipImg.style.backgroundSize = (sheet.cols * 224) + 'px ' + (sheet.rows * 168) + 'px';
+      camTipImg.style.backgroundPosition = (-cell[0] * 224) + 'px ' + (-cell[1] * 168) + 'px';
+      camTipCap.textContent = 'кадр ' + (index + 1) + ' / ' + sheet.tile.length + ' · ' + sheet.names[index];
+      camShown = index;
+    }
+    camTip.style.display = 'block';
+    var width = camTip.offsetWidth, height = camTip.offsetHeight;
+    camTip.style.left = Math.min(x + 18, window.innerWidth - width - 8) + 'px';
+    camTip.style.top = Math.min(Math.max(y - height / 2, 8), window.innerHeight - height - 8) + 'px';
+  }
+  function cameraUnder(event) {
+    if (!camGroup || !camGroup.visible || !META.camshots) { return null; }
+    var box = host.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) { return null; }
+    var ndc = new THREE.Vector2(((event.clientX - box.left) / box.width) * 2 - 1,
+                               -((event.clientY - box.top) / box.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    scene.updateMatrixWorld();
+    var hits = raycaster.intersectObjects(camGroup.children, false);
+    for (var i = 0; i < hits.length; i++) {
+      var cam = hits[i].object.userData.cam;
+      if (cam !== undefined) { return cam; }
+    }
+    return null;
   }
 
   function chosen() {
@@ -452,7 +542,8 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
       if (on) { shown += spec.count; }
     }
-    if (frustums) { frustums.visible = state.cams; }
+    if (camGroup) { camGroup.visible = state.cams; }
+    if (!state.cams) { hideCamShot(); }
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
          + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
     syncButtons();
@@ -463,6 +554,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
   });
+  host.addEventListener('pointerleave', hideCamShot);
   document.getElementById('size').addEventListener('input', function () {
     state.size = parseFloat(this.value);
     forEachObject(function (obj) { obj.material.uniforms.uSize.value = state.size; });

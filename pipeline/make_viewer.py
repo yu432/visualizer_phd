@@ -21,13 +21,14 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from PIL import Image
 from scipy.spatial import cKDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from align import apply_sim3  # noqa: E402
 from pose_align import centres, sim3 as pose_sim3  # noqa: E402
-from common import (CLOUDS, GT, OUTPUTS, crop_mask, diagonal, load_crop,  # noqa: E402
-                    percentile_box, read_json, read_ply, view_basis)
+from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, diagonal,  # noqa: E402
+                    load_crop, percentile_box, read_json, read_ply, view_basis)
 
 VENDOR = Path(__file__).resolve().parent / "vendor"
 LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9"}
@@ -50,6 +51,14 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 .pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
 .pick:disabled { opacity:.35; cursor:not-allowed; }
 .fail { padding:28px 24px; max-width:640px; color:#ffd08a; font-size:15px; line-height:1.5; }
+#camshot { display:none; position:fixed; z-index:9; pointer-events:none; padding:6px 6px 4px;
+           background:#0b0e12; border:1px solid #3a4450; border-radius:8px;
+           box-shadow:0 12px 30px rgba(0,0,0,.6);
+           font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+#camshotimg { width:224px; height:168px; background-repeat:no-repeat; background-color:#0b0e12;
+              border-radius:5px; }
+#camshotcap { color:#c3cad3; font-size:11.5px; margin-top:5px; padding:0 2px;
+              font-variant-numeric:tabular-nums; white-space:nowrap; }
 """
 
 HEADER = (
@@ -73,6 +82,7 @@ CONTROLS = """
   <span style="width:1px;height:18px;background:#2b313a"></span>
   <label style="cursor:pointer;color:#c3cad3"><input type="checkbox" id="cams"
      style="vertical-align:-2px;margin-right:4px">центры камер GT</label>
+  <span style="color:#6b7480">наведите на пирамидку — покажется её кадр</span>
   <label style="cursor:pointer;color:#8f98a3">размер
      <input type="range" id="size" min="1" max="8" step="0.1"
             style="width:96px;vertical-align:-3px"></label>
@@ -96,12 +106,19 @@ PROGRESS = """
 </div>
 """
 
+# One tooltip for the whole page: it is positioned next to the cursor and shows the frame that
+# belongs to the camera pyramid under it.
+CAMSHOT = """
+<div id="camshot"><div id="camshotimg"></div><div id="camshotcap"></div></div>
+"""
+
 SCRIPT = r"""
 <script>
 (function () {
   var META = window.VIEWER;
   var host = document.getElementById('gl');
-  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false, size: META.point_size};
+  var state = {cloud: META.default_cloud, colour: 'rgb', cams: META.cams !== false,
+               size: META.point_size};
   var ready = false, dirty = true, benchMode = /[?&]bench/.test(location.search);
 
   // ---------------------------------------------------------------- URL hash
@@ -114,6 +131,7 @@ SCRIPT = r"""
     if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
     if (parts[1] === 'rgb' || parts[1] === 'dist') { state.colour = parts[1]; }
     if (parts[2] === 'cams') { state.cams = true; }
+    if (parts[2] === 'nocams') { state.cams = false; }
     var size = parseFloat(parts[3]);
     if (isFinite(size) && size > 0) { state.size = size; }
     for (var i = 4; i < parts.length; i++) {
@@ -128,7 +146,7 @@ SCRIPT = r"""
     }
   }
   function toHash() {
-    var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
+    var tail = (state.cams ? ':cams' : ':nocams') + ':' + state.size.toFixed(1);
     if (control) {
       // the point we orbit around is part of the view: share or reload it, not just the rotation
       tail += ':@' + [control.target.x, control.target.y, control.target.z, control.radius,
@@ -273,7 +291,14 @@ SCRIPT = r"""
     toHash();
   });
   host.addEventListener('pointermove', function (event) {
-    if (!drag) { return; }
+    if (!drag) {
+      // idle hover: is the cursor on a camera pyramid?
+      var over = cameraUnder(event);
+      showCamShot(over, event.clientX, event.clientY);
+      host.style.cursor = over === null ? 'grab' : 'help';
+      return;
+    }
+    hideCamShot();
     var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     drag.x = event.clientX; drag.y = event.clientY;
     if (drag.pan || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
@@ -403,16 +428,85 @@ SCRIPT = r"""
   }
 
   // ----------------------------------------------------------------- drawing
-  var frustums = null;
+  // One pyramid per GT camera rather than a single merged wireframe: a pyramid can then be picked
+  // with the mouse, which is what makes "по наведению картинка из этой пирамидки" possible.
+  var camGroup = null, raycaster = new THREE.Raycaster();
   if (META.frustums) {
-    var fgeo = new THREE.BufferGeometry();
-    fgeo.setAttribute('position', new THREE.BufferAttribute(floats(META.frustums.b64), 3));
-    // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
-    frustums = new THREE.LineSegments(fgeo, new THREE.LineBasicMaterial(
-      {color: 0xffb020, depthTest: false, transparent: true, opacity: 0.85}));
-    frustums.renderOrder = 1;
-    frustums.visible = false;
-    root.add(frustums);
+    camGroup = new THREE.Group();
+    var raw = floats(META.frustums.b64), per = META.frustums.per;
+    var apexOf = function (slice) {
+      var point = new THREE.Vector3();
+      for (var v = 0; v < slice.length; v += 3) {
+        point.x += slice[v]; point.y += slice[v + 1]; point.z += slice[v + 2];
+      }
+      return point.multiplyScalar(3 / slice.length);
+    };
+    // A pyramid seen head-on is a handful of thin lines, so an invisible sphere sits inside each
+    // one: the cursor lands on it from any angle, the drawing stays a wireframe.
+    var hitGeometry = new THREE.SphereGeometry(1, 10, 8);
+    var hitMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0, depthWrite: false});
+    // A hundred pyramids in one place turn into an orange tangle over the cloud, so the denser the
+    // camera path, the fainter the wireframe: hovering still works, reading the cloud still works.
+    var cameras = raw.length / per;
+    var wireOpacity = cameras > 40 ? 0.35 : (cameras > 18 ? 0.55 : 0.85);
+    for (var c = 0; c < raw.length / per; c++) {
+      var slice = raw.subarray(c * per, (c + 1) * per);
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(slice.slice(), 3));
+      // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
+      var wire = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial(
+        {color: 0xffb020, depthTest: false, transparent: true, opacity: wireOpacity}));
+      wire.renderOrder = 1;
+      wire.userData.cam = c;
+      camGroup.add(wire);
+      var hit = new THREE.Mesh(hitGeometry, hitMaterial);
+      hit.position.copy(apexOf(slice));
+      hit.scale.setScalar(META.frustums.edge * 0.9);
+      hit.userData.cam = c;
+      camGroup.add(hit);
+    }
+    camGroup.visible = state.cams;
+    root.add(camGroup);
+    raycaster.params.Line = {threshold: META.frustums.edge * 0.12};
+  }
+
+  // --------------------------------------------------------------- frame hover
+  var camTip = document.getElementById('camshot'), camTipImg = document.getElementById('camshotimg'),
+      camTipCap = document.getElementById('camshotcap'), camShown = null;
+  function hideCamShot() {
+    if (camTip && camShown !== null) { camTip.style.display = 'none'; camShown = null; }
+  }
+  function showCamShot(index, x, y) {
+    var sheet = META.camshots;
+    if (!camTip) { return; }
+    if (!sheet || index === null || !sheet.tile[index]) { camShown = null; camTip.style.display = 'none'; return; }
+    if (camShown !== index) {
+      var cell = sheet.tile[index];
+      camTipImg.style.backgroundImage = "url('" + sheet.url + "')";
+      camTipImg.style.backgroundSize = (sheet.cols * 224) + 'px ' + (sheet.rows * 168) + 'px';
+      camTipImg.style.backgroundPosition = (-cell[0] * 224) + 'px ' + (-cell[1] * 168) + 'px';
+      camTipCap.textContent = 'кадр ' + (index + 1) + ' / ' + sheet.tile.length + ' · ' + sheet.names[index];
+      camShown = index;
+    }
+    camTip.style.display = 'block';
+    var width = camTip.offsetWidth, height = camTip.offsetHeight;
+    camTip.style.left = Math.min(x + 18, window.innerWidth - width - 8) + 'px';
+    camTip.style.top = Math.min(Math.max(y - height / 2, 8), window.innerHeight - height - 8) + 'px';
+  }
+  function cameraUnder(event) {
+    if (!camGroup || !camGroup.visible || !META.camshots) { return null; }
+    var box = host.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) { return null; }
+    var ndc = new THREE.Vector2(((event.clientX - box.left) / box.width) * 2 - 1,
+                               -((event.clientY - box.top) / box.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    scene.updateMatrixWorld();
+    var hits = raycaster.intersectObjects(camGroup.children, false);
+    for (var i = 0; i < hits.length; i++) {
+      var cam = hits[i].object.userData.cam;
+      if (cam !== undefined) { return cam; }
+    }
+    return null;
   }
 
   function chosen() {
@@ -491,7 +585,8 @@ SCRIPT = r"""
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
       if (on) { shown += spec.count; }
     }
-    if (frustums) { frustums.visible = state.cams; }
+    if (camGroup) { camGroup.visible = state.cams; }
+    if (!state.cams) { hideCamShot(); }
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
          + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
     syncButtons();
@@ -502,6 +597,7 @@ SCRIPT = r"""
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
   });
+  host.addEventListener('pointerleave', hideCamShot);
   document.getElementById('size').addEventListener('input', function () {
     state.size = parseFloat(this.value);
     forEachObject(function (obj) { obj.material.uniforms.uSize.value = state.size; });
@@ -611,7 +707,6 @@ def palette_index(colours, count):
     if colours is None:
         palette = np.array([[0x9a, 0xa4, 0xb0]], dtype=np.uint8)
         return np.zeros(count, dtype=np.uint8), palette, 0.0
-    from PIL import Image
 
     pixels = np.ascontiguousarray(np.asarray(colours, dtype=np.uint8)[:, None, :])
     image = Image.fromarray(pixels, "RGB")
@@ -790,8 +885,15 @@ def framing_radius(rotation, centre, eye, points, aspect=1.6, margin=1.06):
     return float(np.percentile(need, 99.5) * margin)
 
 
+FRUSTUM_SEGMENTS = 8  # 4 sides from the apex + the 4 edges of the image plane
+
+
 def frustum_wireframes(extrinsics, intrinsics, size):
-    """Camera frustum wireframes (apex plus four corners) for the GT camera toggle."""
+    """One frustum pyramid per camera, flattened to a (cameras, 48) block of line vertices.
+
+    Kept per camera rather than merged into one big buffer so a single pyramid can be picked with
+    the mouse: hovering it shows the photo it stands for.
+    """
     segments = []
     for rotation, translation, k in zip(extrinsics[:, :3, :3], extrinsics[:, :3, 3], intrinsics):
         fx, fy, cx, cy = float(k[0, 0]), float(k[1, 1]), float(k[0, 2]), float(k[1, 2])
@@ -808,7 +910,66 @@ def frustum_wireframes(extrinsics, intrinsics, size):
             segments.extend([apex, corners[index]])
             segments.append(corners[index])
             segments.append(corners[(index + 1) % 4])
-    return np.asarray(segments, dtype=np.float32)
+    return np.asarray(segments, dtype=np.float32).reshape(len(extrinsics),
+                                                          3 * 2 * FRUSTUM_SEGMENTS)
+
+
+CAM_TILE = (256, 192)  # 4:3 tile: a whole photo at a glance, small enough for a tooltip
+CAM_COLUMNS = 5
+
+
+def camera_sheet(out, dataset, scene, count):
+    """Contact sheet of the input frames, one tile per GT camera.
+
+    The pages draw camera pyramids but no pictures, so a visitor sees a wireframe and cannot tell
+    which wall it photographed. The frames go into one JPEG per scene and the tooltip shows the
+    tile by CSS offset — one request for the whole set instead of one per camera.
+    """
+    manifest = INFERENCE / dataset / scene / "manifest.json"
+    if not manifest.exists():
+        return None
+    frames = [frame["name"] for frame in read_json(manifest)["frames"]]
+    folder = INFERENCE / dataset / scene / "images"
+    names = [name for name in frames if (folder / name).exists()][:count]
+    if not names:
+        return None
+    columns = min(CAM_COLUMNS, len(names))
+    rows = int(np.ceil(len(names) / columns))
+    tile_width, tile_height = CAM_TILE
+    sheet = Image.new("RGB", (columns * tile_width, rows * tile_height), (11, 14, 18))
+    for position, name in enumerate(names):
+        with Image.open(folder / name) as opened:
+            opened.draft("RGB", (3 * tile_width, 3 * tile_height))  # decode at a fraction of full size
+            image = opened.convert("RGB")
+        scale = max(tile_width / image.width, tile_height / image.height)
+        image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+                             Image.LANCZOS)
+        left = (image.width - tile_width) // 2
+        top = (image.height - tile_height) // 2
+        sheet.paste(image.crop((left, top, left + tile_width, top + tile_height)),
+                    ((position % columns) * tile_width, (position // columns) * tile_height))
+    out.mkdir(parents=True, exist_ok=True)
+    name = "%s-%s-cams.jpg" % (dataset, scene)
+    sheet.save(out / name, "JPEG", quality=80, optimize=True)
+    print("    cameras: %d frames -> %s (%.0f kB)"
+          % (len(names), name, (out / name).stat().st_size / 1e3), flush=True)
+    return dict(url="data/" + name, cols=columns, rows=rows, w=tile_width, h=tile_height,
+                tile=[[position % columns, position // columns] for position in range(len(names))],
+                names=names)
+
+
+def frame_transform(dataset, scene):
+    """Transform that takes the reference cameras into the reference cloud's frame.
+
+    Tanks and Temples keeps its COLMAP model and its laser scan in different coordinate systems, so
+    gt_meta.json carries the official transform between them. Without it the camera pyramids hang
+    twenty metres away from the cloud they photographed (and hovering them makes no sense).
+    """
+    path = GT / dataset / scene / "gt_meta.json"
+    if not path.exists():
+        return None
+    value = read_json(path).get("frame_transform")
+    return None if value is None else np.asarray(value, dtype=np.float64)
 
 
 def nearest(query, reference):
@@ -918,14 +1079,27 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
 
     frustums = None
     if intrinsics is not None:
-        wire = frustum_wireframes(extrinsics, intrinsics, 0.025 * span)
-        frustums = dict(b64=base64.b64encode(wire.tobytes()).decode("ascii"), size=int(len(wire)))
+        # Pyramids have to be big enough to aim at with the mouse, and they are the only hint of
+        # where the photos were taken from, so 3.5% of the scene span rather than a token 2.5%.
+        wire = frustum_wireframes(extrinsics, intrinsics, 0.035 * span)
+        frame = frame_transform(dataset, scene)
+        if frame is not None:
+            moved = wire.reshape(-1, 3) @ frame[:3, :3].T + frame[:3, 3]
+            wire = moved.reshape(wire.shape).astype(np.float32)
+        frustums = dict(b64=base64.b64encode(wire.tobytes()).decode("ascii"),
+                        size=int(len(extrinsics)), per=int(wire.shape[1]), edge=0.035 * span)
+    camshots = camera_sheet(out / "data", dataset, scene, len(extrinsics))
     predictions = [key for key in ("da3", "omega") if key in traces]
     has_gt = "gt" in traces
     meta = dict(
         traces=traces,
         predictions=predictions,
-        default_cloud="both" if len(predictions) == 2 else (predictions[0] if predictions else "gt"),
+        # VGGT-Omega opens first: it is the stronger of the two methods, and "both predictions"
+        # is a comparison, not a starting point.
+        default_cloud=("omega" if "omega" in predictions
+                       else (predictions[0] if predictions else "gt")),
+        cams=True,
+        camshots=camshots,
         basis=basis,
         camera=camera,
         fov=FOV,
@@ -959,10 +1133,10 @@ def write_page(path, meta, heading, note):
         "<meta name='viewport' content='width=device-width, initial-scale=1'>\n"
         "<title>%s</title>\n<link rel='icon' href='data:,'>\n<style>%s</style>\n"
         "<script src='three.min.js'></script>\n</head>\n<body>\n"
-        "%s%s\n<div id='gl'>%s</div>\n"
+        "%s%s\n<div id='gl'>%s</div>\n%s\n"
         "<script>window.VIEWER = %s;</script>\n%s\n"
         "</body>\n</html>\n"
-    ) % (heading, CSS, HEADER % (heading, note), controls, PROGRESS,
+    ) % (heading, CSS, HEADER % (heading, note), controls, PROGRESS, CAMSHOT,
          json.dumps(meta, ensure_ascii=False), SCRIPT)
     Path(path).write_text(html, encoding="utf-8")
     return len(html.encode("utf-8"))
@@ -1006,7 +1180,9 @@ INDEX_HEAD = """<!doctype html>
 камер и раскрашены цветом пикселей. Кнопки сверху переключают, какое облако смотреть (GT,
 DA3-Giant, VGGT-Ω или оба предсказания), как его красить — цветом пикселей или расстоянием до
 GT (зелёный — на поверхности, красный — дальше τ) — и задают размер точки. Мышь вращает, колесо
-зумит, панорама — Ctrl, Shift, Alt или Cmd с левой кнопкой, а также правая и средняя кнопки.</p>
+зумит, панорама — Ctrl, Shift, Alt или Cmd с левой кнопкой, а также правая и средняя кнопки.
+По умолчанию открывается VGGT-Ω, а центры камер GT включены: наведите курсор на пирамидку
+камеры — всплывёт кадр, снятый с этой точки.</p>
 <p>Сцены идут от лучших к худшим по среднему F@1 двух методов, а не по алфавиту: так первым делом
 видно, что получается хорошо, а не самое слабое.</p>
 <p>Рендер — three.js: точки рисуются буфером WebGL, координаты упакованы в int16, цвет — один

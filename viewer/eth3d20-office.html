@@ -15,6 +15,14 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 .pick.on { background:#2b6cb0; border-color:#3b82d0; color:#ffffff; font-weight:600; }
 .pick:disabled { opacity:.35; cursor:not-allowed; }
 .fail { padding:28px 24px; max-width:640px; color:#ffd08a; font-size:15px; line-height:1.5; }
+#camshot { display:none; position:fixed; z-index:9; pointer-events:none; padding:6px 6px 4px;
+           background:#0b0e12; border:1px solid #3a4450; border-radius:8px;
+           box-shadow:0 12px 30px rgba(0,0,0,.6);
+           font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; }
+#camshotimg { width:224px; height:168px; background-repeat:no-repeat; background-color:#0b0e12;
+              border-radius:5px; }
+#camshotcap { color:#c3cad3; font-size:11.5px; margin-top:5px; padding:0 2px;
+              font-variant-numeric:tabular-nums; white-space:nowrap; }
 </style>
 <script src='three.min.js'></script>
 </head>
@@ -35,6 +43,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   <span style="width:1px;height:18px;background:#2b313a"></span>
   <label style="cursor:pointer;color:#c3cad3"><input type="checkbox" id="cams"
      style="vertical-align:-2px;margin-right:4px">центры камер GT</label>
+  <span style="color:#6b7480">наведите на пирамидку — покажется её кадр</span>
   <label style="cursor:pointer;color:#8f98a3">размер
      <input type="range" id="size" min="1" max="8" step="0.1"
             style="width:96px;vertical-align:-3px"></label>
@@ -56,13 +65,17 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   </span>
 </div>
 </div>
-<script>window.VIEWER = {"traces": {"gt": {"count": 723324, "centre": [-1.2448574602603912, -1.0779975652694702, 0.4210842251777649], "half": [1.8798249661922455, 2.4012140035629272, 2.0778161883354187], "pal": "8/DT6+K15dis2s6nz8OjzMCaxrubxbqVw7eWwLWVwrWQvrSPvbGRu7CQvLGLu66KuK+MuK2Lt6yKtquLtaqFs6iKs6iGs6iEs6eDsqZ/sKaDr6WCrqSCrqKArKJ/q6B/qaF+q55+qZ59qJ58p517ppt7pJt8pJt3o5l6opd5p5x0pZt0pJp0o5p0o5dyoplzophzoZZ0oZZvn5d4n5dzn5Zyn5R3n5Ryn5Zvn5Vun5NtnZVznZRxnJNwnJJvm5NwmZNwnZFum5BumpFumo9umZBumY9tmI9xmI9smI9ql41slY1xlYxslY5qlYxqlItqk4ptk4ppkohrmo9nl41nl4tmlYxmlYlklItmlIpmk4pjk4llkopmkolkkohlkYhikYdkkYZjkIhnj4dokIdhj4Zoj4Zkj4ZhjoVojoVkjoVgjYRnjYRjjYRfjIJnjIJjjINhi4FhjINfjIJci4FdioNjioJhiYFjiYFciYBiiYBciX9iiX9eiH9ah4Bfh35dhn9eg39eh31chn1fhn1ZhXxehXxYhHxfhHxZhnpahHtahHlZg3pdg3pXg3hZgnpfgnpbgnpXgnlWgXhYgXZXf3hdf3hYfnZbfnVXf3hUf3ZUfnVVfnVSfXRafXRWfXRUfXNTfXNQfHJTfHBRenNWeXJUeXFWeXFQeHBVeXBPeG5UeG5QeG5PeG5LdnBUdm5Rdm1QdWxPcHBgc2xQc2tTc2tPc2tOcmhPcGhQdGpLcWlLcmdKcGdKb2dQb2dLb2dIbmVIbGZQbGZIbmNIbGNJa2NJamNJamBGaWJLaWJFaF9GZmBLZmBGZV5IZmBEZV5DZF1HZF1CZFpDYVxFYVpDYFlCX1hCXlZDXlY+XFdCW1VAW1Q/WlM+WVM/WFE9VVJCWE87Vk88VU47VE47U0w5UUw8UEo6UUs3UEk3TUk6TUc2S0Y3S0UzSUM1SUMxR0AxREAzQz0wQTwwPTsxPDgsOjUqNTMpMTErMC0lKiokJiYiHx8bFxcUEhIQDQ0MBwcG", "pal_count": 256, "pos": "data/eth3d20-office-gt.bin", "dist": "data/eth3d20-office-gt-dist.bin", "colour_error": 1.05, "label": "GT: лидар"}, "da3": {"count": 526676, "centre": [-1.2377853741159783, -1.101361944449497, 0.41762179460089865], "half": [1.8851881542229205, 2.399036335773273, 2.096835930918485], "pal": "5Nq01cqlzsKdyb6ZxruXxbmSwriRwLePwLSQvbSQvbGOvrOKvLGJu7CJuq+Nua+HuK6JtK6Gt6yJtauItamHsqmHsaaGtaqCtKeAsqeBsaeBsKSArqWDrqOCrqR+raJ9rKKBrKJ7qKJ7rJ98qp99qZ98qJ98qJx6p519p513pp18pp12pZp4o5t7o5l6o5p3oph5oZd3oZZ3oph0oplwoZVyn5Z3npV1nZR0nJJ1nJJznJJynpRwnZRsnJFwnJFrmpFwmpBvmY9umI9ulZBtnIthmI1rl41sl4tnlo1ulo1olopmlYxvlYxslYxnlIpplIhikopukopqk4plkollkohqkohkkYdmkYRcj4hqj4ZojYVpjoVlj4dhjoVhjYRhjINnjINjjIJhjIJdi4Fki4Bhi4FcjHxLiIJjiIBkiIBciH9iiH9bh35hh35ahn1hhn1ehn1ZhXtghXtdhXtchXxYhHtYhHpYhXpSg3xeg3peg3pWgnlcgnlVgHpegnhbgnhVf3hbgXdagXdUfndah3I/gXNMgHVTf3ZZf3VTf3JOfnVWfnNRfHRdfHRZfHRWfXRSfHNSfHJWfHJRe3FSfG1FeXJaeXFUeXBWeG9VenFQeXBQeG9Pd25Ud25Rd25Pd21Ld2xNeGc7dG5TdGxTdGxNc2tSdGtMcmpScmlPcmlMc2lKcWhPb2dQcGhMcWdIb2ZMcWZEcWI5bWhQbWZNbWVNbWVJbGRMbWRIbGNLbGJEamRNaWJKaWFIaWBJaWBEZ2BIZWBJbVw1Z1w/ZlxDZVxEY11IY1tHY1xCY1g8YVtGYFlEX1hEXldEW1dGW1VEX1g/XlY+W1Y/YFI0W1M9WlM+WVJAWFE6VlE/VU8+VlA6VE46YEYtU0w5Uks4T0o6T0o2Tkc0S0c5SUU1RkI2R0IwRD8yRD4sPzwyPTkrOTcuODQoNTInMTEsLi0nLCskKiggJiUgIyIcIR8ZHh4aHBwYGxsXGhkVGBgWFxYTFRUSEhMREBEODg4MCwwKCAgH", "pal_count": 256, "pos": "data/eth3d20-office-da3.bin", "dist": "data/eth3d20-office-da3-dist.bin", "colour_error": 1.16, "label": "DA3-Giant — F@1 = 0.854"}, "omega": {"count": 750000, "centre": [-1.2429047174420673, -1.119961495691032, 0.4159658556259149], "half": [1.8831747524584554, 2.4160022755824375, 2.113817211981326], "pal": "5dm02c2o0sahzMKdyb2ayLyTxbmVwrmTwraUv7OTwLSNvrONvLKQvLCQvLGKubCLua2Nt6yMuKyGtquJtKqKs6iKtKmFtKmAsqiHsaWHsaaCsaZ+r6SFrqR/rKR/raKCraGBq6GBqaCAqZ6BrKB6qp96qZ96qJ56pp1+pp17pZt8ppx4pZx0pZp7pZl0opp6oph5oppzophzoZZ5oZZ2oZZzoZZvn5Z2npR2n5VxnpVtnZR1nZRvm5Rxn5BpnJFwm5Fzm5BsmpFympFsmo5smZBymZBwmZBrmI5tmIxplo5xlo5tloxvlottlo1qlo1mlYpnlIxtk4pskolskohpk4tnk4lnkohnkollkolhkIdrkIdokIdmj4VokIZkkIZgkIRfjoZmjYVojYVhjYRnjYRgjINnjYNjjINfi4JmjIJji4JeioBlioBiioBhioFeioBbin5ah4FiiH9fhn9gh35hh35ahn5fh31gh31ahX1ehnxghnxdhXxZhHtcg3tdiXZJhHlYg3pdg3pWg3ZTgnldgnlWgndWgXlcgXhWgXZVf3dff3dbf3dZgHdVf3ZUf3VYf3VTfnRVf3BJfHVafHRYfHNYe3JXfXRSfHNSe3JSenFXenFTenFRenBOeW9Qe2k9d3FVd29Vd29Pdm5Ud25OdW1UdW1QdWxOdmxLc2tTdGtPc2tNcmlPc2pMdGpIdGZAcGpQcGhQcGhKb2dOcGdKb2ZOb2VKb2VHbWZNbWRKbGNJa2RLamJJaGNLb186amBGaWBHaGBHZ2BHZ11FZl9JZl5EZVxFZF1HY1tGYVxHYVlFXllGY1xCYVpBYFlBX1hBYlY6XlZBXVZBXFVAWlRCWlQ/WVJAWVM8WlE7V1A9VlA8X0oyVE88VEw4UU09UUs5UEo4T0k3TEg4TEY3TUUxSkQ0R0Q2R0ExREAyQj4vQTssPTsyOzguOjYqNTUuNTEmLy8oLSohKSghJSUhISEcHh4ZGxwZGRkWFxYTFBUTEhMQDxAODA0LCgoJBgYG", "pal_count": 256, "pos": "data/eth3d20-office-omega.bin", "dist": "data/eth3d20-office-omega-dist.bin", "colour_error": 1.11, "label": "VGGT-Ω — F@1 = 0.936"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, -0.2922409981559579, -0.9563447072038459, 0.0, -0.9787740005863055, 0.19599573924925404, -0.05989262035023528, 0.0, 0.20494256701885774, 0.9360453350094471, -0.286037890900442, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [1.2051987477165702, 0.5145189323327419, 1.1356023436945368], "radius": 6.585479656208539, "theta": -0.6680783774498267, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "u2vOv9m4Jb1TuT2+CSq9v18K3L17eO29CSq9v18K3L17eO291WbVvy8GO75vffW9u2vOv9m4Jb1TuT2+1WbVvy8GO75vffW91WbVvy8GO75vffW9BBjVv6cKOr4ZXIK+u2vOv9m4Jb1TuT2+BBjVv6cKOr4ZXIK+BBjVv6cKOr4ZXIK+ONu8v1AT2r3cWoC+u2vOv9m4Jb1TuT2+ONu8v1AT2r3cWoC+ONu8v1AT2r3cWoC+CSq9v18K3L17eO29zhG3vy2lej5+8jy+GeOrv7kH+j0EPey9GeOrv7kH+j0EPey9UMzFvxm6FD4tQvO9zhG3vy2lej5+8jy+UMzFvxm6FD4tQvO9UMzFvxm6FD4tQvO934LFvzBdFD4LzoG+zhG3vy2lej5+8jy+34LFvzBdFD4LzoG+34LFvzBdFD4LzoG+qZmrv+dN+T3ADIC+zhG3vy2lej5+8jy+qZmrv+dN+T3ADIC+qZmrv+dN+T3ADIC+GeOrv7kH+j0EPey9CJKDvws3ij28hDy+O5mKv7l2lL3eRuq9O5mKv7l2lL3eRuq9qT6Wv/Pl4D0OUPG9CJKDvws3ij28hDy+qT6Wv/Pl4D0OUPG9qT6Wv/Pl4D0OUPG9MDOWv0kO3D06UYG+CJKDvws3ij28hDy+MDOWv0kO3D06UYG+MDOWv0kO3D06UYG+wo2Kv2ROmb3cHX++CJKDvws3ij28hDy+wo2Kv2ROmb3cHX++wo2Kv2ROmb3cHX++O5mKv7l2lL3eRuq9nsiAv/z3Ob6ANzy+wESNv2N2l75x7+i9wESNv2N2l75x7+i9uaSQv9wWwL04hfC9nsiAv/z3Ob6ANzy+uaSQv9wWwL04hfC9uaSQv9wWwL04hfC9aruQv0BVxb3gHYG+nsiAv/z3Ob6ANzy+aruQv0BVxb3gHYG+aruQv0BVxb3gHYG+cVuNv/3FmL7dcH6+nsiAv/z3Ob6ANzy+cVuNv/3FmL7dcH6+cVuNv/3FmL7dcH6+wESNv2N2l75x7+i9kGG/v3uIYj7/GT2+8aSuvwgXlz6zpOq98aSuvwgXlz6zpOq9SUq0v9MCxT3XdfO9kGG/v3uIYj7/GT2+SUq0v9MCxT3XdfO9SUq0v9MCxT3XdfO91R+0vy5lyj1F2YG+kGG/v3uIYj7/GT2+1R+0vy5lyj1F2YG+1R+0vy5lyj1F2YG+fHquv55vmD75SX++kGG/v3uIYj7/GT2+fHquv55vmD75SX++fHquv55vmD75SX++8aSuvwgXlz6zpOq9Q2GgvwrVSz7SCza+vBeTv45p/D1y05W9vBeTv45p/D1y05W9wxKtvzDO2z2qcKe9Q2GgvwrVSz7SCza+wxKtvzDO2z2qcKe9wxKtvzDO2z2qcKe96PGrv+Zcgj3Q9VW+Q2GgvwrVSz7SCza+6PGrv+Zcgj3Q9VW+6PGrv+Zcgj3Q9VW+4faRv0T4oj00J02+Q2GgvwrVSz7SCza+4faRv0T4oj00J02+4faRv0T4oj00J02+vBeTv45p/D1y05W9EIKFv5OSEb0iFzm+1HyHv9w5Jr5x5Jm91HyHv9w5Jr5x5Jm9aOWVv2lF7jtJSK29EIKFv5OSEb0iFzm+aOWVv2lF7jtJSK29aOWVv2lF7jtJSK295EmavwEHubzYili+EIKFv5OSEb0iFzm+5EmavwEHubzYili+5EmavwEHubzYili+UeGLv+jMRL7t2E6+EIKFv5OSEb0iFzm+UeGLv+jMRL7t2E6+UeGLv+jMRL7t2E6+1HyHv9w5Jr5x5Jm9+Ke5v9DYRD6KSjW+YOmqvyY6fj6UNZO9YOmqvyY6fj6UNZO9WT61v7V7ez2/jaa9+Ke5v9DYRD6KSjW+WT61v7V7ez2/jaa9WT61v7V7ez2/jaa9/7ivvwd8ST1Ca1W++Ke5v9DYRD6KSjW+/7ivvwd8ST1Ca1W+/7ivvwd8ST1Ca1W+BWSlvzu6cT4sv0u++Ke5v9DYRD6KSjW+BWSlvzu6cT4sv0u+BWSlvzu6cT4sv0u+YOmqvyY6fj6UNZO9Dzhmv6Vi6j2jjlm+wTxYv/5vIj3Anpm9wTxYv/5vIj3Anpm9UgF5vzxRSj4T2ba9Dzhmv6Vi6j2jjlm+UgF5vzxRSj4T2ba9UgF5vzxRSj4T2ba9FlGHv3LP+j3PjCa+Dzhmv6Vi6j2jjlm+FlGHv3LP+j3PjCa+FlGHv3LP+j3PjCa+nN1tvww2Eb2m7xe+Dzhmv6Vi6j2jjlm+nN1tvww2Eb2m7xe+nN1tvww2Eb2m7xe+wTxYv/5vIj3Anpm9ufdUv9+Mvr7K3lm+Zxpev3gh6r4r0Zm9Zxpev3gh6r4r0Zm9vHpLv5L1iL5wwbe9ufdUv9+Mvr7K3lm+vHpLv5L1iL5wwbe9vHpLv5L1iL5wwbe9BjBnv9AYbb44ZCW+ufdUv9+Mvr7K3lm+BjBnv9AYbb44ZCW+BjBnv9AYbb44ZCW+sc95v064174VbBa+ufdUv9+Mvr7K3lm+sc95v064174VbBa+sc95v064174VbBa+Zxpev3gh6r4r0Zm946Wmv/n+1b4YWVq+98Wxv2ah5b6YiZq998Wxv2ah5b6YiZq9wUaZv2Kbwr6r27i946Wmv/n+1b4YWVq+wUaZv2Kbwr6r27i9wUaZv2Kbwr6r27i9KNqevy3vi74K1CO+46Wmv/n+1b4YWVq+KNqevy3vi74K1CO+KNqevy3vi74K1CO+X1m3vzH1rr4BqxS+46Wmv/n+1b4YWVq+X1m3vzH1rr4BqxS+X1m3vzH1rr4BqxS+98Wxv2ah5b6YiZq9EazMv584tr0Vj1y+caPSv1BcLrxJo529caPSv1BcLrxJo529NXbFv8c2Pr5c4769EazMv584tr0Vj1y+NXbFv8c2Pr5c4769NXbFv8c2Pr5c4769Jwy5vwqY+r3T6iW+EazMv584tr0Vj1y+Jwy5vwqY+r3T6iW+Jwy5vwqY+r3T6iW+YznGv/UTWD3KShW+EazMv584tr0Vj1y+YznGv/UTWD3KShW+YznGv/UTWD3KShW+caPSv1BcLrxJo529NnOYv4jigj3azmm+IYWKv5S6eb37cW++IYWKv5S6eb37cW++aIakv0L1k734FmS+NnOYv4jigj3azmm+aIakv0L1k734FmS+aIakv0L1k734FmS+JNKlv0n/VbsOGK2+NnOYv4jigj3azmm+JNKlv0n/VbsOGK2+JNKlv0n/VbsOGK2+3dCLv+o/AzyQxbK+NnOYv4jigj3azmm+3dCLv+o/AzyQxbK+3dCLv+o/AzyQxbK+IYWKv5S6eb37cW++3wp/v2fxQT0g8Wq+zbqAv3/G8b11mm++zbqAv3/G8b11mm++s1aUv8iSgjyLOmW+3wp/v2fxQT0g8Wq+s1aUv8iSgjyLOmW+s1aUv8iSgjyLOmW+xROPv9jKkj1wzq2+3wp/v2fxQT0g8Wq+xROPv9jKkj1wzq2+xROPv9jKkj1wzq2+v+92v7FAf71l/rK+3wp/v2fxQT0g8Wq+v+92v7FAf71l/rK+v+92v7FAf71l/rK+zbqAv3/G8b11mm++m4++v1P6az7rJm2+q/upv0qzQz6SEXa+q/upv0qzQz6SEXa+oGe+v7aLhD2zDGy+m4++v1P6az7rJm2+oGe+v7aLhD2zDGy+oGe+v7aLhD2zDGy+G73Ev8eC8j3hBLC+m4++v1P6az7rJm2+G73Ev8eC8j3hBLC+G73Ev8eC8j3hBLC+JlGwv9Kuej5QB7W+m4++v1P6az7rJm2+JlGwv9Kuej5QB7W+JlGwv9Kuej5QB7W+q/upv0qzQz6SEXa+YdeVv+J2tL5lo0++oh2Hv7aY7r7+Hyq+oh2Hv7aY7r7+Hyq+oQyhvyW3+b5b4ye+YdeVv+J2tL5lo0++oQyhvyW3+b5b4ye+oQyhvyW3+b5b4ye+Iq6hvyrm6L7d0Ja+YdeVv+J2tL5lo0++Iq6hvyrm6L7d0Ja+Iq6hvyrm6L7d0Ja+Ir+Hv7rH3b4u75e+YdeVv+J2tL5lo0++Ir+Hv7rH3b4u75e+Ir+Hv7rH3b4u75e+oh2Hv7aY7r7+Hyq+xSO7vxFVzL62wk++cX+qv+Rm/b4Puym+cX+qv+Rm/b4Puym+kcPDv5anC7+rTyi+xSO7vxFVzL62wk++kcPDv5anC7+rTyi+kcPDv5anC7+rTyi+5ezEv2iCA786C5e+xSO7vxFVzL62wk++5ezEv2iCA786C5e+5ezEv2iCA786C5e+xairv4kc7b7swJe+xSO7vxFVzL62wk++xairv4kc7b7swJe+xairv4kc7b7swJe+cX+qv+Rm/b4Puym+niHjv4Z4674Z7U++3CLUv6cqEr+KeSm+3CLUv6cqEr+KeSm+zgHuv/DPGL9Emii+niHjv4Z4674Z7U++zgHuv/DPGL9Emii+zgHuv/DPGL9Emii+/5zuv2N4EL+8NZe+niHjv4Z4674Z7U++/5zuv2N4EL+8NZe+/5zuv2N4EL+8NZe+DL7UvxrTCb9fpZe+niHjv4Z4674Z7U++DL7UvxrTCb9fpZe+DL7UvxrTCb9fpZe+3CLUv6cqEr+KeSm+kubRvUTFf79Q0U6+6L8Qvtz0k79e7Ci+6L8Qvtz0k79e7Ci+8PeGvoctfr+Pjie+kubRvUTFf79Q0U6+8PeGvoctfr+Pjie+8PeGvoctfr+Pjie+QDtzvsvleL81pZa+kubRvUTFf79Q0U6+QDtzvsvleL81pZa+QDtzvsvleL81pZa+jxbsvf5Qkb8dVJe+kubRvUTFf79Q0U6+jxbsvf5Qkb8dVJe+jxbsvf5Qkb8dVJe+6L8Qvtz0k79e7Ci+Gu/Gv1lca79MzU++SvqyvyEjdr+RpCm+SvqyvyEjdr+RpCm+vinIv8lIir/Qmii+Gu/Gv1lca79MzU++vinIv8lIir/Qmii+vinIv8lIir/Qmii+drTKv0Tjhr/eLpe+Gu/Gv1lca79MzU++drTKv0Tjhr/eLpe+drTKv0Tjhr/eLpe+AoW1vxdYb7+/s5e+Gu/Gv1lca79MzU++AoW1vxdYb7+/s5e+AoW1vxdYb7+/s5e+SvqyvyEjdr+RpCm+", "size": 320}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.07382401028866449, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
+
+<div id="camshot"><div id="camshotimg"></div><div id="camshotcap"></div></div>
+
+<script>window.VIEWER = {"traces": {"gt": {"count": 723324, "centre": [-1.2448574602603912, -1.0779975652694702, 0.4210842251777649], "half": [1.8798249661922455, 2.4012140035629272, 2.0778161883354187], "pal": "8/DT6+K15dis2s6nz8OjzMCaxrubxbqVw7eWwLWVwrWQvrSPvbGRu7CQvLGLu66KuK+MuK2Lt6yKtquLtaqFs6iKs6iGs6iEs6eDsqZ/sKaDr6WCrqSCrqKArKJ/q6B/qaF+q55+qZ59qJ58p517ppt7pJt8pJt3o5l6opd5p5x0pZt0pJp0o5p0o5dyoplzophzoZZ0oZZvn5d4n5dzn5Zyn5R3n5Ryn5Zvn5Vun5NtnZVznZRxnJNwnJJvm5NwmZNwnZFum5BumpFumo9umZBumY9tmI9xmI9smI9ql41slY1xlYxslY5qlYxqlItqk4ptk4ppkohrmo9nl41nl4tmlYxmlYlklItmlIpmk4pjk4llkopmkolkkohlkYhikYdkkYZjkIhnj4dokIdhj4Zoj4Zkj4ZhjoVojoVkjoVgjYRnjYRjjYRfjIJnjIJjjINhi4FhjINfjIJci4FdioNjioJhiYFjiYFciYBiiYBciX9iiX9eiH9ah4Bfh35dhn9eg39eh31chn1fhn1ZhXxehXxYhHxfhHxZhnpahHtahHlZg3pdg3pXg3hZgnpfgnpbgnpXgnlWgXhYgXZXf3hdf3hYfnZbfnVXf3hUf3ZUfnVVfnVSfXRafXRWfXRUfXNTfXNQfHJTfHBRenNWeXJUeXFWeXFQeHBVeXBPeG5UeG5QeG5PeG5LdnBUdm5Rdm1QdWxPcHBgc2xQc2tTc2tPc2tOcmhPcGhQdGpLcWlLcmdKcGdKb2dQb2dLb2dIbmVIbGZQbGZIbmNIbGNJa2NJamNJamBGaWJLaWJFaF9GZmBLZmBGZV5IZmBEZV5DZF1HZF1CZFpDYVxFYVpDYFlCX1hCXlZDXlY+XFdCW1VAW1Q/WlM+WVM/WFE9VVJCWE87Vk88VU47VE47U0w5UUw8UEo6UUs3UEk3TUk6TUc2S0Y3S0UzSUM1SUMxR0AxREAzQz0wQTwwPTsxPDgsOjUqNTMpMTErMC0lKiokJiYiHx8bFxcUEhIQDQ0MBwcG", "pal_count": 256, "pos": "data/eth3d20-office-gt.bin", "dist": "data/eth3d20-office-gt-dist.bin", "colour_error": 1.05, "label": "GT: лидар"}, "da3": {"count": 526676, "centre": [-1.2377853741159783, -1.101361944449497, 0.41762179460089865], "half": [1.8851881542229205, 2.399036335773273, 2.096835930918485], "pal": "5Nq01cqlzsKdyb6ZxruXxbmSwriRwLePwLSQvbSQvbGOvrOKvLGJu7CJuq+Nua+HuK6JtK6Gt6yJtauItamHsqmHsaaGtaqCtKeAsqeBsaeBsKSArqWDrqOCrqR+raJ9rKKBrKJ7qKJ7rJ98qp99qZ98qJ98qJx6p519p513pp18pp12pZp4o5t7o5l6o5p3oph5oZd3oZZ3oph0oplwoZVyn5Z3npV1nZR0nJJ1nJJznJJynpRwnZRsnJFwnJFrmpFwmpBvmY9umI9ulZBtnIthmI1rl41sl4tnlo1ulo1olopmlYxvlYxslYxnlIpplIhikopukopqk4plkollkohqkohkkYdmkYRcj4hqj4ZojYVpjoVlj4dhjoVhjYRhjINnjINjjIJhjIJdi4Fki4Bhi4FcjHxLiIJjiIBkiIBciH9iiH9bh35hh35ahn1hhn1ehn1ZhXtghXtdhXtchXxYhHtYhHpYhXpSg3xeg3peg3pWgnlcgnlVgHpegnhbgnhVf3hbgXdagXdUfndah3I/gXNMgHVTf3ZZf3VTf3JOfnVWfnNRfHRdfHRZfHRWfXRSfHNSfHJWfHJRe3FSfG1FeXJaeXFUeXBWeG9VenFQeXBQeG9Pd25Ud25Rd25Pd21Ld2xNeGc7dG5TdGxTdGxNc2tSdGtMcmpScmlPcmlMc2lKcWhPb2dQcGhMcWdIb2ZMcWZEcWI5bWhQbWZNbWVNbWVJbGRMbWRIbGNLbGJEamRNaWJKaWFIaWBJaWBEZ2BIZWBJbVw1Z1w/ZlxDZVxEY11IY1tHY1xCY1g8YVtGYFlEX1hEXldEW1dGW1VEX1g/XlY+W1Y/YFI0W1M9WlM+WVJAWFE6VlE/VU8+VlA6VE46YEYtU0w5Uks4T0o6T0o2Tkc0S0c5SUU1RkI2R0IwRD8yRD4sPzwyPTkrOTcuODQoNTInMTEsLi0nLCskKiggJiUgIyIcIR8ZHh4aHBwYGxsXGhkVGBgWFxYTFRUSEhMREBEODg4MCwwKCAgH", "pal_count": 256, "pos": "data/eth3d20-office-da3.bin", "dist": "data/eth3d20-office-da3-dist.bin", "colour_error": 1.16, "label": "DA3-Giant — F@1 = 0.854"}, "omega": {"count": 750000, "centre": [-1.2429047174420673, -1.119961495691032, 0.4159658556259149], "half": [1.8831747524584554, 2.4160022755824375, 2.113817211981326], "pal": "5dm02c2o0sahzMKdyb2ayLyTxbmVwrmTwraUv7OTwLSNvrONvLKQvLCQvLGKubCLua2Nt6yMuKyGtquJtKqKs6iKtKmFtKmAsqiHsaWHsaaCsaZ+r6SFrqR/rKR/raKCraGBq6GBqaCAqZ6BrKB6qp96qZ96qJ56pp1+pp17pZt8ppx4pZx0pZp7pZl0opp6oph5oppzophzoZZ5oZZ2oZZzoZZvn5Z2npR2n5VxnpVtnZR1nZRvm5Rxn5BpnJFwm5Fzm5BsmpFympFsmo5smZBymZBwmZBrmI5tmIxplo5xlo5tloxvlottlo1qlo1mlYpnlIxtk4pskolskohpk4tnk4lnkohnkollkolhkIdrkIdokIdmj4VokIZkkIZgkIRfjoZmjYVojYVhjYRnjYRgjINnjYNjjINfi4JmjIJji4JeioBlioBiioBhioFeioBbin5ah4FiiH9fhn9gh35hh35ahn5fh31gh31ahX1ehnxghnxdhXxZhHtcg3tdiXZJhHlYg3pdg3pWg3ZTgnldgnlWgndWgXlcgXhWgXZVf3dff3dbf3dZgHdVf3ZUf3VYf3VTfnRVf3BJfHVafHRYfHNYe3JXfXRSfHNSe3JSenFXenFTenFRenBOeW9Qe2k9d3FVd29Vd29Pdm5Ud25OdW1UdW1QdWxOdmxLc2tTdGtPc2tNcmlPc2pMdGpIdGZAcGpQcGhQcGhKb2dOcGdKb2ZOb2VKb2VHbWZNbWRKbGNJa2RLamJJaGNLb186amBGaWBHaGBHZ2BHZ11FZl9JZl5EZVxFZF1HY1tGYVxHYVlFXllGY1xCYVpBYFlBX1hBYlY6XlZBXVZBXFVAWlRCWlQ/WVJAWVM8WlE7V1A9VlA8X0oyVE88VEw4UU09UUs5UEo4T0k3TEg4TEY3TUUxSkQ0R0Q2R0ExREAyQj4vQTssPTsyOzguOjYqNTUuNTEmLy8oLSohKSghJSUhISEcHh4ZGxwZGRkWFxYTFBUTEhMQDxAODA0LCgoJBgYG", "pal_count": 256, "pos": "data/eth3d20-office-omega.bin", "dist": "data/eth3d20-office-omega-dist.bin", "colour_error": 1.11, "label": "VGGT-Ω — F@1 = 0.936"}}, "predictions": ["da3", "omega"], "default_cloud": "omega", "cams": true, "camshots": {"url": "data/eth3d20-office-cams.jpg", "cols": 5, "rows": 4, "w": 256, "h": 192, "tile": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [0, 3], [1, 3], [2, 3], [3, 3], [4, 3]], "names": ["DSC_0219.JPG", "DSC_0220.JPG", "DSC_0222.JPG", "DSC_0223.JPG", "DSC_0228.JPG", "DSC_0230.JPG", "DSC_0231.JPG", "DSC_0235.JPG", "DSC_0237.JPG", "DSC_0238.JPG", "DSC_0239.JPG", "DSC_0240.JPG", "DSC_0242.JPG", "DSC_0243.JPG", "DSC_0248.JPG", "DSC_0250.JPG", "DSC_0251.JPG", "DSC_0252.JPG", "DSC_0254.JPG", "DSC_0255.JPG"]}, "basis": [0.0, -0.2922409981559579, -0.9563447072038459, 0.0, -0.9787740005863055, 0.19599573924925404, -0.05989262035023528, 0.0, 0.20494256701885774, 0.9360453350094471, -0.286037890900442, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [1.2051987477165702, 0.5145189323327419, 1.1356023436945368], "radius": 6.585479656208539, "theta": -0.6680783774498267, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 20, "per": 48, "edge": 0.28528976133078543}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.07382401028866449, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
 (function () {
   var META = window.VIEWER;
   var host = document.getElementById('gl');
-  var state = {cloud: META.default_cloud, colour: 'rgb', cams: false, size: META.point_size};
+  var state = {cloud: META.default_cloud, colour: 'rgb', cams: META.cams !== false,
+               size: META.point_size};
   var ready = false, dirty = true, benchMode = /[?&]bench/.test(location.search);
 
   // ---------------------------------------------------------------- URL hash
@@ -75,6 +88,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
     if (parts[1] === 'rgb' || parts[1] === 'dist') { state.colour = parts[1]; }
     if (parts[2] === 'cams') { state.cams = true; }
+    if (parts[2] === 'nocams') { state.cams = false; }
     var size = parseFloat(parts[3]);
     if (isFinite(size) && size > 0) { state.size = size; }
     for (var i = 4; i < parts.length; i++) {
@@ -89,7 +103,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     }
   }
   function toHash() {
-    var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
+    var tail = (state.cams ? ':cams' : ':nocams') + ':' + state.size.toFixed(1);
     if (control) {
       // the point we orbit around is part of the view: share or reload it, not just the rotation
       tail += ':@' + [control.target.x, control.target.y, control.target.z, control.radius,
@@ -234,7 +248,14 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     toHash();
   });
   host.addEventListener('pointermove', function (event) {
-    if (!drag) { return; }
+    if (!drag) {
+      // idle hover: is the cursor on a camera pyramid?
+      var over = cameraUnder(event);
+      showCamShot(over, event.clientX, event.clientY);
+      host.style.cursor = over === null ? 'grab' : 'help';
+      return;
+    }
+    hideCamShot();
     var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     drag.x = event.clientX; drag.y = event.clientY;
     if (drag.pan || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
@@ -364,16 +385,85 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   }
 
   // ----------------------------------------------------------------- drawing
-  var frustums = null;
+  // One pyramid per GT camera rather than a single merged wireframe: a pyramid can then be picked
+  // with the mouse, which is what makes "по наведению картинка из этой пирамидки" possible.
+  var camGroup = null, raycaster = new THREE.Raycaster();
   if (META.frustums) {
-    var fgeo = new THREE.BufferGeometry();
-    fgeo.setAttribute('position', new THREE.BufferAttribute(floats(META.frustums.b64), 3));
-    // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
-    frustums = new THREE.LineSegments(fgeo, new THREE.LineBasicMaterial(
-      {color: 0xffb020, depthTest: false, transparent: true, opacity: 0.85}));
-    frustums.renderOrder = 1;
-    frustums.visible = false;
-    root.add(frustums);
+    camGroup = new THREE.Group();
+    var raw = floats(META.frustums.b64), per = META.frustums.per;
+    var apexOf = function (slice) {
+      var point = new THREE.Vector3();
+      for (var v = 0; v < slice.length; v += 3) {
+        point.x += slice[v]; point.y += slice[v + 1]; point.z += slice[v + 2];
+      }
+      return point.multiplyScalar(3 / slice.length);
+    };
+    // A pyramid seen head-on is a handful of thin lines, so an invisible sphere sits inside each
+    // one: the cursor lands on it from any angle, the drawing stays a wireframe.
+    var hitGeometry = new THREE.SphereGeometry(1, 10, 8);
+    var hitMaterial = new THREE.MeshBasicMaterial({transparent: true, opacity: 0, depthWrite: false});
+    // A hundred pyramids in one place turn into an orange tangle over the cloud, so the denser the
+    // camera path, the fainter the wireframe: hovering still works, reading the cloud still works.
+    var cameras = raw.length / per;
+    var wireOpacity = cameras > 40 ? 0.35 : (cameras > 18 ? 0.55 : 0.85);
+    for (var c = 0; c < raw.length / per; c++) {
+      var slice = raw.subarray(c * per, (c + 1) * per);
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(slice.slice(), 3));
+      // The cameras sit inside the cloud they photographed, so the trail is drawn through it.
+      var wire = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial(
+        {color: 0xffb020, depthTest: false, transparent: true, opacity: wireOpacity}));
+      wire.renderOrder = 1;
+      wire.userData.cam = c;
+      camGroup.add(wire);
+      var hit = new THREE.Mesh(hitGeometry, hitMaterial);
+      hit.position.copy(apexOf(slice));
+      hit.scale.setScalar(META.frustums.edge * 0.9);
+      hit.userData.cam = c;
+      camGroup.add(hit);
+    }
+    camGroup.visible = state.cams;
+    root.add(camGroup);
+    raycaster.params.Line = {threshold: META.frustums.edge * 0.12};
+  }
+
+  // --------------------------------------------------------------- frame hover
+  var camTip = document.getElementById('camshot'), camTipImg = document.getElementById('camshotimg'),
+      camTipCap = document.getElementById('camshotcap'), camShown = null;
+  function hideCamShot() {
+    if (camTip && camShown !== null) { camTip.style.display = 'none'; camShown = null; }
+  }
+  function showCamShot(index, x, y) {
+    var sheet = META.camshots;
+    if (!camTip) { return; }
+    if (!sheet || index === null || !sheet.tile[index]) { camShown = null; camTip.style.display = 'none'; return; }
+    if (camShown !== index) {
+      var cell = sheet.tile[index];
+      camTipImg.style.backgroundImage = "url('" + sheet.url + "')";
+      camTipImg.style.backgroundSize = (sheet.cols * 224) + 'px ' + (sheet.rows * 168) + 'px';
+      camTipImg.style.backgroundPosition = (-cell[0] * 224) + 'px ' + (-cell[1] * 168) + 'px';
+      camTipCap.textContent = 'кадр ' + (index + 1) + ' / ' + sheet.tile.length + ' · ' + sheet.names[index];
+      camShown = index;
+    }
+    camTip.style.display = 'block';
+    var width = camTip.offsetWidth, height = camTip.offsetHeight;
+    camTip.style.left = Math.min(x + 18, window.innerWidth - width - 8) + 'px';
+    camTip.style.top = Math.min(Math.max(y - height / 2, 8), window.innerHeight - height - 8) + 'px';
+  }
+  function cameraUnder(event) {
+    if (!camGroup || !camGroup.visible || !META.camshots) { return null; }
+    var box = host.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) { return null; }
+    var ndc = new THREE.Vector2(((event.clientX - box.left) / box.width) * 2 - 1,
+                               -((event.clientY - box.top) / box.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    scene.updateMatrixWorld();
+    var hits = raycaster.intersectObjects(camGroup.children, false);
+    for (var i = 0; i < hits.length; i++) {
+      var cam = hits[i].object.userData.cam;
+      if (cam !== undefined) { return cam; }
+    }
+    return null;
   }
 
   function chosen() {
@@ -452,7 +542,8 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
       if (on) { shown += spec.count; }
     }
-    if (frustums) { frustums.visible = state.cams; }
+    if (camGroup) { camGroup.visible = state.cams; }
+    if (!state.cams) { hideCamShot(); }
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
          + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
     syncButtons();
@@ -463,6 +554,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
   });
+  host.addEventListener('pointerleave', hideCamShot);
   document.getElementById('size').addEventListener('input', function () {
     state.size = parseFloat(this.value);
     forEachObject(function (obj) { obj.material.uniforms.uSize.value = state.size; });
