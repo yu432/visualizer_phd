@@ -876,16 +876,24 @@ def _rodrigues(vector, axis, degrees):
             + axis * np.dot(axis, vector) * (1.0 - np.cos(angle)))
 
 
-def three_quarter(towards_camera, up, yaw=32.0, pitch=20.0):
-    """Turn a frontal camera direction into an oblique one: first sideways, then raise it."""
-    towards_camera = towards_camera / np.linalg.norm(towards_camera)
-    up = up - towards_camera * np.dot(up, towards_camera)
+def view_direction(up, towards_camera, yaw=32.0, elevation=20.0):
+    """Direction from the target to the eye for the opening shot.
+
+    The azimuth comes from a camera (a view exactly along it reads as a flat picture) turned
+    sideways by yaw; the elevation is counted from the scene's own horizon, so the page opens
+    on the same kind of 3/4 aerial view the report figures use. Raising a camera's own axes
+    instead does not work: there the eye and the up vector are perpendicular by construction,
+    so the eye stays level with the target and only the head gets tilted.
+    """
+    up = np.asarray(up, dtype=np.float64)
     up = up / np.linalg.norm(up)
-    side = np.cross(up, towards_camera)
-    direction = _rodrigues(towards_camera, up, yaw)
-    side = _rodrigues(side, up, yaw)
-    direction = _rodrigues(direction, side, pitch)
-    return direction / np.linalg.norm(direction), _rodrigues(up, side, pitch)
+    horizontal = np.asarray(towards_camera, dtype=np.float64)
+    horizontal = horizontal - float(horizontal @ up) * up
+    if np.linalg.norm(horizontal) < 1e-6:
+        horizontal = np.array([1.0, 0.0, 0.0]) - up[0] * up
+    horizontal = _rodrigues(horizontal / np.linalg.norm(horizontal), up, yaw)
+    angle = np.radians(elevation)
+    return horizontal * np.cos(angle) + up * np.sin(angle)
 
 
 def scene_basis(up):
@@ -913,25 +921,28 @@ def orbit_camera(rotation, centre, eye, radius):
                 phi=float(np.arccos(np.clip(direction[1], -1.0, 1.0))))
 
 
-def framing_radius(rotation, centre, eye, points, aspect=1.6, margin=1.10):
+def framing_radius(rotation, centre, eye, points, aspect=1.7, margin=1.12):
     """Camera distance that actually fills the frame with the points that are drawn.
 
     The bounding-box diagonal over-estimates the distance badly for flat, elongated scenes
-    (a barn is long and low), which left the cloud small in the middle of the page.
+    (a barn is long and low), which left the cloud small in the middle of the page, while a
+    cloud framed by the box alone runs over the edges. Everything here is in the rotated frame
+    the page uses, where up is +Y: the eye has to be rotated too, or the horizontal and the
+    vertical half-angles swap and the picture is cropped on the wrong sides.
     """
     eye = np.asarray(eye, dtype=np.float64)
     eye = eye / np.linalg.norm(eye)
-    reference = np.array([0.0, 1.0, 0.0])
-    right = np.cross(reference, eye)
+    local_eye = rotation @ eye
+    right = np.cross(np.array([0.0, 1.0, 0.0]), local_eye)
     right = right / np.linalg.norm(right)
-    up = np.cross(eye, right)
+    up = np.cross(local_eye, right)
     local = (np.asarray(points, dtype=np.float64) - centre) @ rotation.T
-    depth = local @ eye
+    depth = local @ local_eye
     tan_v = np.tan(np.radians(FOV) / 2.0)
     tan_h = tan_v * aspect
     need = np.maximum(depth + np.abs(local @ right) / tan_h,
                       depth + np.abs(local @ up) / tan_v)
-    return float(np.percentile(need, 99.5) * margin)
+    return float(np.percentile(need, 99.9) * margin)
 
 
 FRUSTUM_SEGMENTS = 8  # 4 sides from the apex + the 4 edges of the image plane
@@ -1124,9 +1135,10 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
     # them cancels it and recovers the vertical of the reconstruction itself.
     averaged = -extrinsics[:, :3, :3][:, 1, :].mean(axis=0)
     _, _, forward = view_basis(extrinsics[0])
-    eye, up = three_quarter(-(to_cloud @ np.asarray(forward, dtype=np.float64)),
-                            to_cloud @ averaged, yaw=32.0, pitch=20.0)
+    up = to_cloud @ averaged
     rotation, basis = scene_basis(up)
+    eye = view_direction(up, -(to_cloud @ np.asarray(forward, dtype=np.float64)),
+                         yaw=32.0, elevation=20.0)
     span = float(np.linalg.norm(high - low))
     drawn = np.concatenate(framed) if framed else 0.5 * (low + high)[None, :]
     drawn_low, drawn_high = percentile_box(drawn, 1.0, 99.0, 0.0)
