@@ -1,0 +1,166 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DA3-Giant и VGGT-Ω: облака точек на ETH3D-10 и Tanks and Temples</title>
+<meta name="description" content="Локальный прогон DA3-Giant-1.1 и VGGT-Omega-1B на ETH3D-10 и Tanks and Temples: облака точек, глубина, позы и сравнение с лазерным эталоном.">
+<meta property="og:title" content="DA3-Giant и VGGT-Ω: облака точек на ETH3D-10 и Tanks and Temples">
+<meta property="og:description" content="Интерактивные облака точек и сравнение с GT: DA3-Giant против VGGT-Ω.">
+<meta property="og:type" content="website">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14171c; color: #e8e8e8; line-height: 1.55;
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 44px 24px 72px; }
+  h1 { font-size: 30px; line-height: 1.2; margin: 0 0 10px; }
+  h2 { font-size: 19px; margin: 46px 0 12px; padding-bottom: 7px; border-bottom: 1px solid #262c35; }
+  p  { color: #aab2bd; max-width: 760px; }
+  a  { color: #6cb6ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .lede { color: #c9d1db; font-size: 16.5px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
+  .btn { display: inline-block; padding: 9px 15px; border-radius: 8px; background: #1e242c;
+         border: 1px solid #2e3742; color: #dfe5ec; font-size: 14px; }
+  .btn:hover { background: #262e38; text-decoration: none; }
+  .btn.primary { background: #2b6cb0; border-color: #3b82d0; color: #fff; font-weight: 600; }
+  .btn.primary:hover { background: #3177c0; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .card { background: #171b21; border: 1px solid #262c35; border-radius: 10px; overflow: hidden;
+          display: flex; flex-direction: column; }
+  .card img { width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover;
+              object-position: center; background: #0e1116; }
+  .card .meta { padding: 10px 13px 13px; font-size: 13.5px; }
+  .card .name { color: #e8e8e8; font-weight: 600; margin-bottom: 3px; }
+  .card .num { color: #8f98a3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  .card.plain { justify-content: center; }
+  table { border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; }
+  th, td { padding: 5px 9px; border-bottom: 1px solid #242a33; text-align: right; white-space: nowrap; }
+  th { color: #8f98a3; font-weight: 600; font-size: 12px; text-transform: none; }
+  th:first-child, td:first-child { text-align: left; }
+  td.best { color: #ffffff; font-weight: 700; }
+  tbody tr:hover { background: #1a1f26; }
+  .scroll { overflow-x: auto; }
+  .note { color: #6b7480; font-size: 12.5px; max-width: 760px; }
+  code { background: #22262e; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid #262c35;
+           color: #6b7480; font-size: 12.5px; max-width: 820px; }
+</style>
+<div class="wrap">
+<h1>DA3-Giant и VGGT-Ω: облака точек на ETH3D-10 и Tanks and Temples</h1>
+<p class="lede">Два монокулярных реконструктора — DA3-Giant-1.1 и VGGT-Omega-1B — прогнаны локально на одинаковых наборах кадров, и их облака точек, глубина и позы сравнены с эталоном. На страницах ниже облака можно вращать и переключать между методами и лазерным сканом.</p>
+<div class="actions">
+  <a class="btn primary" href="#scenes">Смотреть облака</a>
+  <a class="btn" href="report.pdf">PDF-отчёт</a>
+  <a class="btn" href="https://github.com/yu432/visualizer_phd">Код и данные прогона</a>
+  <a class="btn" href="data/summary.json">Числа (JSON)</a>
+</div>
+
+<h2 id="scenes">Сцены</h2>
+<p>Девять страниц, по одной на сцену. Мышь вращает, колесо зумит, правая кнопка сдвигает.
+Сверху переключается облако (GT, DA3-Giant, VGGT-Ω или оба предсказания) и раскраска —
+цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога).
+Каждая страница самодостаточна, кроме соседнего <code>plotly.min.js</code>.</p>
+<div class="cards">
+<a class="card" href="viewer/eth3d-courtyard.html">
+  <img src="viewer/thumb-eth3d-courtyard.jpg" alt="ETH3D / courtyard" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / courtyard</div>
+    <div class="num">DA3 0.966 · Ω 0.970</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-delivery_area.html">
+  <img src="viewer/thumb-eth3d-delivery_area.jpg" alt="ETH3D / delivery_area" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / delivery_area</div>
+    <div class="num">DA3 0.881 · Ω 0.972</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-facade.html">
+  <img src="viewer/thumb-eth3d-facade.jpg" alt="ETH3D / facade" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / facade</div>
+    <div class="num">DA3 0.976 · Ω 0.979</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-office.html">
+  <img src="viewer/thumb-eth3d-office.jpg" alt="ETH3D / office" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / office</div>
+    <div class="num">DA3 0.937 · Ω 0.966</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-terrace.html">
+  <img src="viewer/thumb-eth3d-terrace.jpg" alt="ETH3D / terrace" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / terrace</div>
+    <div class="num">DA3 0.975 · Ω 0.978</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt-barn.html">
+  <img src="viewer/thumb-tnt-barn.jpg" alt="Tanks and Temples / barn" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples / barn</div>
+    <div class="num">DA3 0.677 · Ω 0.767</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt-courthouse.html">
+  <img src="viewer/thumb-tnt-courthouse.jpg" alt="Tanks and Temples / courthouse" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples / courthouse</div>
+    <div class="num">DA3 0.423 · Ω 0.055</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt-ignatius.html">
+  <img src="viewer/thumb-tnt-ignatius.jpg" alt="Tanks and Temples / ignatius" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples / ignatius</div>
+    <div class="num">DA3 rot 0.54° · Ω rot 0.44°</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt-meetingroom.html">
+  <img src="viewer/thumb-tnt-meetingroom.jpg" alt="Tanks and Temples / meetingroom" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples / meetingroom</div>
+    <div class="num">DA3 rot 0.46° · Ω rot 0.54°</div>
+  </div>
+</a>
+</div>
+
+<h2>Что показано</h2>
+<h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>ETH3D, 10 кадров</h3>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>AbsRel (s+t)</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>courtyard</td><td>da3-giant</td><td>0.931</td><td>0.966</td><td>0.0085</td><td>1.11</td></tr>
+<tr><td>courtyard</td><td>vggt-omega</td><td>0.928</td><td>0.970</td><td class="best">0.0056</td><td>0.55</td></tr>
+<tr><td>delivery_area</td><td>da3-giant</td><td>0.855</td><td>0.881</td><td>0.0273</td><td>6.86</td></tr>
+<tr><td>delivery_area</td><td>vggt-omega</td><td>0.928</td><td>0.972</td><td>0.0112</td><td>2.91</td></tr>
+<tr><td>facade</td><td>da3-giant</td><td>0.961</td><td>0.976</td><td>0.0105</td><td class="best">0.43</td></tr>
+<tr><td>facade</td><td>vggt-omega</td><td>0.965</td><td class="best">0.979</td><td>0.0082</td><td>1.40</td></tr>
+<tr><td>office</td><td>da3-giant</td><td>0.807</td><td>0.937</td><td>0.0096</td><td>1.82</td></tr>
+<tr><td>office</td><td>vggt-omega</td><td>0.898</td><td>0.966</td><td>0.0067</td><td>0.77</td></tr>
+<tr><td>terrace</td><td>da3-giant</td><td>0.952</td><td>0.975</td><td>0.0268</td><td>1.30</td></tr>
+<tr><td>terrace</td><td>vggt-omega</td><td class="best">0.967</td><td>0.978</td><td>0.0059</td><td>0.44</td></tr>
+</tbody></table></div>
+<h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Tanks and Temples, 16 кадров</h3>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.462</td><td>0.677</td><td class="best">10.6</td><td>0.48</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td class="best">0.527</td><td class="best">0.767</td><td>10.7</td><td>0.64</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.276</td><td>0.423</td><td>86.7</td><td>3.51</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.028</td><td>0.055</td><td>384.3</td><td>47.32</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.54</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td class="best">0.44</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.46</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>0.54</td></tr>
+</tbody></table></div>
+<p class="note">Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, 10 кадров, официальный протокол. Tanks and Temples: 4 сцены по 16 кадров, лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы.</p>
+
+<h2>Как это посчитано</h2>
+<p>Облако предсказания приводится в систему координат эталона через sim(3) по центрам камер (Umeyama), на ETH3D дополнительно уточняется ICP. F-score считается при порогах 0.5 % и 1 % диагонали эталонного облака. Для Tanks and Temples облако обрезано официальным полигоном GT и выровнено только по позам — без ICP; «точн. мед.» — медианное расстояние от точки предсказания до ближайшей точки лазерного скана.</p>
+
+<footer>
+<p>Данные и веса моделей в репозиторий не входят: сюда попадают только код, числа и страницы
+просмотра. ETH3D — CC BY-NC-SA 4.0; Tanks and Temples — только некоммерческое исследовательское
+использование, лазерные облака получены из публичного зеркала (официальный архив за закрытым
+Google Drive). Веса VGGT-Ω — под лицензией fair-noncommercial-research. Числа получены локально
+на Apple M3 Max, 36 ГБ, MPS.</p>
+</footer>
+</div>
