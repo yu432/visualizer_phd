@@ -117,6 +117,7 @@ CARD = """<a class="card" href="viewer/__PAGE__">
 
 TITLES = {"eth3d": "ETH3D", "tnt": "Tanks and Temples",
           "tnt100": "Tanks and Temples, 100 кадров"}
+LABELS = {"eth3d": "ETH3D", "tnt": "T&T, 16 кадров", "tnt100": "T&T, 100 кадров"}
 
 
 def pretty(dataset, scene):
@@ -351,7 +352,7 @@ def main() -> int:
     for dataset in ("eth3d", "tnt", "tnt100"):
         found = sum(1 for key in pairs if key[0] == dataset)
         if found:
-            counts.append("%d — %s" % (found, TITLES[dataset].lower()))
+            counts.append("%d — %s" % (found, LABELS[dataset]))
     scene_note = ("По странице на сцену, всего %d (%s)."
                   % (len(pairs), ", ".join(counts)) if counts else "По странице на сцену.")
 
