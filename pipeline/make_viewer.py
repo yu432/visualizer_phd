@@ -224,16 +224,28 @@ SCRIPT = r"""
   scene.add(root);
   var camera = new THREE.PerspectiveCamera(META.fov, 1, 0.001, 1e6);
 
+  // Point size is a pixel size at REF_DIST, the distance of the opening view, not at whatever
+  // distance the orbit happens to be at. The difference matters when zooming in: tying the
+  // reference to the live radius cancels the perspective, so the dots stayed 2 px while the
+  // building grew around them and a close-up turned into sparse dust. With a fixed reference the
+  // dots grow with the geometry, the exponent below halves that growth so it stays readable, and
+  // the floor/cap in CSS pixels keep them from vanishing in a wide shot or turning into blobs.
+  var REF_DIST = META.camera.radius;
+  var MIN_POINT_PX = 1.2;   // floor in CSS pixels: distant points stay visible in a wide shot
+  var MAX_POINT_PX = 26.0;  // ceiling in CSS pixels: a point right under the camera is not a blob
   var VERTEX = [
     'uniform vec3 uCentre;', 'uniform vec3 uHalf;', 'uniform float uSize;',
     'uniform float uPixel;', 'uniform float uRefDist;',
+    'uniform float uMinPx;', 'uniform float uMaxPx;',
     'attribute float aIndex;', 'attribute float aDist;',
     'varying float vIndex;', 'varying float vDist;',
     'void main() {',
     '  vIndex = aIndex; vDist = aDist / 255.0;',
     '  vec4 view = modelViewMatrix * vec4(position * uHalf + uCentre, 1.0);',
     '  gl_Position = projectionMatrix * view;',
-    '  gl_PointSize = clamp(uSize * uPixel * uRefDist / max(-view.z, 1e-9), 1.0, 40.0);',
+    '  float atten = clamp(uRefDist / max(-view.z, 1e-9), 0.06, 30.0);',
+    '  float px = uSize * uPixel * pow(atten, 0.7);',
+    '  gl_PointSize = clamp(px, uMinPx * uPixel, uMaxPx * uPixel);',
     '}'
   ].join('\n');
 
@@ -258,7 +270,9 @@ SCRIPT = r"""
         uHalf: {value: new THREE.Vector3().fromArray(spec.half)},
         uSize: {value: state.size},
         uPixel: {value: renderer.getPixelRatio()},
-        uRefDist: {value: 1.0},
+        uRefDist: {value: REF_DIST},
+        uMinPx: {value: MIN_POINT_PX},
+        uMaxPx: {value: MAX_POINT_PX},
         uPalette: {value: texture(bytes(spec.pal), spec.pal_count)},
         uRamp: {value: RAMP},
         uPalCount: {value: spec.pal_count},
@@ -286,7 +300,6 @@ SCRIPT = r"""
     camera.near = Math.max(s.radius * 0.002, 1e-5);
     camera.far = s.radius * 40.0;
     camera.updateProjectionMatrix();
-    forEachObject(function (obj) { obj.material.uniforms.uRefDist.value = s.radius; });
     dirty = true;
   }
   function forEachObject(visit) {
@@ -418,7 +431,7 @@ SCRIPT = r"""
                              + spec.half[2] * spec.half[2]);
       geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
       var object = new THREE.Points(geo, materialFor(spec));
-      object.material.uniforms.uRefDist.value = control.radius;
+      object.material.uniforms.uRefDist.value = REF_DIST;
       object.visible = false;
       root.add(object);
       spec.object = object;

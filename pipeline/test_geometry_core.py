@@ -105,3 +105,47 @@ def test_voxel_downsample_is_deterministic_and_reduces():
 
 def test_align_rejects_degenerate_input():
     assert align_clouds(np.zeros((10, 3)), np.zeros((10, 3)))["status"] == "failed"
+
+def test_drive_url_carries_resource_key():
+    """Without the resource key Drive answers with a sign-in page, so the key has to be in the URL."""
+    from fetch_tnt_gt_drive import drive_url
+    assert drive_url("abc", "0-key") == "https://drive.google.com/uc?export=download&id=abc&resourcekey=0-key"
+    assert "resourcekey" not in drive_url("abc")
+
+
+def test_drive_confirm_form_is_parsed():
+    """Drive's "virus scan warning" page hides the real transfer in a GET form."""
+    from fetch_tnt_gt_drive import bandwidth_note, form_params
+    page = (
+        '<html><body><p>Google Drive can not scan this file for viruses.</p>'
+        '<p><b>Ignatius.ply</b> (129M) is too large for Google to scan for viruses.</p>'
+        '<form id="download-form" action="https://drive.usercontent.google.com/download" method="get">'
+        '<input type="submit" value="Download anyway"/>'
+        '<input type="hidden" name="id" value="0B-file"/>'
+        '<input type="hidden" name="export" value="download"/>'
+        '<input type="hidden" name="confirm" value="t"/>'
+        "</form></body></html>"
+    )
+    action, fields = form_params(page)
+    assert action == "https://drive.usercontent.google.com/download"
+    assert fields == {"id": "0B-file", "export": "download", "confirm": "t"}
+    assert bandwidth_note(page) == "Ignatius.ply (129M)"
+
+
+def test_fetcher_verify_rejects_wrong_payload(tmp_path):
+    """A quota page saved as .ply must not pass as a laser scan."""
+    from fetch_tnt_gt_drive import verify
+    good = tmp_path / "Scene.ply"
+    good.write_bytes(b"ply\nformat binary_little_endian 1.0\nelement vertex 42\n")
+    assert "42" in verify("cloud", good)
+    bad = tmp_path / "Quota.ply"
+    bad.write_bytes(b"<!DOCTYPE html><title>Google Drive - Quota exceeded</title>")
+    with pytest.raises(ValueError):
+        verify("cloud", bad)
+    crop = tmp_path / "Scene.json"
+    crop.write_text('{"bounding_polygon": [[0, 0], [1, 0], [1, 1]], "orthogonal_axis": "Z", '
+                    '"axis_min": -1.0, "axis_max": 1.0}')
+    assert "3 points" in verify("crop", crop)
+    transform = tmp_path / "Scene_trans.txt"
+    transform.write_text("0.5 0 0 1\n0 0.5 0 2\n0 0 0.5 3\n0 0 0 1\n")
+    assert "scale 0.5000" in verify("transform", transform)
