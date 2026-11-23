@@ -59,6 +59,15 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
               border-radius:5px; }
 #camshotcap { color:#c3cad3; font-size:11.5px; margin-top:5px; padding:0 2px;
               font-variant-numeric:tabular-nums; white-space:nowrap; }
+#legend { display:none; position:fixed; left:14px; bottom:14px; z-index:6; pointer-events:none;
+          background:rgba(20,23,28,.88); border:1px solid #2b313a; border-radius:8px;
+          padding:8px 10px 7px; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+          box-shadow:0 8px 22px rgba(0,0,0,.45); max-width:260px; }
+#legendtitle { color:#dfe5ec; font-size:12px; margin-bottom:6px; }
+#legendbar { height:10px; border-radius:4px; border:1px solid #39424e; }
+#legendticks { display:flex; justify-content:space-between; color:#a8b0ba; font-size:11px;
+               margin-top:3px; font-variant-numeric:tabular-nums; }
+#legendnote { color:#6b7480; font-size:10.5px; margin-top:3px; line-height:1.3; }
 """
 
 HEADER = (
@@ -110,6 +119,18 @@ PROGRESS = """
 # belongs to the camera pyramid under it.
 CAMSHOT = """
 <div id="camshot"><div id="camshotimg"></div><div id="camshotcap"></div></div>
+"""
+
+# The distance colouring is meaningless without the scale it is drawn on: green means "on the
+# surface", but how many metres that is depends on the scene, so the bar carries the actual tau.
+LEGEND = """
+<div id="legend">
+  <div id="legendtitle"></div>
+  <div id="legendbar"></div>
+  <div id="legendticks"><span id="legendlo">0</span><span id="legendmid"></span>
+    <span id="legendhi"></span></div>
+  <div id="legendnote"></div>
+</div>
 """
 
 SCRIPT = r"""
@@ -514,6 +535,30 @@ SCRIPT = r"""
     return [state.cloud];
   }
   function hint(text) { document.getElementById('hint').textContent = text; }
+
+  // -------------------------------------------------------------- colour scale
+  // Drawn only for the distance colouring: green/red only mean something together with the number
+  // that separates them, and that number is per scene (1 % of the GT diagonal).
+  var legend = document.getElementById('legend'), legendBuilt = false;
+  function quantity(value) {
+    return value >= 10 ? value.toFixed(1) : (value >= 1 ? value.toFixed(2) : value.toFixed(3));
+  }
+  function paintLegend() {
+    if (!legend) { return; }
+    var sheet = META.legend || {};
+    var on = state.colour === 'dist';
+    legend.style.display = on ? 'block' : 'none';
+    if (!on) { return; }
+    var title = state.cloud === 'gt' && sheet.gt ? sheet.gt : sheet.pred;
+    document.getElementById('legendtitle').textContent = title || 'расстояние';
+    if (!legendBuilt) {
+      document.getElementById('legendbar').style.background = META.ramp_css;
+      document.getElementById('legendmid').textContent = quantity(META.tau / 2);
+      document.getElementById('legendhi').textContent = 'τ = ' + quantity(META.tau);
+      document.getElementById('legendnote').textContent = sheet.note || '';
+      legendBuilt = true;
+    }
+  }
   function syncButtons() {
     var buttons = document.querySelectorAll('.pick');
     for (var i = 0; i < buttons.length; i++) {
@@ -587,6 +632,7 @@ SCRIPT = r"""
     }
     if (camGroup) { camGroup.visible = state.cams; }
     if (!state.cams) { hideCamShot(); }
+    paintLegend();
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
          + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
     syncButtons();
@@ -1112,6 +1158,15 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
         point_size=2.2,
         tau=float(tau),
         tau_note=tau_note,
+        ramp_css="linear-gradient(90deg, " + ", ".join(
+            "%s %.0f%%" % (colour, 100.0 * share) for share, colour in DIST_SCALE) + ")",
+        legend=dict(
+            pred=("расстояние до GT, ед. GT" if has_gt else "расхождение методов"),
+            gt=("GT → ближайшее предсказание, ед. GT" if has_gt else None),
+            note=("всё, что дальше τ, закрашено одним красным; τ = 1 % диагонали GT"
+                  if has_gt else
+                  "всё, что дальше τ, закрашено одним красным; τ = 1 % диагонали предсказаний"),
+        ),
         hint_rgb="цвет пикселей, из которых получены точки",
         hint_dist=("зелёный — на поверхности GT, красный — дальше \u03c4" if has_gt
                    else "зелёный — совпадение, красный — расхождение"),
@@ -1139,7 +1194,7 @@ def write_page(path, meta, heading, note):
         "%s%s\n<div id='gl'>%s</div>\n%s\n"
         "<script>window.VIEWER = %s;</script>\n%s\n"
         "</body>\n</html>\n"
-    ) % (heading, CSS, HEADER % (heading, note), controls, PROGRESS, CAMSHOT,
+    ) % (heading, CSS, HEADER % (heading, note), controls, PROGRESS + LEGEND, CAMSHOT,
          json.dumps(meta, ensure_ascii=False), SCRIPT)
     Path(path).write_text(html, encoding="utf-8")
     return len(html.encode("utf-8"))
