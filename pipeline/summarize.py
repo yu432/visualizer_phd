@@ -6,7 +6,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import OUTPUTS, read_json, write_json  # noqa: E402
 
-DATASETS = ("eth3d", "tnt")
+# tnt100 — the dense variation of the Tanks and Temples scenes: same scenes and the same laser
+# GT, 100 greedily selected frames instead of 16.
+DATASETS = ("eth3d", "tnt", "tnt100")
 
 
 def scene_row(dataset, scene, method):
@@ -54,7 +56,7 @@ def scene_row(dataset, scene, method):
         row["tolerance"] = dict(
             lidar_spacing_cm=tolerance.get("lidar_spacing_cm"),
             # T&T has no dense GT of the same frames, so only the pose variant is unbiased there.
-            primary="pose" if dataset == "tnt" else "icp",
+            primary="pose" if dataset.startswith("tnt") else "icp",
             variants={tag: {key: block.get(key) for key in keys}
                       for tag, block in tolerance["variants"].items()},
         )

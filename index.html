@@ -47,7 +47,7 @@
 </style>
 <div class="wrap">
 <h1>DA3-Giant и VGGT-Ω: облака точек на ETH3D-10 и Tanks and Temples</h1>
-<p class="lede">Два монокулярных реконструктора — DA3-Giant-1.1 и VGGT-Omega-1B — прогнаны локально на одинаковых наборах кадров, и их облака точек, глубина и позы сравнены с эталоном. На страницах ниже облака можно вращать и переключать между методами и лазерным сканом.</p>
+<p class="lede">Два монокулярных реконструктора — DA3-Giant-1.1 и VGGT-Omega-1B — прогнаны локально на одинаковых наборах кадров, и их облака точек, глубина и позы сравнены с эталоном. Для Tanks and Temples есть две схемы: 16 кадров и плотная — 100 кадров на ту же сцену. На страницах ниже облака можно вращать и переключать между методами и лазерным сканом.</p>
 <div class="actions">
   <a class="btn primary" href="#scenes">Смотреть облака</a>
   <a class="btn" href="report.pdf">PDF-отчёт</a>
@@ -124,6 +124,34 @@
     <div class="num">DA3 rot 0.46° · Ω rot 0.54°</div>
   </div>
 </a>
+<a class="card" href="viewer/tnt100-barn.html">
+  <img src="viewer/thumb-tnt100-barn.jpg" alt="Tanks and Temples, 100 кадров / barn" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / barn</div>
+    <div class="num">DA3 0.753 · Ω 0.834</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt100-courthouse.html">
+  <img src="viewer/thumb-tnt100-courthouse.jpg" alt="Tanks and Temples, 100 кадров / courthouse" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / courthouse</div>
+    <div class="num">DA3 0.586 · Ω 0.546</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt100-ignatius.html">
+  <img src="viewer/thumb-tnt100-ignatius.jpg" alt="Tanks and Temples, 100 кадров / ignatius" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / ignatius</div>
+    <div class="num">DA3 rot 0.81° · Ω rot 0.36°</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt100-meetingroom.html">
+  <img src="viewer/thumb-tnt100-meetingroom.jpg" alt="Tanks and Temples, 100 кадров / meetingroom" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / meetingroom</div>
+    <div class="num">DA3 rot 0.32° · Ω rot 0.23°</div>
+  </div>
+</a>
 </div>
 
 <h2>Что показано</h2>
@@ -151,7 +179,29 @@
 <tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.46</td></tr>
 <tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>0.54</td></tr>
 </tbody></table></div>
-<p class="note">Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, 10 кадров, официальный протокол. Tanks and Temples: 4 сцены по 16 кадров, лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы.</p>
+<h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Tanks and Temples, 100 кадров</h3>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.471</td><td>0.753</td><td>18.5</td><td>0.39</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td class="best">0.585</td><td class="best">0.834</td><td class="best">13.5</td><td>0.55</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.384</td><td>0.586</td><td>61.6</td><td>1.69</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.379</td><td>0.546</td><td>57.9</td><td>3.68</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.81</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>0.36</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.32</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td class="best">0.23</td></tr>
+</tbody></table></div>
+<h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Кадров 16 → 100: что изменилось</h3>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@1%, %</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.677 → 0.753</td><td>10.6 → 18.5</td><td>0.48 → 0.39</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td>0.767 → 0.834</td><td>10.7 → 13.5</td><td>0.64 → 0.55</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.423 → 0.586</td><td>86.7 → 61.6</td><td>3.51 → 1.69</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.055 → 0.546</td><td>384.3 → 57.9</td><td>47.32 → 3.68</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>0.54 → 0.81</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>0.44 → 0.36</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>0.46 → 0.32</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>0.54 → 0.23</td></tr>
+</tbody></table></div>
+<p class="note">Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, 10 кадров, официальный протокол. Tanks and Temples: 4 сцены в двух схемах — 16 и 100 кадров, лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы. В последней таблице одна ячейка показывает пару «16 → 100».</p>
 
 <h2>Как это посчитано</h2>
 <p>Облако предсказания приводится в систему координат эталона через sim(3) по центрам камер (Umeyama), на ETH3D дополнительно уточняется ICP. F-score считается при порогах 0.5 % и 1 % диагонали эталонного облака. Для Tanks and Temples облако обрезано официальным полигоном GT и выровнено только по позам — без ICP; «точн. мед.» — медианное расстояние от точки предсказания до ближайшей точки лазерного скана.</p>

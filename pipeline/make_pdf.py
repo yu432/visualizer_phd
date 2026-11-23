@@ -322,6 +322,34 @@ def tolerance_value(row, key, spec="%.1f"):
     return "—" if node is None else spec % node
 
 
+def scheme_table(sparse, dense):
+    """The same scene and method in both frame schemes, one cell per metric: "16 → 100".
+
+    Colour-by-column was meaningless here (a cell holds two numbers), so kinds are all None and
+    the reader follows the arrow instead of the fill.
+    """
+    index = {(row["scene"], row["method"]): row for row in sparse}
+    header = ["сцена", "метод", "кадров", "F@1%, 16 → 100", "точн. мед., см, 16 → 100",
+              "rot, °, 16 → 100"]
+    kinds = [None] * len(header)
+
+    def pair(label, old, new):
+        return "%s → %s" % (label(old), label(new))
+
+    body = []
+    for row in dense:
+        old = index.get((row["scene"], row["method"]))
+        if old is None:
+            continue
+        body.append([
+            row["scene"], row["method"], "%s → %d" % (old["frames"], row["frames"]),
+            pair(lambda r: value(r, "fscore_one", ("cloud",)), old, row),
+            pair(lambda r: tolerance_value(r, "accuracy_median_cm"), old, row),
+            pair(lambda r: value(r, "rotation_mean_deg", ("pose",), "%.2f"), old, row),
+        ])
+    return header, body, kinds
+
+
 def tnt_table(rows):
     header = ["сцена", "метод", "кадров", "F@0.5%", "F@1%", "prec@1%", "rec@1%",
               "точн. мед., см", "покр.90, см", "rot, °", "trans, %diag", "GT-облако"]
@@ -358,11 +386,12 @@ def range_of(rows, path, key, spec="%.3f", scale=1.0):
     return "—" if not numbers else "%s…%s" % (spec % min(numbers), spec % max(numbers))
 
 
-def scene_signature(rows, scene):
+def scene_signature(rows, scene, dataset=None):
     """One caption line tying a scene page back to the numbers in the summary tables."""
     parts = []
     for method in ("da3-giant", "vggt-omega"):
-        row = next((row for row in rows if row["scene"] == scene and row["method"] == method), None)
+        row = next((row for row in rows if row["scene"] == scene and row["method"] == method
+                    and (dataset is None or row["dataset"] == dataset)), None)
         if row is None:
             continue
         label = "da3" if method == "da3-giant" else "Ω"
@@ -390,6 +419,7 @@ def main() -> int:
     rows = summary["rows"]
     eth3d = [row for row in rows if row["dataset"] == "eth3d"]
     tnt = [row for row in rows if row["dataset"] == "tnt"]
+    tnt100 = [row for row in rows if row["dataset"] == "tnt100"]
     methods = summary.get("methods") or [summary.get("method", "da3-giant")]
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -400,7 +430,8 @@ def main() -> int:
     for name in methods:
         per_method[name] = dict(
             eth3d=[row for row in eth3d if row["method"] == name],
-            tnt=[row for row in tnt if row["method"] == name])
+            tnt=[row for row in tnt if row["method"] == name],
+            tnt100=[row for row in tnt100 if row["method"] == name])
     short = {"da3-giant": "DA3", "vggt-omega": "Ω"}
 
     def render(pdf, plan):
@@ -421,7 +452,8 @@ def main() -> int:
         base = 0.88 - 0.058 * len(title_lines) - 0.045
         figure.text(0.05, base, "Отчёт по локальному прогону: облака точек, глубина и позы, сравнение с GT",
                     fontsize=12.5, family=FONT)
-        figure.text(0.05, base - 0.036, "ETH3D (10-кадровый протокол, 5 сцен со зданиями) и Tanks and Temples (4 сцены)",
+        figure.text(0.05, base - 0.036,
+                    "ETH3D (10-кадровый протокол, 5 сцен со зданиями) и Tanks and Temples (4 сцены, схемы 16 и 100 кадров)",
                     fontsize=12.5, family=FONT)
 
         top = base - 0.10
@@ -437,10 +469,14 @@ def main() -> int:
                                                                      "depth", "absrel_scale_shift", "%.4f") for name in methods]),
                    ("ошибка поворота, ETH3D", [range_of([row for row in per_method[name]["eth3d"] if "pose" in row],
                                                         "pose", "rotation_mean_deg", "%.2f") + "°" for name in methods]),
-                   ("T&T: точность, м (barn / courthouse)",
+                   ("T&T: точность, м (barn / courthouse), 16 кадров",
                     [" / ".join(tolerance_metres(row) for row in (scene_row(per_method[name]["tnt"], scene)
                                                                  for scene in ("barn", "courthouse")))
-                     for name in methods])]
+                     for name in methods]),
+                   ("T&T: то же, 100 кадров",
+                    [" / ".join(tolerance_metres(scene_row(per_method[name]["tnt100"], scene))
+                                for scene in ("barn", "courthouse"))
+                     if per_method[name]["tnt100"] else "—" for name in methods])]
         y = top - 0.048
         for label, values in metrics:
             figure.text(column_x, y, label, fontsize=11.5, family=FONT)
@@ -476,6 +512,10 @@ def main() -> int:
             "обратная проекция валидных пикселей, stride 4.",
             "- Tanks and Temples: barn, courthouse, ignatius, meetingroom. Кадры выбраны жадно по покрытию точек, "
             "бюджет 16; у ETH3D — фиксированные 10.",
+            "- Вторая схема T&T — плотная: те же четыре сцены и тот же лазерный GT, но бюджет 100 кадров. "
+            "Плотная схема живёт в отдельном "
+            "наборе (data/inference/tnt100, outputs/tnt100), поэтому 16-кадровые результаты не перезаписаны; "
+            "лазерный скан, полигон и официальный файл выравнивания у обеих схем общие.",
             "- Лазерный GT T&T есть для barn (12.7 млн точек) и courthouse (59.1 млн) — из публичного зеркала "
             "gtsfm-datasets-mirror (официальные архивы только на Google Drive, квота недоступна). Он обрезан "
             "официальным SelectionPolygonVolume и переведён в COLMAP файлом <Scene>_trans.txt, как в официальном "
@@ -525,9 +565,25 @@ def main() -> int:
                             "официальным полигоном GT. «покр.90» — расстояние, ниже которого лежит 90% точек. "
                             "У ignatius и meetingroom лазерного GT нет (только Drive) — там прочерки. "
                             "Вариант с ICP сохранён в tolerance.json. Заливка — по той же шкале, что выше.")
+        if tnt100:
+            mark("T&T, 100 кадров: сводная таблица")
+            header, body, kinds = tnt_table(tnt100)
+            table_page(pdf, "T&T, 100 кадров: сводная таблица", header, body, kinds,
+                       note="Та же сцена, тот же лазерный скан, тот же официальный полигон и то же выравнивание "
+                            "pose, но кадров 100 вместо 16: облако плотнее, покрытие выше. Время инференса растёт "
+                            "почти линейно по числу кадров: DA3 ~2 мин на сцену (было ~20 с), VGGT-Ω ~5.5 мин "
+                            "(было ~31 с). Столбец «кадров» и GT-облако продублированы, чтобы таблицу можно было "
+                            "читать отдельно.")
+            mark("T&T: 16 кадров против 100")
+            header, body, kinds = scheme_table(tnt, tnt100)
+            table_page(pdf, "T&T: 16 кадров против 100", header, body, kinds,
+                       note="В каждой ячейке пара «16 → 100», обе схемы посчитаны одним и тем же кодом на одном и "
+                            "том же GT. F@1% и точность — по варианту pose. Если число выросло, плотная схема "
+                            "помогла; если упало — модель начала путаться в лишних кадрах или ухудшился масштаб.")
 
         # --- 5. one page per scene --------------------------------------------------
-        for dataset, subset, title in (("eth3d", eth3d, "ETH3D"), ("tnt", tnt, "Tanks and Temples")):
+        for dataset, subset, title in (("eth3d", eth3d, "ETH3D"), ("tnt", tnt, "Tanks and Temples"),
+                                       ("tnt100", tnt100, "T&T · 100 кадров")):
             seen = []
             for row in subset:
                 scene = row["scene"]
@@ -543,10 +599,10 @@ def main() -> int:
                 if check.exists():
                     # laser GT present: the orthographic overlay states the agreement better than
                     # a third 3D panel, whose dark pixel colours hide the walls
-                    entries.append((str(check), scene_signature(rows, scene)
+                    entries.append((str(check), scene_signature(rows, scene, dataset)
                                     + " · чёрный контур — лазерный скан, облака обрезаны полигоном GT"))
                 elif compare.exists():
-                    entries.append((str(compare), scene_signature(rows, scene)))
+                    entries.append((str(compare), scene_signature(rows, scene, dataset)))
                 if entries:
                     mark("%s / %s" % (title, scene))
                     image_page(pdf, "%s / %s" % (title, scene), entries, tolerance=1.75)
@@ -563,9 +619,10 @@ def main() -> int:
             "- courthouse — 89 м по диагонали: монокулярная глубина на 20–50 м даёт ошибки порядка метра, поэтому "
             "даже у DA3 медианная точность 0.79 м против 0.14 м на barn. Абсолютные сантиметры между сценами "
             "сравнивать нельзя, только внутри сцены.",
-            "- Неустойчивый случай: на courthouse у VGGT-Omega средняя ошибка вращения 47.3° (у DA3 — 3.5°) — "
-            "разворот примерно на 90° вокруг вертикали из-за симметричного фасада; показываем как ограничение метода, "
-            "а не прячем в средних.",
+            "- courthouse у VGGT-Omega на 16 кадрах: ошибка вращения 47.3° (разворот ~90° из-за симметричного "
+            "фасада), F@1% 0.055. На 100 кадрах — 3.7° и 0.546: провал был следствием нехватки кадров.",
+            "- Плотная схема дороже: кадров ×6, инференс ×6–11 (DA3 ~2 мин, VGGT-Ω ~5.5 мин на сцену), а на barn "
+            "медианная точность хуже при росте F@1% (p90 23 → 131 см) — лишние кадры добавляют дальние виды.",
             "- Небо вырезает внешний сегментатор (SegFormer-B1, Cityscapes): класс sky не покрывает пересветы, дымку "
             "и часть растительности у горизонта, поэтому остаточные артефакты сохраняются.",
             "- Веса VGGT-Omega — из публичного зеркала (официальный facebook/VGGT-Omega gated, запрос отклонён); файл "
@@ -585,6 +642,9 @@ def main() -> int:
             "## Команды (из корня репозитория)",
             "- prepare_eth3d_geometry.py --scenes courtyard delivery_area facade terrace office",
             "- prepare_tnt.py --scenes barn courthouse ignatius meetingroom --budget 16",
+            "- prepare_tnt.py --dataset tnt100 --gt-source tnt --budget 100 --scenes barn courthouse ignatius meetingroom  "
+            "(плотная схема: тот же скан и полигон, свои камеры; выходы в outputs/tnt100, clouds/tnt100)",
+            "- sh run_dense_tnt.sh  (небо, облака, позы, метрики, рисунки и просмотрщик для tnt100)",
             "- prepare_tnt_gt.py --scene barn --cloud <Barn.ply> --crop-json <Barn.json> --transform <Barn_trans.txt>"
             "  (лазерный GT: обрезка официальным полигоном + перевод в COLMAP)",
             "- tolerance_metrics.py --dataset tnt --scenes barn courthouse --methods da3-giant vggt-omega --out <dir>/tolerance.json",

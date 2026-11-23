@@ -32,6 +32,7 @@ GT_DEPTH_DIR = {"eth3d": ("data", "gt", "eth3d")}
 SCENES = {
     "eth3d": ["courtyard", "delivery_area", "facade", "office", "terrace"],
     "tnt": ["barn", "courthouse", "ignatius", "meetingroom"],
+    "tnt100": ["barn", "courthouse", "ignatius", "meetingroom"],
 }
 
 

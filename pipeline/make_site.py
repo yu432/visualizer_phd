@@ -115,8 +115,12 @@ CARD = """<a class="card" href="viewer/__PAGE__">
 </a>"""
 
 
+TITLES = {"eth3d": "ETH3D", "tnt": "Tanks and Temples",
+          "tnt100": "Tanks and Temples, 100 кадров"}
+
+
 def pretty(dataset, scene):
-    return ("ETH3D" if dataset == "eth3d" else "Tanks and Temples") + " / " + scene
+    return TITLES.get(dataset, dataset) + " / " + scene
 
 
 def panel_spans(image):
@@ -161,11 +165,12 @@ def thumb(figures, viewer_out, dataset, scene):
     return name
 
 
-def scene_number(rows, scene):
+def scene_number(rows, dataset, scene):
     """Card caption: F@1 for both methods, or pose error when the scene has no GT cloud."""
     parts = []
     for method in ("da3-giant", "vggt-omega"):
-        row = next((row for row in rows if row["scene"] == scene and row["method"] == method), None)
+        row = next((row for row in rows if row["dataset"] == dataset and row["scene"] == scene
+                    and row["method"] == method), None)
         if row is None:
             continue
         label = "DA3" if method == "da3-giant" else "Ω"
@@ -174,6 +179,34 @@ def scene_number(rows, scene):
         elif "pose" in row:
             parts.append("%s rot %s°" % (label, report.value(row, "rotation_mean_deg", ("pose",), "%.2f")))
     return " · ".join(parts)
+
+
+def compare_columns(sparse, dense):
+    """Header, body and colour kinds for the 16-frame vs 100-frame change per scene and method.
+
+    One cell holds both values around an arrow, so the column-kind colouring of the plain tables
+    does not apply; the reader compares the numbers inside the cell instead.
+    """
+    index = {(row["dataset"], row["scene"], row["method"]): row for row in sparse + dense}
+
+    def cells(scene, method):
+        old = index.get(("tnt", scene, method))
+        new = index.get(("tnt100", scene, method))
+        if old is None or new is None:
+            return None
+        return [scene, method,
+                "%s → %s" % (report.value(old, "fscore_one", ("cloud",)),
+                             report.value(new, "fscore_one", ("cloud",))),
+                "%s → %s" % (report.tolerance_value(old, "accuracy_median_cm"),
+                             report.tolerance_value(new, "accuracy_median_cm")),
+                "%s → %s" % (report.value(old, "rotation_mean_deg", ("pose",), "%.2f"),
+                             report.value(new, "rotation_mean_deg", ("pose",), "%.2f"))]
+
+    body = [row for row in (cells(scene, method)
+                            for scene in sorted({row["scene"] for row in dense})
+                            for method in ("da3-giant", "vggt-omega")) if row is not None]
+    header = ["сцена", "метод", "F@1%, %", "точн. мед., см", "rot, °"]
+    return header, body, [None] * len(header)
 
 
 def table_html(header, body, kinds, title):
@@ -264,11 +297,12 @@ def main() -> int:
         cards.append(card.replace("__PAGE__", page)
                      .replace("__THUMB__", image or "")
                      .replace("__SCENE__", pretty(dataset, scene))
-                     .replace("__NUM__", scene_number(rows, scene)))
+                     .replace("__NUM__", scene_number(rows, dataset, scene)))
     shutil.copyfile(Path(args.viewer) / "plotly.min.js", out / "viewer" / "plotly.min.js")
 
     eth3d = [row for row in rows if row.get("dataset") == "eth3d"]
     tnt = [row for row in rows if row.get("dataset") == "tnt"]
+    dense = [row for row in rows if row.get("dataset") == "tnt100"]
     tables = []
     if eth3d:
         header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "rot, °"]
@@ -288,9 +322,20 @@ def main() -> int:
                  report.tolerance_value(row, "accuracy_median_cm"),
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in tnt]
         tables.append(table_html(header, body, kinds, "Tanks and Temples, 16 кадров"))
+    if dense:
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "rot, °"]
+        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW]
+        body = [[row["scene"], row["method"],
+                 report.value(row, "fscore_half", ("cloud",)),
+                 report.value(row, "fscore_one", ("cloud",)),
+                 report.tolerance_value(row, "accuracy_median_cm"),
+                 report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in dense]
+        tables.append(table_html(header, body, kinds, "Tanks and Temples, 100 кадров"))
+        tables.append(table_html(*compare_columns(tnt, dense), title="Кадров 16 → 100: что изменилось"))
 
     lede = ("Два монокулярных реконструктора — DA3-Giant-1.1 и VGGT-Omega-1B — прогнаны локально на "
             "одинаковых наборах кадров, и их облака точек, глубина и позы сравнены с эталоном. "
+            "Для Tanks and Temples есть две схемы: 16 кадров и плотная — 100 кадров на ту же сцену. "
             "На страницах ниже облака можно вращать и переключать между методами и лазерным сканом.")
     method = ("Облако предсказания приводится в систему координат эталона через sim(3) по центрам камер "
               "(Umeyama), на ETH3D дополнительно уточняется ICP. F-score считается при порогах 0.5 % и 1 % "
@@ -298,8 +343,9 @@ def main() -> int:
               "GT и выровнено только по позам — без ICP; «точн. мед.» — медианное расстояние от точки "
               "предсказания до ближайшей точки лазерного скана.")
     table_note = ("Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, "
-                  "10 кадров, официальный протокол. Tanks and Temples: 4 сцены по 16 кадров, лазерный GT "
-                  "есть только у barn и courthouse — у ignatius и meetingroom остаются позы.")
+                  "10 кадров, официальный протокол. Tanks and Temples: 4 сцены в двух схемах — 16 и 100 кадров, "
+                  "лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы. "
+                  "В последней таблице одна ячейка показывает пару «16 → 100».")
 
     html = (TEMPLATE
             .replace("__TITLE__", args.title)

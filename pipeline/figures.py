@@ -120,7 +120,7 @@ LABEL = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω"}
 
 def gt_label(dataset):
     """"Lidar" is ETH3D's term; Tanks and Temples ships a terrestrial laser scan."""
-    return "GT: лазерный скан T&T" if dataset == "tnt" else "GT: лидар ETH3D"
+    return "GT: лазерный скан T&T" if dataset.startswith("tnt") else "GT: лидар ETH3D"
 
 
 def crop_to_region(dataset, scene, points, colours):

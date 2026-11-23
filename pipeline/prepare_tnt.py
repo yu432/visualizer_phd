@@ -63,10 +63,29 @@ def scaled_intrinsics(camera: dict, path: Path) -> tuple:
     return intrinsics, (height, width)
 
 
-def prepare(scene: str, budget: int, force: bool) -> dict:
+GT_ARTIFACTS = ("gt_cloud.ply", "crop_volume.json", "colmap_to_gt.txt", "gt_meta.json")
+
+
+def copy_gt_artifacts(source: Path, target: Path) -> list:
+    """Copy the frame-independent GT files (laser scan, ROI volume, official transform).
+
+    A denser frame scheme is a separate dataset namespace that shares the laser scan with the
+    sparse one, so the scan and the official alignment have to travel with it; the cameras are
+    re-derived from the new frame set and must not be copied.
+    """
+    copied = []
+    for name in GT_ARTIFACTS:
+        origin = source / name
+        if origin.is_file():
+            shutil.copy2(origin, target / name)
+            copied.append(name)
+    return copied
+
+
+def prepare(scene: str, budget: int, force: bool, dataset: str = "tnt", gt_source: Path = None) -> dict:
     scene_root = extract(scene)
-    inference = INFERENCE / "tnt" / scene
-    gt_root = GT / "tnt" / scene
+    inference = INFERENCE / dataset / scene
+    gt_root = GT / dataset / scene
     manifest_path = inference / "manifest.json"
     if manifest_path.exists() and not force:
         import json
@@ -90,6 +109,7 @@ def prepare(scene: str, budget: int, force: bool) -> dict:
 
     (inference / "images").mkdir(parents=True, exist_ok=True)
     gt_root.mkdir(parents=True, exist_ok=True)
+    copied = copy_gt_artifacts(gt_source, gt_root) if gt_source is not None else []
     frames, kept_extrinsics, kept_intrinsics = [], [], []
     for index in indices:
         record, source = kept[index]
@@ -105,21 +125,32 @@ def prepare(scene: str, budget: int, force: bool) -> dict:
         extrinsics=np.asarray(kept_extrinsics),
         intrinsics=np.asarray(kept_intrinsics),
     )
-    write_json(
-        gt_root / "gt_meta.json",
+    # A dataset that reuses the laser scan keeps every field of the source metadata (diagonal,
+    # transform hashes, point counts) and only overrides what depends on the frame set.
+    meta_path = gt_root / "gt_meta.json"
+    import json
+
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    meta.update(
         dict(
-            dataset="tnt",
+            dataset=dataset,
             scene=scene,
             frames=[frame["name"] for frame in frames],
             has_depth=False,
-            has_cloud=False,
+            has_cloud="gt_cloud.ply" in copied or bool(meta.get("has_cloud")),
             frame_selection=dict(kind="sparse_point_coverage", budget=budget, coverage=coverage),
             source=dict(kind="colmap_sparse", scene_root=str(scene_root)),
-            note="Tanks and Temples GT point clouds require the official form download; only COLMAP poses are local",
-        ),
+            note=(
+                "Tanks and Temples GT point clouds require the official form download; only COLMAP poses are local"
+                if "gt_cloud.ply" not in copied
+                else "laser scan and official alignment shared with dataset " + str(gt_source.parent.name)
+            ),
+            gt_copied=[name for name in copied if name != "gt_meta.json"],
+        )
     )
+    write_json(meta_path, meta)
     manifest = dict(
-        dataset="tnt",
+        dataset=dataset,
         scene=scene,
         frame_selection=dict(kind="sparse_point_coverage", budget=budget, coverage=coverage),
         source=dict(kind="alexxxcr/tanks_temples tarball", scene_root=str(scene_root)),
@@ -133,10 +164,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenes", nargs="+", default=SCENES)
     parser.add_argument("--budget", type=int, default=FRAME_BUDGET)
+    parser.add_argument("--dataset", default="tnt", help="dataset namespace; data/gt/<dataset> and data/inference/<dataset>")
+    parser.add_argument("--gt-source", default=None, help="copy laser GT and alignment from an existing data/gt/<dataset>/<scene>")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+    if args.gt_source is not None and args.gt_source == args.dataset:
+        raise ValueError("--gt-source must differ from --dataset, otherwise the GT is overwritten")
     for scene in args.scenes:
-        manifest = prepare(scene, args.budget, args.force)
+        source = None if args.gt_source is None else GT / args.gt_source / scene
+        manifest = prepare(scene, args.budget, args.force, args.dataset, source)
         print(scene, "prepared", len(manifest["frames"]), "frames",
               "coverage %.3f" % manifest["frame_selection"]["coverage"], flush=True)
     return 0
