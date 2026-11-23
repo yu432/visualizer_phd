@@ -107,7 +107,8 @@ SCRIPT = r"""
   // ---------------------------------------------------------------- URL hash
   // Everything the page shows is mirrored into the hash, so a view can be bookmarked
   // and deep-linked (and so headless renders can ask for a specific state):
-  // #da3:dist:cams:2.5  ->  cloud : colour : camera centres : point size
+  // #da3:dist:cams:2.5:@1.20,-0.30,4.10,9.80,0.60,1.25
+  //   cloud : colour : camera centres : point size : @target xyz, radius, theta, phi
   function fromHash() {
     var parts = (location.hash || '').replace('#', '').split(':');
     if (parts[0] && (parts[0] === 'both' || META.traces[parts[0]])) { state.cloud = parts[0]; }
@@ -115,9 +116,25 @@ SCRIPT = r"""
     if (parts[2] === 'cams') { state.cams = true; }
     var size = parseFloat(parts[3]);
     if (isFinite(size) && size > 0) { state.size = size; }
+    for (var i = 4; i < parts.length; i++) {
+      if (parts[i].charAt(0) !== '@' || !control) { continue; }
+      var n = parts[i].slice(1).split(',').map(Number);
+      if (n.length < 6 || !n.every(function (v) { return isFinite(v) && Math.abs(v) < 1e9; })) {
+        continue;
+      }
+      control.target.set(n[0], n[1], n[2]);
+      control.radius = n[3] > 0 ? n[3] : control.radius;
+      control.theta = n[4]; control.phi = n[5];
+    }
   }
   function toHash() {
     var tail = (state.cams ? ':cams' : '') + ':' + state.size.toFixed(1);
+    if (control) {
+      // the point we orbit around is part of the view: share or reload it, not just the rotation
+      tail += ':@' + [control.target.x, control.target.y, control.target.z, control.radius,
+                      control.theta, control.phi]
+        .map(function (v) { return v.toFixed(3); }).join(',');
+    }
     try { history.replaceState(null, '', '#' + state.cloud + ':' + state.colour + tail); } catch (e) {}
   }
 
@@ -238,9 +255,16 @@ SCRIPT = r"""
     }
   }
   var drag = null;
+  // Pan is asked for in several idioms: right or middle drag, or any modifier with the left button
+  // (Shift as in three.js, Ctrl as in Blender / most desktop viewers, plus Alt and Cmd so the
+  // gesture works whatever the user's muscle memory is).
+  function wantsPan(event) {
+    return event.button === 2 || event.button === 1 ||
+           event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+  }
   host.addEventListener('contextmenu', function (event) { event.preventDefault(); });
   host.addEventListener('pointerdown', function (event) {
-    drag = {x: event.clientX, y: event.clientY, button: event.button, shift: event.shiftKey};
+    drag = {x: event.clientX, y: event.clientY, pan: wantsPan(event)};
     try { host.setPointerCapture(event.pointerId); } catch (e) {}
   });
   host.addEventListener('pointerup', function (event) {
@@ -252,7 +276,7 @@ SCRIPT = r"""
     if (!drag) { return; }
     var dx = event.clientX - drag.x, dy = event.clientY - drag.y;
     drag.x = event.clientX; drag.y = event.clientY;
-    if (drag.button === 2 || drag.shift) {
+    if (drag.pan || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
       // pan: move the orbit target in the plane of the screen
       var scale = 2.0 * control.radius * Math.tan(META.fov * Math.PI / 360.0) / host.clientHeight;
       var right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
@@ -1015,6 +1039,8 @@ def main() -> int:
         note = ("Облака после sim(3) по позам камер. Точек: %s (до %s на облако). "
                 "Раскраска «расстояние»: τ = %.3f ед. GT (%s), всё, что дальше, — одним красным."
                 % (thousands(total), thousands(args.points), meta["tau"], meta["tau_note"]))
+        note += (" <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃"
+                 " (или ПКМ, СКМ), зум — колесо.</span>")
         warnings = pose_warnings(args.dataset, scene, present)
         if warnings:
             note += " <span style='color:#ffb020'>Внимание: " + "; ".join(warnings) + ".</span>"
