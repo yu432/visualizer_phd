@@ -394,6 +394,13 @@ SCRIPT = r"""
     });
     return spec.dist_pending;
   }
+  // One call per trace for "give me everything this cloud has": positions, then distances.
+  function loadAll(key) {
+    var spec = META.traces[key];
+    return loadPositions(key).then(function () {
+      return spec.dist ? loadDistances(key) : null;
+    });
+  }
 
   // ----------------------------------------------------------------- drawing
   var frustums = null;
@@ -423,47 +430,74 @@ SCRIPT = r"""
     document.getElementById('cams').checked = state.cams;
     document.getElementById('size').value = state.size;
   }
-  function apply() {
-    var keys = chosen(), loading = [], expected = 0;
-    for (var i = 0; i < keys.length; i++) {
-      var trace = META.traces[keys[i]];
-      if (!trace) { continue; }
-      if (!trace.object) { expected += 7 * trace.count; }
-      if (state.colour === 'dist' && trace.dist && !trace.dist_done) { expected += trace.count; }
-      loading.push(loadPositions(keys[i]));
+  // Everything the page has is fetched once, up front, so switching GT / DA3-Giant / VGGT-Omega or
+  // turning the distance colour on is a visibility toggle: the whole payload of a scene is only a
+  // few megabytes, which is a far better trade than a network round trip per click.
+  function payloadKeys() {
+    var keys = [];
+    for (var key in META.traces) {
+      if (META.traces[key]) { keys.push(key); }
     }
-    // Nothing to download (a revisit): no bar, and no flicker of a bar that finishes instantly.
-    var bar = expected > 0 && progStart(expected, 'загрузка точек…');
-    Promise.all(loading).then(function () {
-      var extra = [];
-      if (state.colour === 'dist') {
-        for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
-      }
-      if (bar) { prog.phase = 'обработка…'; prog.done = prog.total; progPaint(); }
-      return Promise.all(extra);
-    }).then(function () {
+    return keys;
+  }
+  var preload = null;
+  function preloadAll() {
+    var keys = payloadKeys(), expected = 0, jobs = [];
+    for (var i = 0; i < keys.length; i++) {
+      var spec = META.traces[keys[i]];
+      if (!spec.object) { expected += 7 * spec.count; }
+      if (spec.dist && !spec.dist_done) { expected += spec.count; }
+      jobs.push(loadAll(keys[i]));
+    }
+    var bar = expected > 0 && progStart(expected, 'загрузка облаков…');
+    // Paint the default selection as soon as its own bytes are in; the other clouds keep arriving
+    // behind the same bar, and by the time the bar clears every button is instantaneous.
+    var defaults = chosen(), ready_jobs = [];
+    for (var j = 0; j < defaults.length; j++) { ready_jobs.push(loadPositions(defaults[j])); }
+    Promise.all(ready_jobs).then(function () {
+      if (bar) { prog.phase = 'догружаю остальные облака…'; progPaint(); }
+      sync();
+    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+    preload = Promise.all(jobs).then(function () {
       if (bar) { progFinish(); }
-      var shown = 0;
-      for (var key in META.traces) {
-        var spec = META.traces[key];
-        if (!spec.object) { continue; }
-        var on = keys.indexOf(key) >= 0;
-        spec.object.visible = on;
-        spec.object.material.uniforms.uSize.value = state.size;
-        spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
-        if (on) { shown += spec.count; }
-      }
-      if (frustums) { frustums.visible = state.cams; }
-      hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
-           + ' · ' + shown.toLocaleString('ru-RU') + ' точек');
-      syncButtons();
-      toHash();
-      dirty = true;
-      if (!ready) { ready = true; firstReady(); }
+      return sync();
     }).catch(function (error) {
       if (bar) { prog.el.style.display = 'none'; }
       hint('не загрузилось: ' + error.message);
     });
+    return preload;
+  }
+  // apply() only waits for payloads that are still missing (an error retry, or a click while the
+  // preload is in flight); normally it resolves immediately and just redraws.
+  function apply() {
+    var keys = chosen(), loading = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (!META.traces[keys[i]]) { continue; }
+      loading.push(loadAll(keys[i]));
+    }
+    Promise.all(loading).then(sync).catch(function (error) {
+      hint('не загрузилось: ' + error.message);
+    });
+  }
+  // sync() is the pure "show what state says" half: no network, no bar.
+  function sync() {
+    var keys = chosen(), shown = 0;
+    for (var key in META.traces) {
+      var spec = META.traces[key];
+      if (!spec.object) { continue; }
+      var on = keys.indexOf(key) >= 0;
+      spec.object.visible = on;
+      spec.object.material.uniforms.uSize.value = state.size;
+      spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
+      if (on) { shown += spec.count; }
+    }
+    if (frustums) { frustums.visible = state.cams; }
+    hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
+         + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
+    syncButtons();
+    toHash();
+    dirty = true;
+    if (!ready) { ready = true; firstReady(); }
   }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
@@ -544,7 +578,7 @@ SCRIPT = r"""
   fromHash();
   resize();
   applyCamera();
-  apply();
+  preloadAll();
   loop();
 })();
 </script>
@@ -972,35 +1006,58 @@ INDEX_HEAD = """<!doctype html>
 камер и раскрашены цветом пикселей. Кнопки сверху переключают, какое облако смотреть (GT,
 DA3-Giant, VGGT-Ω или оба предсказания), как его красить — цветом пикселей или расстоянием до
 GT (зелёный — на поверхности, красный — дальше τ) — и задают размер точки. Мышь вращает, колесо
-зумит, правая кнопка или Shift+перетаскивание сдвигает.</p>
+зумит, панорама — Ctrl, Shift, Alt или Cmd с левой кнопкой, а также правая и средняя кнопки.</p>
+<p>Сцены идут от лучших к худшим по среднему F@1 двух методов, а не по алфавиту: так первым делом
+видно, что получается хорошо, а не самое слабое.</p>
 <p>Рендер — three.js: точки рисуются буфером WebGL, координаты упакованы в int16, цвет — один
 байт палитры, поэтому на странице сотни тысяч и миллионы точек, а не сто тысяч, как раньше в
-Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> и подгружается при
-первом включении облака, поэтому страницы нужно открывать по http (GitHub Pages) — из
-<code>file://</code> браузер не отдаёт соседние бинарные файлы. <code>three.min.js</code> лежит
+Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> и загружается вся
+сразу при открытии страницы под одним индикатором, поэтому переключение между GT, DA3-Giant и
+VGGT-Ω мгновенное — в памяти лежат все три облака. Страницы нужно открывать по http (GitHub Pages):
+из <code>file://</code> браузер не отдаёт соседние бинарные файлы. <code>three.min.js</code> лежит
 рядом, интернет не нужен.</p>
 <ul>
 """
 
 
+LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω"}
+# The same building appears under two schemes, so the link text has to say which one it is.
+SCHEMES = {"eth3d": "ETH3D-10", "eth3d20": "ETH3D-20", "tnt": "T&T-10", "tnt100": "T&T-100"}
+
+
 def index_metrics(stem):
-    """A one-line hint under each link: how well the two clouds match the GT lidar."""
+    """The hint under each link: how well the clouds match the GT lidar, plus a quality score.
+
+    The score is the mean F@1 over the methods, and drives the order of the list: the scenes the
+    reconstructions handle best come first, so a reader starts with the ones worth looking at.
+    """
     dataset, _, scene = stem.replace("-", " ", 1).partition(" ")
     scene = scene.replace(" ", "-")
-    scores = []
+    labels, scores = [], []
     for method in ("da3-giant", "vggt-omega"):
         evaluation = OUTPUTS / dataset / scene / method / "evaluation.json"
         if evaluation.exists():
-            scores.append("%s %.3f" % (method, read_json(evaluation)["cloud"]["fscore@1"]))
-    return " · F@1: " + ", ".join(scores) if scores else ""
+            score = float(read_json(evaluation)["cloud"]["fscore@1"])
+            labels.append("%s %.3f" % (LABELS[method], score))
+            scores.append(score)
+    hint = " · F@1: " + ", ".join(labels) if labels else ""
+    return (sum(scores) / len(scores) if scores else -1.0), hint
+
+
+def index_title(stem):
+    """'eth3d20-courtyard' -> 'courtyard · ETH3D-20'."""
+    dataset, _, scene = stem.replace("-", " ", 1).partition(" ")
+    return "%s · %s" % (scene.replace(" ", "-"), SCHEMES.get(dataset, dataset))
 
 
 def write_index(out):
-    pages = sorted(path.name for path in Path(out).glob("*.html") if path.name != "index.html")
+    pages = [path.name for path in Path(out).glob("*.html") if path.name != "index.html"]
+    scored = [(index_metrics(name[:-5]), name) for name in pages]
+    scored.sort(key=lambda item: (-item[0][0], item[1]))
     items = "\n".join('<li><a href="%s">%s</a><span class="hint">%s</span></li>'
-                      % (name, name[:-5], index_metrics(name[:-5])) for name in pages)
+                      % (name, index_title(name[:-5]), hint) for (_, hint), name in scored)
     Path(out, "index.html").write_text(INDEX_HEAD.format() + items + "\n</ul>\n", encoding="utf-8")
-    print("index.html written (%d scenes)" % len(pages), flush=True)
+    print("index.html written (%d scenes, best first)" % len(pages), flush=True)
 
 
 def main() -> int:

@@ -45,8 +45,8 @@ TEMPLATE = """<!doctype html>
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
   .card { background: #171b21; border: 1px solid #262c35; border-radius: 10px; overflow: hidden;
           display: flex; flex-direction: column; }
-  .card img { width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover;
-              object-position: center; background: #0e1116; }
+  .card img { width: 100%; display: block; aspect-ratio: 3 / 2; object-fit: cover;
+              object-position: center; background: #0b0e12; }
   .card .meta { padding: 10px 13px 13px; font-size: 13.5px; }
   .card .name { color: #e8e8e8; font-weight: 600; margin-bottom: 3px; }
   .card .num { color: #8f98a3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
@@ -151,6 +151,16 @@ def panel_spans(image):
     return [span for span in spans if span[1] - span[0] > 8], inside.size
 
 
+def panel_top(image, spans, width):
+    """First row of the panels: the figures' title strip is set in inches, not as a fraction."""
+    grey = np.asarray(image.convert("L"), dtype=np.float32)
+    columns = np.zeros(grey.shape[1], dtype=bool)
+    for start, end in spans:
+        columns[round(start * grey.shape[1] / width):round(end * grey.shape[1] / width)] = True
+    dark = np.where(grey[:, columns].mean(axis=1) < 140.0)[0]
+    return int(dark[0]) if dark.size else 0
+
+
 def thumb(figures, viewer_out, dataset, scene):
     """A small card image; the full-size figures stay out of the site (161 MB of PNGs)."""
     source = figures / ("%s-%s-compare.png" % (dataset, scene))
@@ -163,13 +173,41 @@ def thumb(figures, viewer_out, dataset, scene):
         # Two panels (no GT lidar) show da3 on the left, three show GT first and da3 second:
         # either way the card shows the DA3 cloud.
         first, last = spans[0 if len(spans) == 2 else 1]
-        box = (round(first * image.width / width), round(0.15 * image.height),
+        box = (round(first * image.width / width), panel_top(image, spans, width),
                round(last * image.width / width), image.height)
         image = image.crop(box)
+    image = fit_ratio(image, 3 / 2)
     column_width = 620
     image = image.resize((column_width, round(image.height * column_width / image.width)), Image.LANCZOS)
     image.save(viewer_out / name, quality=82, optimize=True)
     return name
+
+
+def fit_ratio(image, ratio, background=(11, 14, 18)):
+    """Crop to the cloud's own bounding box, then pad to a fixed aspect.
+
+    The panels are 1.25-2.1 wide depending on the scene, so identical cards need a common shape:
+    trimming to what is actually drawn and letterboxing the rest keeps every building whole
+    (an object-fit crop would cut wide scenes to their middle) and makes the grid regular.
+    """
+    # "Content" is the panel: everything that is not the white paper of the figure. A bright-wall
+    # pixel above the threshold still sits inside the panel box, so the box only loses paper.
+    grey = np.asarray(image.convert("L"), dtype=np.float32)
+    mask = grey < 245.0
+    rows, columns = np.where(mask)
+    if rows.size == 0:
+        return image
+    # No margin: the panel background is already the frame, and any growth would pull the figure's
+    # white paper back into the card.
+    image = image.crop((int(columns.min()), int(rows.min()), int(columns.max()) + 1, int(rows.max()) + 1))
+    width, height = image.size
+    if width / height < ratio:
+        width = round(height * ratio)
+    else:
+        height = round(width / ratio)
+    canvas = Image.new("RGB", (width, height), background)
+    canvas.paste(image, ((width - image.width) // 2, (height - image.height) // 2))
+    return canvas
 
 
 def scene_number(rows, dataset, scene):
@@ -312,7 +350,9 @@ def main() -> int:
     shutil.copyfile(args.summary, out / "data" / "summary.json")
     shutil.copyfile(args.tolerance_json, out / "data" / "tolerance.json")
 
-    # Scene order follows the summary: ETH3D first, then Tanks and Temples, as in the PDF.
+    # Cards are ordered by how well the reconstruction matches the GT (mean F@1 over the methods),
+    # best scenes first: the landing page is read top-left to bottom-right, so the scenes a reader is
+    # most likely to recognise should not be behind the weakest ones.
     pairs, seen = [], set()
     for row in rows:
         key = (row["dataset"], row["scene"])
@@ -320,6 +360,14 @@ def main() -> int:
             continue
         seen.add(key)
         pairs.append(key)
+    quality = {}
+    for dataset, scene in pairs:
+        scores = [float(report.value(row, "fscore_one", ("cloud",)).replace(",", "."))
+                  for row in rows
+                  if row["dataset"] == dataset and row["scene"] == scene and "cloud" in row
+                  and report.value(row, "fscore_one", ("cloud",)) not in ("", "—")]
+        quality[(dataset, scene)] = sum(scores) / len(scores) if scores else -1.0
+    pairs.sort(key=lambda key: (-quality[key], key[0], key[1]))
 
     cards = []
     for dataset, scene in pairs:

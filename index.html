@@ -27,8 +27,8 @@
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
   .card { background: #171b21; border: 1px solid #262c35; border-radius: 10px; overflow: hidden;
           display: flex; flex-direction: column; }
-  .card img { width: 100%; display: block; aspect-ratio: 1 / 1; object-fit: cover;
-              object-position: center; background: #0e1116; }
+  .card img { width: 100%; display: block; aspect-ratio: 3 / 2; object-fit: cover;
+              object-position: center; background: #0b0e12; }
   .card .meta { padding: 10px 13px 13px; font-size: 13.5px; }
   .card .name { color: #e8e8e8; font-weight: 600; margin-bottom: 3px; }
   .card .num { color: #8f98a3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
@@ -62,32 +62,11 @@
 Каждая страница берёт рядом лежащие <code>three.min.js</code> и двоичные облака из
 <code>data/</code>.</p>
 <div class="cards">
-<a class="card" href="viewer/eth3d-courtyard.html">
-  <img src="viewer/thumb-eth3d-courtyard.jpg" alt="ETH3D / courtyard" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D / courtyard</div>
-    <div class="num">DA3 0.966 · Ω 0.970</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d-delivery_area.html">
-  <img src="viewer/thumb-eth3d-delivery_area.jpg" alt="ETH3D / delivery_area" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D / delivery_area</div>
-    <div class="num">DA3 0.881 · Ω 0.972</div>
-  </div>
-</a>
 <a class="card" href="viewer/eth3d-facade.html">
   <img src="viewer/thumb-eth3d-facade.jpg" alt="ETH3D / facade" loading="lazy">
   <div class="meta">
     <div class="name">ETH3D / facade</div>
     <div class="num">DA3 0.976 · Ω 0.979</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d-office.html">
-  <img src="viewer/thumb-eth3d-office.jpg" alt="ETH3D / office" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D / office</div>
-    <div class="num">DA3 0.937 · Ω 0.966</div>
   </div>
 </a>
 <a class="card" href="viewer/eth3d-terrace.html">
@@ -97,11 +76,81 @@
     <div class="num">DA3 0.975 · Ω 0.978</div>
   </div>
 </a>
+<a class="card" href="viewer/eth3d20-terrace.html">
+  <img src="viewer/thumb-eth3d20-terrace.jpg" alt="ETH3D, 20 кадров / terrace" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D, 20 кадров / terrace</div>
+    <div class="num">DA3 0.971 · Ω 0.976</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d20-facade.html">
+  <img src="viewer/thumb-eth3d20-facade.jpg" alt="ETH3D, 20 кадров / facade" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D, 20 кадров / facade</div>
+    <div class="num">DA3 0.970 · Ω 0.970</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-courtyard.html">
+  <img src="viewer/thumb-eth3d-courtyard.jpg" alt="ETH3D / courtyard" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / courtyard</div>
+    <div class="num">DA3 0.966 · Ω 0.970</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-office.html">
+  <img src="viewer/thumb-eth3d-office.jpg" alt="ETH3D / office" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / office</div>
+    <div class="num">DA3 0.937 · Ω 0.966</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d-delivery_area.html">
+  <img src="viewer/thumb-eth3d-delivery_area.jpg" alt="ETH3D / delivery_area" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D / delivery_area</div>
+    <div class="num">DA3 0.881 · Ω 0.972</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d20-delivery_area.html">
+  <img src="viewer/thumb-eth3d20-delivery_area.jpg" alt="ETH3D, 20 кадров / delivery_area" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D, 20 кадров / delivery_area</div>
+    <div class="num">DA3 0.879 · Ω 0.971</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d20-courtyard.html">
+  <img src="viewer/thumb-eth3d20-courtyard.jpg" alt="ETH3D, 20 кадров / courtyard" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D, 20 кадров / courtyard</div>
+    <div class="num">DA3 0.914 · Ω 0.920</div>
+  </div>
+</a>
+<a class="card" href="viewer/eth3d20-office.html">
+  <img src="viewer/thumb-eth3d20-office.jpg" alt="ETH3D, 20 кадров / office" loading="lazy">
+  <div class="meta">
+    <div class="name">ETH3D, 20 кадров / office</div>
+    <div class="num">DA3 0.854 · Ω 0.936</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt100-barn.html">
+  <img src="viewer/thumb-tnt100-barn.jpg" alt="Tanks and Temples, 100 кадров / barn" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / barn</div>
+    <div class="num">DA3 0.753 · Ω 0.834</div>
+  </div>
+</a>
 <a class="card" href="viewer/tnt-barn.html">
   <img src="viewer/thumb-tnt-barn.jpg" alt="Tanks and Temples / barn" loading="lazy">
   <div class="meta">
     <div class="name">Tanks and Temples / barn</div>
     <div class="num">DA3 0.677 · Ω 0.767</div>
+  </div>
+</a>
+<a class="card" href="viewer/tnt100-courthouse.html">
+  <img src="viewer/thumb-tnt100-courthouse.jpg" alt="Tanks and Temples, 100 кадров / courthouse" loading="lazy">
+  <div class="meta">
+    <div class="name">Tanks and Temples, 100 кадров / courthouse</div>
+    <div class="num">DA3 0.586 · Ω 0.546</div>
   </div>
 </a>
 <a class="card" href="viewer/tnt-courthouse.html">
@@ -125,20 +174,6 @@
     <div class="num">DA3 rot 0.46° · Ω rot 0.54°</div>
   </div>
 </a>
-<a class="card" href="viewer/tnt100-barn.html">
-  <img src="viewer/thumb-tnt100-barn.jpg" alt="Tanks and Temples, 100 кадров / barn" loading="lazy">
-  <div class="meta">
-    <div class="name">Tanks and Temples, 100 кадров / barn</div>
-    <div class="num">DA3 0.753 · Ω 0.834</div>
-  </div>
-</a>
-<a class="card" href="viewer/tnt100-courthouse.html">
-  <img src="viewer/thumb-tnt100-courthouse.jpg" alt="Tanks and Temples, 100 кадров / courthouse" loading="lazy">
-  <div class="meta">
-    <div class="name">Tanks and Temples, 100 кадров / courthouse</div>
-    <div class="num">DA3 0.586 · Ω 0.546</div>
-  </div>
-</a>
 <a class="card" href="viewer/tnt100-ignatius.html">
   <img src="viewer/thumb-tnt100-ignatius.jpg" alt="Tanks and Temples, 100 кадров / ignatius" loading="lazy">
   <div class="meta">
@@ -151,41 +186,6 @@
   <div class="meta">
     <div class="name">Tanks and Temples, 100 кадров / meetingroom</div>
     <div class="num">DA3 rot 0.32° · Ω rot 0.23°</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d20-courtyard.html">
-  <img src="viewer/thumb-eth3d20-courtyard.jpg" alt="ETH3D, 20 кадров / courtyard" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D, 20 кадров / courtyard</div>
-    <div class="num">DA3 0.914 · Ω 0.920</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d20-delivery_area.html">
-  <img src="viewer/thumb-eth3d20-delivery_area.jpg" alt="ETH3D, 20 кадров / delivery_area" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D, 20 кадров / delivery_area</div>
-    <div class="num">DA3 0.879 · Ω 0.971</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d20-facade.html">
-  <img src="viewer/thumb-eth3d20-facade.jpg" alt="ETH3D, 20 кадров / facade" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D, 20 кадров / facade</div>
-    <div class="num">DA3 0.970 · Ω 0.970</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d20-office.html">
-  <img src="viewer/thumb-eth3d20-office.jpg" alt="ETH3D, 20 кадров / office" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D, 20 кадров / office</div>
-    <div class="num">DA3 0.854 · Ω 0.936</div>
-  </div>
-</a>
-<a class="card" href="viewer/eth3d20-terrace.html">
-  <img src="viewer/thumb-eth3d20-terrace.jpg" alt="ETH3D, 20 кадров / terrace" loading="lazy">
-  <div class="meta">
-    <div class="name">ETH3D, 20 кадров / terrace</div>
-    <div class="num">DA3 0.971 · Ω 0.976</div>
   </div>
 </a>
 </div>

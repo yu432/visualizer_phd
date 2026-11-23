@@ -66,8 +66,132 @@ def robust_limits(clouds, basis, pad=0.05):
     return (u_low - pad, u_high + pad), (v_low - pad, v_high + pad)
 
 
+def cloud_subsample(points, limit=200000, seed=0):
+    """Cheap random subsample, enough statistics for a PCA axis and a handful of quantiles."""
+    if len(points) <= limit:
+        return points
+    rng = np.random.default_rng(seed)
+    index = rng.choice(len(points), size=limit, replace=False)
+    return points[index]
+
+
+def world_up(extrinsics):
+    """World direction that is `up` for the scene, read off the cameras themselves.
+
+    The world frame of every scene comes from COLMAP, so nothing guarantees that +Z is up.
+    Hand-held and rig-mounted captures are roughly upright, though, so the mean of the camera
+    up-vectors (-y of each world-to-camera rotation) is a stable estimate: it is what the
+    photographer would call up, and averaging cancels the individual tilts.
+    """
+    rotations = np.asarray(extrinsics, dtype=np.float64)[:, :3, :3]
+    ups = -rotations[:, 1, :]
+    ups = ups / np.maximum(np.linalg.norm(ups, axis=1, keepdims=True), 1e-12)
+    mean = ups.mean(axis=0)
+    norm = float(np.linalg.norm(mean))
+    if not np.isfinite(norm) or norm < 1e-6:
+        return np.array([0.0, 0.0, 1.0])
+    return mean / norm
+
+
+def scene_basis(points, extrinsics=None, elevation=22.0, seed=0):
+    """3/4 aerial orthographic basis chosen from the cloud, not from one camera.
+
+    A camera pose is a bad viewport: on Tanks and Temples the first frame is often a
+    ground-level shot of grass, and the resulting panel showed a green smear instead of the
+    building. Here the union cloud is reduced with PCA; its dominant horizontal direction gives
+    the building's long axis, the view looks across that axis (so the long side fills the panel
+    width) from `elevation` degrees above the horizon, and the image `up` stays the scene's up,
+    so the horizon is level and no panel is rolled. The side of the axis is picked on the side
+    the cameras looked from, so the panels show the surfaces the reconstruction actually saw.
+    """
+    sample = np.asarray(cloud_subsample(points, 200000, seed), dtype=np.float64)
+    up = world_up(extrinsics) if extrinsics is not None else np.array([0.0, 0.0, 1.0])
+    centre = np.median(sample, axis=0)
+    values, vectors = np.linalg.eigh(np.cov((sample - centre).T))
+    order = np.argsort(values)[::-1]
+    horizontal = None
+    for index in order:
+        direction = vectors[:, index]
+        flat = direction - float(direction @ up) * up
+        length = float(np.linalg.norm(flat))
+        # A vertical principal axis says nothing about where to stand; skip it.
+        if length > 0.35 * max(float(np.linalg.norm(direction)), 1e-12):
+            horizontal = flat / length
+            break
+    if horizontal is None:
+        side = np.cross(up, [0.0, 1.0, 0.0])
+        horizontal = side / max(float(np.linalg.norm(side)), 1e-12)
+    aside = np.cross(up, horizontal)
+    aside /= max(float(np.linalg.norm(aside)), 1e-12)
+    forward_flat = aside
+    if extrinsics is not None:
+        mean_forward = np.asarray(extrinsics, dtype=np.float64)[:, :3, :3][:, 2, :].mean(axis=0)
+        mean_forward = mean_forward - float(mean_forward @ up) * up
+        if float(mean_forward @ aside) < 0.0:
+            forward_flat = -aside
+    tilt = np.radians(float(np.clip(elevation, 0.0, 80.0)))
+    forward = np.cos(tilt) * forward_flat - np.sin(tilt) * up
+    right = np.cross(forward, up)
+    right /= max(float(np.linalg.norm(right)), 1e-12)
+    return right, -np.cross(right, forward), forward
+
+
+def ground_level(points, up):
+    """Height of the scene's floor: the densest height slab in the lower half of the cloud.
+
+    Aerial captures put half their points on the ground, which is why a plain percentile frame
+    showed a lawn with a church somewhere in it. The floor is the strongest peak of the height
+    histogram below the median, and everything above it is scene content worth framing.
+    """
+    heights = np.asarray(points, dtype=np.float64) @ up
+    low, high = np.percentile(heights, [1.0, 99.0])
+    if not np.isfinite(high - low) or high - low < 1e-9:
+        return float(low)
+    bins = 120
+    histogram, edges = np.histogram(np.clip(heights, low, high), bins=bins)
+    peak = int(np.argmax(histogram[: bins // 2]))
+    return float(0.5 * (edges[peak] + edges[peak + 1]))
+
+
+def frame_limits(clouds, basis, up, aspect=1.4, trim=0.03, letterbox=0.06):
+    """Framing box that shows the scene, not the lawn it stands on.
+
+    The horizontal extent comes from the points above the ground, so a building fills the panel
+    width even when the capture also reconstructed a field around it; the ground is kept, but
+    only as the strip under the content, and it simply runs out of the frame. `aspect` widens
+    the shorter side so equal-aspect panels are not letterboxed by matplotlib at draw time.
+    """
+    right, down, forward = basis
+    points = np.asarray(cloud_subsample(np.concatenate(clouds), 300000, seed=5), dtype=np.float64)
+    heights = points @ up
+    floor = ground_level(points, up)
+    span = float(np.percentile(heights, 99.0) - np.percentile(heights, 1.0))
+    above = heights > floor + trim * max(span, 1e-9)
+    content = points[above] if np.count_nonzero(above) > 0.05 * len(points) else points
+    u = content @ right
+    v = -(content @ down)
+    u_low, u_high = np.percentile(u, [1.0, 99.0])
+    v_low, v_high = np.percentile(v, [1.0, 99.0])
+    # Keep a band of floor under the content: without it the building looks like it floats.
+    v_low -= 0.18 * max(v_high - v_low, 1e-9)
+    u_span = max(u_high - u_low, 1e-9)
+    v_span = max(v_high - v_low, 1e-9)
+    margin = letterbox * max(u_span, v_span)
+    u_low, u_high = u_low - margin, u_high + margin
+    v_low, v_high = v_low - margin, v_high + margin
+    u_mid, v_mid = 0.5 * (u_low + u_high), 0.5 * (v_low + v_high)
+    u_span, v_span = u_high - u_low, v_high - v_low
+    if aspect is not None:
+        if u_span / v_span < aspect:
+            u_span = v_span * aspect
+        else:
+            v_span = u_span / aspect
+    return ((u_mid - 0.5 * u_span, u_mid + 0.5 * u_span),
+            (v_mid - 0.5 * v_span, v_mid + 0.5 * v_span))
+
+
 def draw_cloud(ax, points, colours, basis, title, limits=None, depth_tint=False, point_size=1.3,
-               wrap=40):
+               wrap=40, equal_aspect=False):
     """Painter's-algorithm scatter: far points first, image-plane orthographic projection."""
     right, down, forward = basis
     u = points @ right
@@ -93,8 +217,16 @@ def draw_cloud(ax, points, colours, basis, title, limits=None, depth_tint=False,
     else:
         ax.autoscale()
         ax.set_aspect("equal", adjustable="datalim")
+    if equal_aspect:
+        # Square units in both directions: the three panels of a comparison then differ only in
+        # what was reconstructed, never in how the scene was stretched to fill the axes.
+        ax.set_aspect("equal", adjustable="datalim")
     ax.set_xticks([])
     ax.set_yticks([])
+    for side in ax.spines.values():
+        # A panel is a picture, not a plot: a white frame around the cloud only adds an edge that
+        # the card thumbnail would inherit.
+        side.set_visible(False)
 
 
 def inputs_figure(dataset, scene, out_path):
@@ -311,12 +443,17 @@ def sky_figure(dataset, scene, method, out_path, picks=2):
     save(figure, out_path, tight=False, top=0.76, bottom=0.02, left=0.01, right=0.99, wspace=0.02)
 
 
-def compare_clouds_figure(dataset, scene, methods, out_path):
-    """One viewpoint, GT next to every method, so the report can compare them directly."""
+def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
+    """One 3/4 aerial view, GT next to every method, so the report can compare them directly.
+
+    The viewpoint is chosen from the cloud itself (see scene_basis) instead of from a camera
+    pose, every panel shares it, and the framing trims the stray points and the far edge of the
+    ground plane so the building, not the ground, fills the panel.
+    """
     gt_path = GT / dataset / scene / "gt_cloud.ply"
     gt_points, gt_colours = read_ply(gt_path) if gt_path.exists() else (None, None)
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        basis = view_basis(np.asarray(handle["extrinsics"])[0])
+        extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
     from pose_align import sim3 as pose_sim3
 
     aligned = {}
@@ -352,15 +489,38 @@ def compare_clouds_figure(dataset, scene, methods, out_path):
         gt_points, gt_colours = subsample(gt_points, gt_colours, RENDER_POINTS)
         panels.append((gt_label(dataset), gt_points, gt_colours))
     for method, (points, colours, score) in aligned.items():
-        label = method if score is None else "%s (F@1%% = %.3f)" % (method, score)
+        label = LABEL.get(method, method)
+        if score is not None:
+            label = "%s (F@1%% = %.3f)" % (label, score)
         panels.append((label, points, colours))
-    limits = robust_limits([panel[1] for panel in panels], basis)
-    figure, axes = plt.subplots(1, len(panels), figsize=(5.6 * len(panels), 5.2))
+    basis = scene_basis(union, extrinsics, elevation=elevation)
+    up = -basis[1]
+    clouds = [panel[1] for panel in panels]
+    # The panel is made roughly as wide as the framed content, so a wide building is not
+    # letterboxed into a square with empty sky above and below it (that is what made the T&T
+    # panels look like a strip in the middle of nothing at thumbnail size).
+    raw = frame_limits(clouds, basis, up, aspect=None)
+    content_aspect = (raw[0][1] - raw[0][0]) / max(raw[1][1] - raw[1][0], 1e-9)
+    panel_aspect = float(np.clip(content_aspect, 1.25, 2.1))
+    limits = frame_limits(clouds, basis, up, aspect=panel_aspect)
+    width = 4.9 * len(panels)
+    wspace = 0.035
+    left, right, bottom = 0.01, 0.99, 0.02
+    # Reserve the title strip in inches, not as a fraction of the canvas: a short wide figure
+    # otherwise ends up with the panel titles on top of the suptitle.
+    header = 0.95
+    axes_width = width * (right - left) / (len(panels) + (len(panels) - 1) * wspace)
+    height = (header + axes_width / panel_aspect) / (1.0 - bottom)
+    height = float(np.clip(height, 3.1, 8.0))
+    top = 1.0 - header / height
+    figure, axes = plt.subplots(1, len(panels), figsize=(width, height))
     axes = np.atleast_1d(axes)
     for axis, (title, points, colours) in zip(axes, panels):
-        draw_cloud(axis, points, colours, basis, title, limits=limits)
-    figure.suptitle("%s / %s: облака с одного ракурса после sim(3) по позам камер" % (dataset, scene), fontsize=13)
-    save(figure, out_path, tight=False, top=0.86, bottom=0.02, left=0.01, right=0.99, wspace=0.04)
+        draw_cloud(axis, points, colours, basis, title, limits=limits, point_size=1.4,
+                   equal_aspect=True, wrap=34)
+    figure.suptitle("%s / %s: облака с одного ракурса после sim(3) по позам камер" % (dataset, scene),
+                    fontsize=13, y=1.0 - 0.30 / height)
+    save(figure, out_path, tight=False, top=top, bottom=bottom, left=left, right=right, wspace=wspace)
 
 
 def gt_overlay_figure(dataset, scene, methods, out_path):
@@ -454,6 +614,11 @@ def sky_cloud_figure(dataset, scene, method, out_path):
     save(figure, out_path, tight=False, top=0.80, bottom=0.02, left=0.01, right=0.99, wspace=0.04)
 
 
+# One token per figure kind, so a re-render after a plotting tweak does not have to redo the
+# expensive depth/pose/sky panels of every scene. --only takes these names; the default is all.
+FIGURE_KINDS = ("inputs", "clouds", "depth", "pose", "sky", "skycloud", "compare", "check")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True)
@@ -461,8 +626,17 @@ def main() -> int:
     parser.add_argument("--method", default="da3-giant")
     parser.add_argument("--methods", nargs="+")
     parser.add_argument("--out", required=True)
+    parser.add_argument("--only", nargs="+", choices=FIGURE_KINDS, default=None,
+                        help="render only these figure kinds (default: every kind)")
+    parser.add_argument("--elevation", type=float, default=22.0,
+                        help="degrees above the horizon for the compare-figure viewpoint")
     args = parser.parse_args()
     methods = args.methods or [args.method]
+    wanted = set(args.only) if args.only else set(FIGURE_KINDS)
+
+    def want(kind):
+        return kind in wanted
+
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     plt.rcParams["font.family"] = "DejaVu Sans"
@@ -471,26 +645,33 @@ def main() -> int:
     plt.rcParams["axes.labelsize"] = 11
     for scene in args.scenes:
         prefix = "%s-%s" % (args.dataset, scene)
-        inputs_figure(args.dataset, scene, out / (prefix + "-inputs.png"))
+        if want("inputs"):
+            inputs_figure(args.dataset, scene, out / (prefix + "-inputs.png"))
         for method in methods:
             root = OUTPUTS / args.dataset / scene / method
             if not (root / "inference.json").exists():
                 continue
             stem = "%s-%s-" % (prefix, method)
             if (root / "evaluation.json").exists():
-                clouds_figure(args.dataset, scene, method, out / (stem + "clouds.png"))
+                if want("clouds"):
+                    clouds_figure(args.dataset, scene, method, out / (stem + "clouds.png"))
                 # Tanks and Temples ships a laser cloud only, no per-frame GT depth.
-                if (GT / args.dataset / scene / "depths").exists():
+                if want("depth") and (GT / args.dataset / scene / "depths").exists():
                     depth_figure(args.dataset, scene, method, out / (stem + "depth.png"))
-            else:
+            elif want("clouds"):
                 pred_cloud_figure(args.dataset, scene, method, out / (stem + "clouds.png"))
-            if (root / "pose_evaluation.json").exists():
+            if want("pose") and (root / "pose_evaluation.json").exists():
                 pose_figure(args.dataset, scene, method, out / (stem + "poses.png"))
             if (root / "sky_meta.json").exists():
-                sky_figure(args.dataset, scene, method, out / (stem + "sky.png"))
-                sky_cloud_figure(args.dataset, scene, method, out / (stem + "skycloud.png"))
-        compare_clouds_figure(args.dataset, scene, methods, out / (prefix + "-compare.png"))
-        gt_overlay_figure(args.dataset, scene, methods, out / (prefix + "-check.png"))
+                if want("sky"):
+                    sky_figure(args.dataset, scene, method, out / (stem + "sky.png"))
+                if want("skycloud"):
+                    sky_cloud_figure(args.dataset, scene, method, out / (stem + "skycloud.png"))
+        if want("compare"):
+            compare_clouds_figure(args.dataset, scene, methods, out / (prefix + "-compare.png"),
+                                  elevation=args.elevation)
+        if want("check"):
+            gt_overlay_figure(args.dataset, scene, methods, out / (prefix + "-check.png"))
         print(args.dataset, scene, "figures written", flush=True)
     return 0
 

@@ -355,6 +355,13 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     });
     return spec.dist_pending;
   }
+  // One call per trace for "give me everything this cloud has": positions, then distances.
+  function loadAll(key) {
+    var spec = META.traces[key];
+    return loadPositions(key).then(function () {
+      return spec.dist ? loadDistances(key) : null;
+    });
+  }
 
   // ----------------------------------------------------------------- drawing
   var frustums = null;
@@ -384,47 +391,74 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     document.getElementById('cams').checked = state.cams;
     document.getElementById('size').value = state.size;
   }
-  function apply() {
-    var keys = chosen(), loading = [], expected = 0;
-    for (var i = 0; i < keys.length; i++) {
-      var trace = META.traces[keys[i]];
-      if (!trace) { continue; }
-      if (!trace.object) { expected += 7 * trace.count; }
-      if (state.colour === 'dist' && trace.dist && !trace.dist_done) { expected += trace.count; }
-      loading.push(loadPositions(keys[i]));
+  // Everything the page has is fetched once, up front, so switching GT / DA3-Giant / VGGT-Omega or
+  // turning the distance colour on is a visibility toggle: the whole payload of a scene is only a
+  // few megabytes, which is a far better trade than a network round trip per click.
+  function payloadKeys() {
+    var keys = [];
+    for (var key in META.traces) {
+      if (META.traces[key]) { keys.push(key); }
     }
-    // Nothing to download (a revisit): no bar, and no flicker of a bar that finishes instantly.
-    var bar = expected > 0 && progStart(expected, 'загрузка точек…');
-    Promise.all(loading).then(function () {
-      var extra = [];
-      if (state.colour === 'dist') {
-        for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
-      }
-      if (bar) { prog.phase = 'обработка…'; prog.done = prog.total; progPaint(); }
-      return Promise.all(extra);
-    }).then(function () {
+    return keys;
+  }
+  var preload = null;
+  function preloadAll() {
+    var keys = payloadKeys(), expected = 0, jobs = [];
+    for (var i = 0; i < keys.length; i++) {
+      var spec = META.traces[keys[i]];
+      if (!spec.object) { expected += 7 * spec.count; }
+      if (spec.dist && !spec.dist_done) { expected += spec.count; }
+      jobs.push(loadAll(keys[i]));
+    }
+    var bar = expected > 0 && progStart(expected, 'загрузка облаков…');
+    // Paint the default selection as soon as its own bytes are in; the other clouds keep arriving
+    // behind the same bar, and by the time the bar clears every button is instantaneous.
+    var defaults = chosen(), ready_jobs = [];
+    for (var j = 0; j < defaults.length; j++) { ready_jobs.push(loadPositions(defaults[j])); }
+    Promise.all(ready_jobs).then(function () {
+      if (bar) { prog.phase = 'догружаю остальные облака…'; progPaint(); }
+      sync();
+    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+    preload = Promise.all(jobs).then(function () {
       if (bar) { progFinish(); }
-      var shown = 0;
-      for (var key in META.traces) {
-        var spec = META.traces[key];
-        if (!spec.object) { continue; }
-        var on = keys.indexOf(key) >= 0;
-        spec.object.visible = on;
-        spec.object.material.uniforms.uSize.value = state.size;
-        spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
-        if (on) { shown += spec.count; }
-      }
-      if (frustums) { frustums.visible = state.cams; }
-      hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
-           + ' · ' + shown.toLocaleString('ru-RU') + ' точек');
-      syncButtons();
-      toHash();
-      dirty = true;
-      if (!ready) { ready = true; firstReady(); }
+      return sync();
     }).catch(function (error) {
       if (bar) { prog.el.style.display = 'none'; }
       hint('не загрузилось: ' + error.message);
     });
+    return preload;
+  }
+  // apply() only waits for payloads that are still missing (an error retry, or a click while the
+  // preload is in flight); normally it resolves immediately and just redraws.
+  function apply() {
+    var keys = chosen(), loading = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (!META.traces[keys[i]]) { continue; }
+      loading.push(loadAll(keys[i]));
+    }
+    Promise.all(loading).then(sync).catch(function (error) {
+      hint('не загрузилось: ' + error.message);
+    });
+  }
+  // sync() is the pure "show what state says" half: no network, no bar.
+  function sync() {
+    var keys = chosen(), shown = 0;
+    for (var key in META.traces) {
+      var spec = META.traces[key];
+      if (!spec.object) { continue; }
+      var on = keys.indexOf(key) >= 0;
+      spec.object.visible = on;
+      spec.object.material.uniforms.uSize.value = state.size;
+      spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
+      if (on) { shown += spec.count; }
+    }
+    if (frustums) { frustums.visible = state.cams; }
+    hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
+         + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
+    syncButtons();
+    toHash();
+    dirty = true;
+    if (!ready) { ready = true; firstReady(); }
   }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
@@ -505,7 +539,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   fromHash();
   resize();
   applyCamera();
-  apply();
+  preloadAll();
   loop();
 })();
 </script>
