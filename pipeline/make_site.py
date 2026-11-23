@@ -29,7 +29,7 @@ TEMPLATE = """<!doctype html>
   * { box-sizing: border-box; }
   body { margin: 0; background: #14171c; color: #e8e8e8; line-height: 1.55;
          font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width: 1060px; margin: 0 auto; padding: 44px 24px 72px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 44px 24px 72px; }
   h1 { font-size: 30px; line-height: 1.2; margin: 0 0 10px; }
   h2 { font-size: 19px; margin: 46px 0 12px; padding-bottom: 7px; border-bottom: 1px solid #262c35; }
   p  { color: #aab2bd; max-width: 760px; }
@@ -42,15 +42,30 @@ TEMPLATE = """<!doctype html>
   .btn:hover { background: #262e38; text-decoration: none; }
   .btn.primary { background: #2b6cb0; border-color: #3b82d0; color: #fff; font-weight: 600; }
   .btn.primary:hover { background: #3177c0; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
-  .card { background: #171b21; border: 1px solid #262c35; border-radius: 10px; overflow: hidden;
-          display: flex; flex-direction: column; }
-  .card img { width: 100%; display: block; aspect-ratio: 3 / 2; object-fit: cover;
-              object-position: center; background: #0b0e12; }
-  .card .meta { padding: 10px 13px 13px; font-size: 13.5px; }
-  .card .name { color: #e8e8e8; font-weight: 600; margin-bottom: 3px; }
-  .card .num { color: #8f98a3; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
-  .card.plain { justify-content: center; }
+  /* One row per scene, four tiles per row: the two frame counts of that scene times the two
+     methods, so a building never appears twice in different places of the page. */
+  h3 { font-size: 15px; margin: 26px 0 10px; color: #c9d1db; }
+  .gridhead, .scene { display: grid; grid-template-columns: 150px repeat(4, minmax(0, 1fr));
+                      gap: 10px 12px; }
+  .gridhead { margin-bottom: 8px; }
+  .ghead { color: #8f98a3; font-size: 12px; align-self: end; padding-bottom: 2px; }
+  .scene { margin-bottom: 12px; align-items: start; }
+  .slabel { font-size: 13.5px; font-weight: 600; color: #e8e8e8; padding-top: 5px; }
+  .slabel span { display: block; color: #8f98a3; font-weight: 400; font-size: 12px;
+                 font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .tile { display: block; background: #171b21; border: 1px solid #262c35; border-radius: 8px;
+          overflow: hidden; }
+  .tile:hover { border-color: #3b82d0; text-decoration: none; }
+  .tile img { width: 100%; display: block; aspect-ratio: 3 / 2; object-fit: cover; background: #0b0e12; }
+  .tile .cap { padding: 5px 8px 6px; font-size: 11.5px; color: #aab2bd; }
+  .tile .cap b { color: #e8e8e8; font-weight: 600; }
+  .tile.missing { display: flex; align-items: center; justify-content: center; min-height: 74px;
+                  color: #6b7480; font-size: 12px; border-style: dashed; }
+  @media (max-width: 880px) {
+    .gridhead { display: none; }
+    .scene { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .slabel { grid-column: 1 / -1; }
+  }
   table { border-collapse: collapse; font-size: 13px; margin: 8px 0 4px; }
   th, td { padding: 5px 9px; border-bottom: 1px solid #242a33; text-align: right; white-space: nowrap; }
   th { color: #8f98a3; font-weight: 600; font-size: 12px; text-transform: none; }
@@ -74,14 +89,14 @@ TEMPLATE = """<!doctype html>
 </div>
 
 <h2 id="scenes">Сцены</h2>
-<p>__SCENE_NOTE__ Мышь вращает, колесо зумит, правая кнопка сдвигает.
-Сверху переключается облако (GT, DA3-Giant, VGGT-Ω или оба предсказания) и раскраска —
-цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога).
-Каждая страница берёт рядом лежащие <code>three.min.js</code> и двоичные облака из
-<code>data/</code>.</p>
-<div class="cards">
+<p>__SCENE_NOTE__ Одна строка — одна сцена, четыре плитки в ней: схема кадров × метод, то есть
+10 и 20 кадров (для T&amp;T — 16 и 100) для DA3-Giant и VGGT-Ω. Плитка открывает страницу сразу в
+нужном виде — нужный метод уже выбран. Подпись под плиткой — F@1 этого метода в этой схеме.
+На самой странице облако переключается (GT, DA3-Giant, VGGT-Ω или оба предсказания), раскраска —
+цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога τ).
+Мышь вращает, колесо зумит, правая кнопка сдвигает. Страница берёт рядом лежащие
+<code>three.min.js</code> и двоичные облака из <code>data/</code>.</p>
 __CARDS__
-</div>
 
 <h2>Что показано</h2>
 __TABLES__
@@ -100,20 +115,18 @@ Google Drive). Веса VGGT-Ω — под лицензией fair-noncommercial
 </div>
 """
 
-CARD_PLAIN = """<a class="card plain" href="viewer/__PAGE__">
-  <div class="meta">
-    <div class="name">__SCENE__</div>
-    <div class="num">__NUM__</div>
-  </div>
+# A tile is one (scene, frame count, method) view: the picture is that method's cloud and the
+# caption is its F@1, so the four tiles of a row are directly comparable.
+TILE = """<a class="tile" href="viewer/__PAGE__#__VIEW__">
+  <img src="viewer/__THUMB__" alt="__ALT__" loading="lazy">
+  <div class="cap">__CAP__</div>
 </a>"""
 
-CARD = """<a class="card" href="viewer/__PAGE__">
-  <img src="viewer/__THUMB__" alt="__SCENE__" loading="lazy">
-  <div class="meta">
-    <div class="name">__SCENE__</div>
-    <div class="num">__NUM__</div>
-  </div>
+TILE_TEXT = """<a class="tile" href="viewer/__PAGE__#__VIEW__">
+  <div class="cap">__CAP__</div>
 </a>"""
+
+TILE_MISSING = """<div class="tile missing">нет данных</div>"""
 
 
 TITLES = {"eth3d": "ETH3D", "eth3d20": "ETH3D, 20 кадров", "tnt": "Tanks and Temples",
@@ -125,9 +138,6 @@ LABELS = {"eth3d": "ETH3D, 10 кадров", "eth3d20": "ETH3D, 20 кадров"
 # run (run_dense_eth3d_metrics.sh --out figures-eth3d20).
 DENSE_FIGURES_DATASETS = ("eth3d20",)
 
-
-def pretty(dataset, scene):
-    return TITLES.get(dataset, dataset) + " / " + scene
 
 
 def panel_spans(image):
@@ -161,25 +171,40 @@ def panel_top(image, spans, width):
     return int(dark[0]) if dark.size else 0
 
 
-def thumb(figures, viewer_out, dataset, scene):
-    """A small card image; the full-size figures stay out of the site (161 MB of PNGs)."""
-    source = figures / ("%s-%s-compare.png" % (dataset, scene))
+def cloud_panel(image, index=1):
+    """Pixel box of one panel inside a rendered clouds figure.
+
+    A clouds figure is GT / prediction / distance in three black panels under a white strip with
+    the scene title and the panel captions. A tile shows just the prediction panel, so the title
+    text and the neighbouring panels never leak into a 250 px thumbnail: the box is bounded by the
+    dark panel background, not by the first dark row of the page.
+    """
+    spans, width = panel_spans(image)
+    if not spans:
+        return None
+    first, last = spans[min(index, len(spans) - 1)]
+    left, right = round(first * image.width / width), round(last * image.width / width)
+    grey = np.asarray(image.convert("L"), dtype=np.float32)[:, left:right]
+    dark = np.where(grey.mean(axis=1) < 80.0)[0]
+    if not dark.size:
+        return (left, 0, right, image.height)
+    return (left, int(dark[0]), right, int(dark[-1]) + 1)
+
+
+def tile_thumb(figures, viewer_out, dataset, scene, method):
+    """One tile image per (scene, frame count, method); the full figures stay out of the site."""
+    source = figures / ("%s-%s-%s-clouds.png" % (dataset, scene, method))
     if not source.exists():
         return None
-    name = "thumb-%s-%s.jpg" % (dataset, scene)
+    name = "tile-%s-%s-%s.jpg" % (dataset, scene, method)
     image = Image.open(source).convert("RGB")
-    spans, width = panel_spans(image)
-    if len(spans) > 1:
-        # Two panels (no GT lidar) show da3 on the left, three show GT first and da3 second:
-        # either way the card shows the DA3 cloud.
-        first, last = spans[0 if len(spans) == 2 else 1]
-        box = (round(first * image.width / width), panel_top(image, spans, width),
-               round(last * image.width / width), image.height)
+    box = cloud_panel(image, 1)
+    if box:
         image = image.crop(box)
     image = fit_ratio(image, 3 / 2)
-    column_width = 620
+    column_width = 560
     image = image.resize((column_width, round(image.height * column_width / image.width)), Image.LANCZOS)
-    image.save(viewer_out / name, quality=82, optimize=True)
+    image.save(viewer_out / name, quality=80, optimize=True)
     return name
 
 
@@ -210,20 +235,20 @@ def fit_ratio(image, ratio, background=(11, 14, 18)):
     return canvas
 
 
-def scene_number(rows, dataset, scene):
-    """Card caption: F@1 for both methods, or pose error when the scene has no GT cloud."""
-    parts = []
-    for method in ("da3-giant", "vggt-omega"):
-        row = next((row for row in rows if row["dataset"] == dataset and row["scene"] == scene
-                    and row["method"] == method), None)
-        if row is None:
-            continue
-        label = "DA3" if method == "da3-giant" else "Ω"
-        if "cloud" in row:
-            parts.append("%s %s" % (label, report.value(row, "fscore_one", ("cloud",))))
-        elif "pose" in row:
-            parts.append("%s rot %s°" % (label, report.value(row, "rotation_mean_deg", ("pose",), "%.2f")))
-    return " · ".join(parts)
+
+def tile_caption(rows, dataset, scene, method):
+    """Tile caption: this method's F@1 in that scheme, or the pose error when there is no GT cloud."""
+    row = next((row for row in rows if row["dataset"] == dataset and row["scene"] == scene
+                and row.get("method") == method), None)
+    if row is None:
+        return ""
+    if "cloud" in row:
+        text = report.value(row, "fscore_one", ("cloud",))
+        if text not in ("", "—"):
+            return "F@1 <b>%s</b>" % text
+    if "pose" in row:
+        return "поз: поворот <b>%s°</b>" % report.value(row, "rotation_mean_deg", ("pose",), "%.2f")
+    return ""
 
 
 def compare_columns(sparse, dense, old_dataset="tnt", new_dataset="tnt100"):
@@ -350,9 +375,6 @@ def main() -> int:
     shutil.copyfile(args.summary, out / "data" / "summary.json")
     shutil.copyfile(args.tolerance_json, out / "data" / "tolerance.json")
 
-    # Cards are ordered by how well the reconstruction matches the GT (mean F@1 over the methods),
-    # best scenes first: the landing page is read top-left to bottom-right, so the scenes a reader is
-    # most likely to recognise should not be behind the weakest ones.
     pairs, seen = [], set()
     for row in rows:
         key = (row["dataset"], row["scene"])
@@ -360,16 +382,6 @@ def main() -> int:
             continue
         seen.add(key)
         pairs.append(key)
-    quality = {}
-    for dataset, scene in pairs:
-        scores = [float(report.value(row, "fscore_one", ("cloud",)).replace(",", "."))
-                  for row in rows
-                  if row["dataset"] == dataset and row["scene"] == scene and "cloud" in row
-                  and report.value(row, "fscore_one", ("cloud",)) not in ("", "—")]
-        quality[(dataset, scene)] = sum(scores) / len(scores) if scores else -1.0
-    pairs.sort(key=lambda key: (-quality[key], key[0], key[1]))
-
-    cards = []
     for dataset, scene in pairs:
         page = "%s-%s.html" % (dataset, scene)
         source = Path(args.viewer) / page
@@ -379,13 +391,55 @@ def main() -> int:
         # The pages live one level down from the landing page now.
         html = html.replace("<a href='index.html'", "<a href='../index.html'")
         (out / "viewer" / page).write_text(html, encoding="utf-8")
-        source_figures = dense_figures if dataset in DENSE_FIGURES_DATASETS else figures
-        image = thumb(source_figures, out / "viewer", dataset, scene)
-        card = CARD if image else CARD_PLAIN
-        cards.append(card.replace("__PAGE__", page)
-                     .replace("__THUMB__", image or "")
-                     .replace("__SCENE__", pretty(dataset, scene))
-                     .replace("__NUM__", scene_number(rows, dataset, scene)))
+    available = {path.name for path in (out / "viewer").glob("*.html")}
+
+    # The landing page is a grid, not a sorted pile: one row per scene and four tiles per row —
+    # the two frame counts of that scene times the two methods. Previously the cards were sorted by
+    # mean F@1, so courtyard-10 sat next to terrace-20 and the same building appeared in two corners
+    # of the page; now the columns line up and a row is one scene in its four variants.
+    scenes_of = {}
+    for row in rows:
+        scenes_of.setdefault(row["dataset"], [])
+        if row["scene"] not in scenes_of[row["dataset"]]:
+            scenes_of[row["dataset"]].append(row["scene"])
+    groups = (
+        ("ETH3D: официальные 10 кадров и плотная схема на 20 кадрах",
+         ("eth3d", "10 кадров"), ("eth3d20", "20 кадров")),
+        ("Tanks and Temples: 16 кадров и плотная схема на 100 кадрах",
+         ("tnt", "16 кадров"), ("tnt100", "100 кадров")),
+    )
+    methods = (("da3-giant", "DA3-Giant", "da3"), ("vggt-omega", "VGGT-Ω", "omega"))
+    cards = []
+    for heading, sparse, dense in groups:
+        scenes = scenes_of.get(sparse[0], [])
+        if not scenes:
+            continue
+        cards.append("<h3>%s</h3>" % heading)
+        head = ["<div class='ghead'></div>"]
+        for _, label in (sparse, dense):
+            for _, method_label, _ in methods:
+                head.append("<div class='ghead'>%s · %s</div>" % (label, method_label))
+        cards.append("<div class='gridhead'>" + "".join(head) + "</div>")
+        for scene in scenes:
+            cells = ["<div class='slabel'>%s</div>" % scene]
+            for dataset, label in ((sparse[0], sparse[1]), (dense[0], dense[1])):
+                page = "%s-%s.html" % (dataset, scene)
+                for method, method_label, view in methods:
+                    if page not in available:
+                        cells.append(TILE_MISSING)
+                        continue
+                    source_figures = dense_figures if dataset in DENSE_FIGURES_DATASETS else figures
+                    image = tile_thumb(source_figures, out / "viewer", dataset, scene, method)
+                    caption = tile_caption(rows, dataset, scene, method)
+                    alt = "%s / %s, %s, %s кадров" % (TITLES.get(dataset, dataset), scene, method_label,
+                                                      label.split()[0])
+                    card = TILE if image else TILE_TEXT
+                    cells.append(card.replace("__PAGE__", page)
+                                 .replace("__VIEW__", view)
+                                 .replace("__THUMB__", image or "")
+                                 .replace("__ALT__", alt)
+                                 .replace("__CAP__", caption))
+            cards.append("<div class='scene'>" + "".join(cells) + "</div>")
     # The WebGL pages load three.js and their binary point payloads from next to themselves.
     for script in sorted(Path(args.viewer).glob("*.js")):
         shutil.copyfile(script, out / "viewer" / script.name)
@@ -464,12 +518,14 @@ def main() -> int:
                   "20 кадров: на нём точность (precision) растёт.")
 
     counts = []
+    rendered = 0
     for dataset in ("eth3d", "eth3d20", "tnt", "tnt100"):
         found = sum(1 for key in pairs if key[0] == dataset)
         if found:
             counts.append("%d — %s" % (found, LABELS[dataset]))
+            rendered += found
     scene_note = ("По странице на сцену, всего %d (%s)."
-                  % (len(pairs), ", ".join(counts)) if counts else "По странице на сцену.")
+                  % (rendered, ", ".join(counts)) if counts else "По странице на сцену.")
 
     html = (TEMPLATE
             .replace("__SCENE_NOTE__", scene_note)
