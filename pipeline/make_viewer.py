@@ -675,6 +675,9 @@ SCRIPT = r"""
   resize();
   applyCamera();
   preloadAll();
+  // The camera contact sheet is small next to the clouds, so fetch it up front: the first hover
+  // then shows a picture instead of an empty frame while the JPEG is still on its way.
+  if (META.camshots) { var warm = new Image(); warm.src = META.camshots.url; }
   loop();
 })();
 </script>
