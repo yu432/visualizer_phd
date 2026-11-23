@@ -1076,8 +1076,21 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
         # laser ground truth carries no colour: distance colouring is what it is for
         gt_points, gt_colours = points[inside], None if colours is None else colours[inside]
 
-    # Green/red threshold: 1% of the GT diagonal is exactly the tau of F@1 in the report.
-    if gt_points is not None and len(gt_points):
+    # Green/red threshold: 1% of the GT cloud diagonal. The diagonal comes from gt_meta.json,
+    # which is the full lidar scan the report measures F@1 against, so the plaque on the page
+    # and the figure caption carry the very same number instead of two slightly different ones
+    # (the GT cloud drawn here is cropped to the reconstructed area, and 1% of the crop was
+    # up to 20% smaller than 1% of the scan).
+    report_diagonal = None
+    gt_meta_path = GT / dataset / scene / "gt_meta.json"
+    if gt_meta_path.exists():
+        gt_meta = read_json(gt_meta_path)
+        if "diagonal" in gt_meta:
+            report_diagonal = float(gt_meta["diagonal"])
+    if report_diagonal:
+        tau = 0.01 * report_diagonal
+        tau_note = "1% диагонали GT-облака, та же τ, что у F@1 в отчёте"
+    elif gt_points is not None and len(gt_points):
         tau = 0.01 * diagonal(gt_points)
         tau_note = "1% диагонали GT-облака"
     else:
