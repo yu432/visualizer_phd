@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from align import apply_sim3  # noqa: E402
 from pose_align import centres  # noqa: E402
 from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, load_crop,  # noqa: E402
-                    percentile_box, read_json, read_ply, view_basis)
+                    metric_text, percentile_box, read_json, read_ply, view_basis)
 
 RENDER_POINTS = 320000
 VIEW_FRAMES = 8
@@ -327,7 +327,7 @@ def clouds_figure(dataset, scene, method, out_path):
     draw_cloud(axes[1], aligned, pred_colours, basis,
                "%s: %d точек" % (method, cloud["pred"]), limits=(xlim, ylim), point_size=1.1)
     draw_cloud(axes[2], aligned, error_colours, basis,
-               "расстояние до GT (τ = %.3f ед. GT)" % tau, limits=(xlim, ylim), point_size=1.1)
+               "расстояние до GT (τ = %s)" % metric_text(tau), limits=(xlim, ylim), point_size=1.1)
     figure.suptitle("%s / %s: облако против GT после sim(3) по позам, F@1%% = %.3f (диагональ GT %.2f)" % (
         dataset, scene, cloud["fscore@1"], evaluation["ground_diagonal"]), fontsize=13)
     save(figure, out_path, tight=False, top=0.80, bottom=0.02, left=0.01, right=0.99, wspace=0.04)

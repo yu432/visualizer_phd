@@ -28,7 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from align import apply_sim3  # noqa: E402
 from pose_align import centres, sim3 as pose_sim3  # noqa: E402
 from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, diagonal,  # noqa: E402
-                    load_crop, percentile_box, read_json, read_ply, view_basis)
+                    load_crop, metric_text, percentile_box, read_json, read_ply,
+                    view_basis)
 
 VENDOR = Path(__file__).resolve().parent / "vendor"
 LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9"}
@@ -62,7 +63,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 #legend { display:none; position:fixed; left:14px; bottom:14px; z-index:6; pointer-events:none;
           background:rgba(20,23,28,.88); border:1px solid #2b313a; border-radius:8px;
           padding:8px 10px 7px; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-          box-shadow:0 8px 22px rgba(0,0,0,.45); max-width:330px; }
+          box-shadow:0 8px 22px rgba(0,0,0,.45); max-width:360px; }
 #legendtitle { color:#dfe5ec; font-size:12px; margin-bottom:6px; }
 #legendbar { height:10px; border-radius:4px; border:1px solid #39424e; }
 #legendticks { display:flex; justify-content:space-between; color:#a8b0ba; font-size:11px;
@@ -540,8 +541,12 @@ SCRIPT = r"""
   // Drawn only for the distance colouring: green/red only mean something together with the number
   // that separates them, and that number is per scene (1 % of the GT diagonal).
   var legend = document.getElementById('legend'), legendBuilt = false;
-  function quantity(value) {
-    return value >= 10 ? value.toFixed(1) : (value >= 1 ? value.toFixed(2) : value.toFixed(3));
+  // The clouds are metric, so the bar reads in metres and drops to centimetres where tau is small
+  // enough that "0.07 м" would be a mouthful.
+  function metric(value) {
+    if (value >= 10) { return value.toFixed(1) + " м"; }
+    if (value >= 0.1) { return value.toFixed(2) + " м"; }
+    return (value * 100).toFixed(1) + " см";
   }
   function paintLegend() {
     if (!legend) { return; }
@@ -553,8 +558,8 @@ SCRIPT = r"""
     document.getElementById('legendtitle').textContent = title || 'расстояние';
     if (!legendBuilt) {
       document.getElementById('legendbar').style.background = META.ramp_css;
-      document.getElementById('legendmid').textContent = quantity(META.tau / 2);
-      document.getElementById('legendhi').textContent = 'τ = ' + quantity(META.tau);
+      document.getElementById('legendmid').textContent = 'τ/2 = ' + metric(META.tau / 2);
+      document.getElementById('legendhi').textContent = 'τ = ' + metric(META.tau);
       document.getElementById('legendnote').textContent = sheet.note || '';
       legendBuilt = true;
     }
@@ -865,6 +870,7 @@ def load_cloud(dataset, scene, method, params, tag):
         mask = crop_mask(points, region)
         points, colours = points[mask], colours[mask]
     return points, colours
+
 
 
 def _rodrigues(vector, axis, degrees):
@@ -1186,8 +1192,8 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
         ramp_css="linear-gradient(90deg, " + ", ".join(
             "%s %.0f%%" % (colour, 100.0 * share) for share, colour in DIST_SCALE) + ")",
         legend=dict(
-            pred=("расстояние до GT, ед. GT" if has_gt else "расхождение методов"),
-            gt=("GT → ближайшее предсказание, ед. GT" if has_gt else None),
+            pred=("расстояние до GT, м" if has_gt else "расхождение методов, м"),
+            gt=("GT → ближайшее предсказание, м" if has_gt else None),
             note=("дальше τ — одним красным; τ = 1 % диагонали GT" if has_gt
                   else "дальше τ — одним красным; τ = 1 % диагонали предсказаний"),
         ),
@@ -1352,8 +1358,9 @@ def main() -> int:
         name = "%s-%s.html" % (args.dataset, scene)
         total = sum(sizes.values())
         note = ("Облака после sim(3) по позам камер. Точек: %s (до %s на облако). "
-                "Раскраска «расстояние»: τ = %.3f ед. GT (%s), всё, что дальше, — одним красным."
-                % (thousands(total), thousands(args.points), meta["tau"], meta["tau_note"]))
+                "Раскраска «расстояние»: τ = %s (%s), всё, что дальше, — одним красным."
+                % (thousands(total), thousands(args.points), metric_text(meta["tau"]),
+                   meta["tau_note"]))
         note += (" <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃"
                  " (или ПКМ, СКМ), зум — колесо.</span>")
         warnings = pose_warnings(args.dataset, scene, present)

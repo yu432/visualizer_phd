@@ -47,6 +47,22 @@ def percentile_box(points, low_percentile=1.0, high_percentile=99.0, pad=0.04):
     return low - margin, high + margin
 
 
+def metric_text(value):
+    """A length in the units the clouds are stored in, which are metres.
+
+    The distance colouring used to be labelled with the bare number and "ед. GT", which asks the
+    reader to find the ground-truth diagonal before the number means anything. ETH3D lidar and the
+    T&T laser scans are both metric, so the viewer legend and the report figures can just say
+    metres (and centimetres once tau gets small).
+    """
+    value = float(value)
+    if value >= 10.0:
+        return "%.1f м" % value
+    if value >= 0.1:
+        return "%.2f м" % value
+    return "%.1f см" % (value * 100.0)
+
+
 def view_basis(extrinsics):
     """Orthographic view basis taken from a camera, so GT and prediction share one viewpoint."""
     rotation = np.asarray(extrinsics, dtype=np.float64)[:3, :3]
