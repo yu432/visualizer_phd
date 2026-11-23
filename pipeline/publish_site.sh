@@ -13,6 +13,7 @@ MPLCONFIGDIR=$PWD/.mpl .venv/bin/python method/geometry/make_site.py \
   --summary "$EXP/summary.json" \
   --tolerance "$EXP/tolerance.json" \
   --figures "$EXP/figures" \
+  --figures-dense "$EXP/figures-eth3d20" \
   --viewer "$EXP/viewer" \
   --report "$EXP/da3-omega-geometry.pdf" \
   --repo https://github.com/yu432/visualizer_phd \
