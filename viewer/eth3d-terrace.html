@@ -7,7 +7,7 @@
 <link rel='icon' href='data:,'>
 <style>
 html, body { margin: 0; background: #14171c; color: #e8e8e8; }
-#gl { width: 100%; height: 86vh; overflow: hidden; }
+#gl { width: 100%; height: 86vh; overflow: hidden; position: relative; }
 #gl canvas { display: block; }
 .pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
         padding:4px 11px; font:inherit; cursor:pointer; }
@@ -19,7 +19,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 <script src='three.min.js'></script>
 </head>
 <body>
-<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:9px 16px 4px;background:#14171c;color:#e8e8e8;font-size:13.5px;line-height:1.35'><div style='font-size:12px;margin-bottom:5px'><a href='../index.html' style='color:#6cb6ff;text-decoration:none'>&larr; все сцены</a></div><b>eth3d / terrace</b><br><span style='color:#a8b0ba'>Облака после sim(3) по позам камер. Точек: 1 780 000 (до 750 000 на облако). Раскраска «расстояние»: τ = 0.211 ед. GT (1% диагонали GT-облака), всё, что дальше, — одним красным.</span></div>
+<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:9px 16px 4px;background:#14171c;color:#e8e8e8;font-size:13.5px;line-height:1.35'><div style='font-size:12px;margin-bottom:5px'><a href='../index.html' style='color:#6cb6ff;text-decoration:none'>&larr; все сцены</a></div><b>eth3d / terrace</b><br><span style='color:#a8b0ba'>Облака после sim(3) по позам камер. Точек: 1 373 908 (до 750 000 на облако). Раскраска «расстояние»: τ = 0.345 ед. GT (1% диагонали GT-облака), всё, что дальше, — одним красным.</span></div>
 <div id="bar" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;
      padding:6px 16px 10px;background:#14171c;color:#e8e8e8;
      font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:13px">
@@ -41,8 +41,22 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   <span id="hint" style="color:#8f98a3"></span>
 </div>
 
-<div id='gl'></div>
-<script>window.VIEWER = {"traces": {"gt": {"count": 280000, "centre": [-2.9381179809570312, -3.2962679862976074, -1.4129159450531006], "half": [7.399072647094727, 6.489640712738037, 3.7419464588165283], "pal": "5uzz1d3o0NHYwM/hx8jPycS+v8TMpsbhyb6tyLusw7uuxrqnwbmnvr7Cv7mqurq/qbvMwrakv7alvralvLWkvrOhu7KivbCeurCfuLSvuK+guLCdt66ct62cs7O3tK6krrC0nrHCuKuYtauatKuas6iXr6qiqamssamXsKeWsaWSr6WUrqWUqKWjrKSTraGPqaGSqZ+OqJyIoqato6OloKCloaCgnp2hoZyUn5mQoZeEmZ6lmJmeiKG2hJeomZmamJaXlJaYlJOVkpKVkJKUkI+Rjo6Qi4+UioyPioqOhoqNmpKClY1+lo14lIl1jYuFjImBi4iAj4Z1jYV1i4R2kIRui4NvhoeJhISHhYWDh4N3i4BuiIBuh39uhX9xhHxti31mhXxnhHxog3llgIqSdIqcgYKEeYKJfoCCfX2BeXyBaXyNfIB0fH13e3x1fHtzf3pugXlmenp4dXl2fHdufndoeHd2eHVsgHdlfXVlfnVjfnVgdnh7dXV5bnV9d3Zyd3RsbnVjf3Fee3JhenFheHFkeG9ddHNudHBqdW9idW1ecXJ0bnF1bm5xam1zcG9rbW1rcG1lcG1hdWpYb2pfbGpobGlfc2VRc11FbGZabF5KaWpsZ2dpaGdiaGddZ2RgaGRZaGFWaFtIZGZoXGl0YmJjXGFnZGNcY2FZX2RSUWgrX19dXVxbWltdUlxjYl5UYlxOXVtUT1w4WlhVWFhWV1hXVlZUXFhOWFVOX1ZFWFRJVFZXVFRUTVVbVFRQSFUuZE43WU4+VVFJVUw9UlJPUk5EUVFSUVBNUE9KUExBTlBST09PTk5PTk5LTk1MTUxKTktCS05PS0xMS0tLSkpKSUlJRExSREdLR0dHS0pDSUhDSEdFSUc+QE8hOk0cRkZEOUchVEIsSkI0RkQ+RUVFRURBREI9Q0NEQkJCQkE8QUJBQEBAPz8/Oz9CPz85N0AmRDsuPDs5Ozs4OTo6OTk0PDYuNjYzPDEjMTU4MDUmMTAsKy4rLioiJyglJiMcHBwZ", "pal_count": 256, "pos": "data/eth3d-terrace-gt.bin", "dist": "data/eth3d-terrace-gt-dist.bin", "colour_error": 1.7, "label": "GT: лидар"}, "da3": {"count": 750000, "centre": [-2.9383844618154313, -3.422730592643319, -1.9862393372546496], "half": [6.304220075989516, 5.523569343250843, 3.2211259148027755], "pal": "6u305unv4uTq2dzlzdvpztLi0dLZzc7Vyc/euM/nyMrTxcbPyMTBzr+vyb+wvcbZvr/Gr8XdosPgyr2sybqqxbusxbqmwrqrwbmowbimxLanxLWhwLalvbm0vramvrakvbWiuLnBuLa1r7jIn7jRwrKgvrGgvLGhu7KiurCetrGquK+guK+et6+cuayetqydtayetayat6uXs6ubs6iZtaeRrq+0sKmbr6eYsKaUrqWWrqSRqKy2qamspqWnoKi1j6rErqKRq6KTqaGToqKmo6GepZ+XpJuRqJyHopiInp+knZ2hlp+smpqfkZmlm5ubmZiZmZeVlJaamZSOmpKGm5F9lJSYk5GPj5KWj5GTjo+Tj4+PkoyCjIyOjod9lIt2kIl2joVyh5mpfpqygZSkiY2RfI6fiYqNe4mXiImJhoeJhYWHg4WIf4SJb4SWiIR+ioNwg4ODfoOAgYCCfn+ChH93fn57h4Bug31uhn5pg3xpfH+DfH2Bbn6NfH18b31gfXp2enp6eXl7eHd1d3l8d3d1dnV0dHd8cnV5c3V1gntpgXhofnhqgHdlgHZhendtdnRte3VnfHVhdXJtd3JmcnFwcHJ1cW9tb3Bye3JifHFbeXBgdG9kdm9ecmxhbmxmdGtacmhXbmdYa3J3a2xvYXaHXm56aWpuamlqZ2dqZGdrWWdza2xfamhhaWZfXHU0Vmo5aWVcYWRcZmJdYmJgYGFiX15dZ2FVYl5UZF1NXF5hW1teUl1mW1tXUV1CWVhXV1dXXVhMWFdRWFNJVFZZVFVUVFRTU1NTU1NRU1NMU1BJUFNWUFFRUFFMT09PT05NTk1NT01GTVBSTE1NTUxLRlNbSExQSkpNSkpKQUlRRlEuPE8fS0pHPkoqSUlISUhFP0gxS0U6RkdHRkVCRUZHREVFRENFRERAQ0NEQkI+QERGQEBBPz8/O0JINEFMPkA1M0MbQTswPDw6Ozs5OTk3Njg5MDg+MjcpNDIsMTEuLy8sKi0qJiYjHyMfGRwYEhQR", "pal_count": 256, "pos": "data/eth3d-terrace-da3.bin", "dist": "data/eth3d-terrace-da3-dist.bin", "colour_error": 1.69, "label": "DA3-Giant — F@1 = 0.975"}, "omega": {"count": 750000, "centre": [-2.937956535082564, -3.4807361100169034, -1.9607345762373418], "half": [6.303799725637151, 5.580648031844, 3.1953754292707117], "pal": "6Orx3OTs2NrhytjnzdLh0NHZzM3Wxs3cr83oy8XCw8TLzsCvyb+tu8Xav8DGrcTdocLfyrysx7usyLqnxLqpwrqrwbmowbmmxLanxLWhwLalvbm0vramvrakvbWiuLnBuLa1p7jMwLKjvLKiu7KitrGquK+gv7GcurCeubCet66dt6yeuKyYtayctKuYs6ubtqmXsqmYtKaSrrC3rq2vramlsaiYsKeWrqaXraSYraSUraORpqu0paarpKSopaOgnqe1jqnDqKCUoaCjnp+jn52dnZucq5+Mpp2No5uOopeGnpaKlZ2qmZuelpiel5ibl5eXlpWWkpSXl5GJmI97kpKVkZCUko6IjZCUjY+RjI2RjY2NjIqJkYl6jIV7kYdyjIVyi4JvgpmtfZKlfY6dh4uOh4iLh4eHfYeSg4aHhIWHg4KFhoJ6iIFuf4OIboKVgIGEgIB/eoF+f35/gn1zhn5tgXtuhX1pgntpfH6CenyBenx/bHyMfHt5dHtyfHhweHd1d3d5dnRwc3d9c3V5c3V3cXN3dHVycnJxgXlof3ZofXVof3ZkfXRjfnRfeHRoenNjdnBmcnBrcG9ubnBzbW1xbm1reXFgeG9fd29geG5bcm1idG1dcGpfbGpkc2lZb2dZbWRUam90ampsaWlpYHKDYmlwZmdpZGRnYGNoVWNwaWdfaGVcWmtAZ2NaX2JYZWFYXmBaX19dXVxbWltcZF5SXFpTYFlLWFteWFlaV1daTlliV1dWWFdQTVg+VlVTVFRTWFNIU1NUUlJPUFNVUFFSUFBNUk1DTk9OTk1NTkxGTFBSTE1NTE1IS0tLS0pJSklJS0lCSU1PSElJSUhHQk5XQ0hMRkdJRkZGPkVMQ00qOksfQkY2RUVERURBO0QsR0E4QkNDQ0I/QkA8QUFCQEA7Pj9BPj89PT09PT03Oj9BOjs7OTk5NjxAMDtDNUAcODkzLj0YODUwNTQyMjMzMTErLTEzKi0uKTEdKionKCYfJScmISUjHR4cGBoZExMT", "pal_count": 256, "pos": "data/eth3d-terrace-omega.bin", "dist": "data/eth3d-terrace-omega-dist.bin", "colour_error": 1.68, "label": "VGGT-Ω — F@1 = 0.978"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, 0.3407408183324765, -0.9401572712701395, 0.0, -0.9753622151814396, 0.20740762064839802, 0.07517065979040907, 0.0, 0.22060949480100622, 0.9169938787249807, 0.33234571937150076, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [2.843099555866915, -3.7497482406725453, 1.3980853208985247], "radius": 13.251342241532562, "theta": -2.4229125285621698, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 160}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.210759602799933, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
+<div id='gl'>
+<div id="prog" style="display:none;position:absolute;left:50%;top:50%;
+     transform:translate(-50%,-50%);z-index:5;flex-direction:column;align-items:center;gap:11px;
+     pointer-events:none;background:rgba(20,23,28,.92);border:1px solid #2b313a;
+     border-radius:10px;padding:15px 24px 17px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+     font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <span id="progtxt" style="color:#dfe5ec;font-size:13px;font-variant-numeric:tabular-nums;
+        letter-spacing:.2px"></span>
+  <span style="display:block;width:300px;height:8px;background:#262b33;
+        border-radius:4px;overflow:hidden">
+    <span id="progfill" style="display:block;width:0%;height:100%;background:#6cb6ff;
+          transition:width .15s linear"></span>
+  </span>
+</div>
+</div>
+<script>window.VIEWER = {"traces": {"gt": {"count": 750000, "centre": [-6.824664831161499, -4.872103214263916, 1.3166368007659912], "half": [12.948265314102173, 9.327250957489014, 6.471139192581177], "pal": "6u3z3Obu0NfjzM3Ut8vfxcTHy8Cvv8HGqMLZx7urwrqrwbmqwrmnw7ejvrmyvrakubm9qLnIwLSivbSkvLOgu7Oivq+curCeubGguK6dtrKvt66dtq2etq2asbCxoa+9taqas6qasKibp6iup6altKmWsaeWrqWVsqaRrKOTpKKkp6GZpp6SraCLp56MpJmGn6Opnp+jnJyhnp2dm5qbmpmZmZaWnZSEkp6qhJ2yk5acf5SmlZWYlZWTk5OUj5OVmJCAlY6BkZCRkouAjo+RjYuLl415kot4kYh3lIhyjoZ2jYVyiY2RiYuMh4mLhYaLhIaIh4eGhISGiIV7j4JwioJwiYFvhoB2hn9shXxugYKFgYF+gX11jX9nhn5phHxpg3tohXdjgXlngHZkfoePfoCDfn+AdImbcoCLe31/eXp+dnl+aHmJfX15fHp1fHhvbn5XdXhyendufnZkd3Z1cXZweXVtdnRveXRnfXRjenNjfHNgc3R3bXN6dXNubHNgfW9beG9edm5fdG9mdWtbcXBwcm9ocW1ncWxhcmpZbm9zaW50bW1taGpuaWlrbmxmamtmamhlbGpgbGlbcmVScl1Ea2ZdbGRVa1tGZ2ZoZ2ZhaGVcZ2JXZ1pGZGVpZGNkZGNdY2BbZF9TY1hHYGRoYGBfX15eX15YV2NsWlxeWlpbWllWVldZTVhgXl1PXVlPT2UrUVk+WldOUlZHV1VRVFRTVFNRU1NUU1NQUlFQUVJUUVFQUVFPS1FWWFRKVVJKV1JGXVI+UVFJQVIhYkw2V0s6U05FU0k4UE9KUEtATk9PT05MTk1MTktDTE1PTE1MTExLS0tLS0lKS0tITEtDS0hES0c8SEtMSElJSElGR0dHR0ZFRkVFRUZHP0dNR0dARUVCRkQ8PkomNkgbUUAsR0AzREE7QkJCQkA6QUFBQD85PkFAPj49PTw8OD1APT02Ozs1Mj4fRTYlOzYtODcyNzYyNDQzLjM2MDMoNSwhLi0nLSsmKigjJCcjIyIcGxsY", "pal_count": 256, "pos": "data/eth3d-terrace-gt.bin", "dist": "data/eth3d-terrace-gt-dist.bin", "colour_error": 1.72, "label": "GT: лидар"}, "da3": {"count": 399203, "centre": [-4.906827071187466, -4.256712849248848, 0.4025074686518977], "half": [11.193762025061789, 7.704949626820283, 5.6140214568097235], "pal": "6e710NvozdDbvdDkw8fTxcC8uMTYq8PZxryuw7uuwbmuxbmmwLiovLm5vrans7nEprnMwLSkvbSlubOourGjt66ivLCctq2ctayctqqXr7G1r6mhsqmYsKaWpLDApamtl63Dm6i1rKOWpKKin5+hmaKsm5uer6OPqqGQqp6KpJ2Po5uIoJiJm5aPl5aXoJWBmpOCmZKCmZCAl4+BmI56kZ2shpyuh5WkfZKkkZaVkJKUjZCSk46Gh46Sk4x/lIx6k4t4iYyReouaiouIk4h4kIl3kId2j4d3jIV5kYVwjIRxioJwhoeKhoaFgIaLgIKFhYR9goB8iIFuiH5uhX1ugX11fH1/fXx3in1qhXxqiXxlgnpohXhngHhof3Zoe3hwfHRmhHVffHNgfm9adoOMdnt+bH+Nd3d4bHd+c3R1cHBzanJ3X3F9anpNcHRgcHJidnBlaXBedG9jaG5gbmxoamtqaGlpcmtea2hfcWlacmlQZWlsW2lyZGhhVGkwcmFLa2JSZ2JXZGRlY2JiY2FWX2JlX2FhXV9hXmBdX19UbVtGZFtKX1tRa1I8Y1I/X1E/W1xcW1pSW1RGW006VWFpVl5dVlpcV1dYUldaVV1DVlZRVFRTVlRLU1JRUVFRVlJJUlFKUU5JU05EVU47VEk5TFhgSlszS1FVSlFESV4kRVciRFQhQlIhPlEgTk5OTU1JSE1PSU06QE4fO00gSktKS0tFSUhHR0hHTElBR0dCS0g7REhIP0hMPEkoPEkdOEkcNkgbWUEsT0EvS0AxR0Q8Rz0uRERDREM7RD0wQ0NAQj40P0JEP0E9Pj89PTw8P0AzPj01PjkuOD9EOD44Ojo4NTo7ODg3ODcyMzc3N0MgNkMZMUEbNDsiNzYqLDkbPzIkODImNjIpNDQvNC4jMjMyMTEwMjIoMS0kLjIxLi4sKTAvLCwqJysrLS8hLCojJjEaJSseLycdKicfKCchJiYgJCUkICQjJCQbHyQZJCAYIB8aHh8aGx4ZGhkVFRgTERIO", "pal_count": 256, "pos": "data/eth3d-terrace-da3.bin", "dist": "data/eth3d-terrace-da3-dist.bin", "colour_error": 1.98, "label": "DA3-Giant — F@1 = 0.975"}, "omega": {"count": 224705, "centre": [-5.816250112226664, -4.877246884614424, 0.43252740344793894], "half": [12.014747022203332, 8.326123814038722, 5.584302359380681], "pal": "6e710Nvoyc7auszgv8POxL21tsLUqsDVxLqrwbmtvbixvrOjurKksLfEsrO1oLbNpLLCtq2hrKysuKyZsamarqaYqqKWrqOQqKCQoay7nqe1k6i8j6GzpaSjpp6QmKGqnaCfpZyMo5uMn5uWoJiKopiFnpaFmpqcl5aWnZaHnZSEm5SFnZKAm5KCmpB/mZGCmZB+mI59l4+Bl458lo18j5qnkpaZkJKVjY6Sh5WjfpSlfo2ZlI+DlI1/lIx6k4t8k4p4j42Fh4yGk4l3kYh4koVyj4d3joRyjYV1jIJxiYaCioNziYFzioFviX9thYaIfIaOgYKEeoGHgoJ/fX5+hX9whnxsinplgnpqgXhpenx/e3t6eHh6enh0fndogHRie3Njgm5ae21bd3Nnd2tbb4KQbnuFb3d+ZXWDanlXbnRqc3JwZ3JhcHBwbG5xZ25zX255cW9oc21dYW5MbGpmaWloZ2hocGlbaWZcb2dRYmhsYmVoWWdxYmZfU2cwcWFPaWFRZWFXYWJiYmBYbFtIZVpKaFM/YVpNYVE/XWFjXV9fXFxeXFxaXVxTW1hSXFZHXE8+VWBpV15fVlpdV1lYVVdZV1pOVldWVlZPVFVVVlROVFNQU1BOVVFIVVBAVUs9TltgTldaTF8sSVkuTVNYTFNDSV0kRVcjRVQiQFMhUFBQT09MTE9QR09USk88QlAgPU8gTU1LS0pJSUpKTktDSklETEpATUo4RkpKQUpMP0smOUojPksdOkodOEkcW0IuUUMzTUI0SUY+ST8wRkZGRUVDRkU9RUI6RTwtQUVGQUNCQEFBQUI+QUI2QD87Pzw5QDsvPEBCNz9DOkA1Ozw3Ozs2Njo5Ojk0NDg3OUYfOEYaOEIeNEQcM0EcMEEaND0eMD0cLTsaQzQlPTQnOTMpNjQtNDU0NDQrMy8lMDQzMDAvKzIxLi4tKS0tLTQeLi0lJzAbMikeLCggKigiKCknKCgfJyQcIyYkISMiISUaIx8ZHh4aHB4aGxoVFxkUEBIO", "pal_count": 256, "pos": "data/eth3d-terrace-omega.bin", "dist": "data/eth3d-terrace-omega-dist.bin", "colour_error": 1.95, "label": "VGGT-Ω — F@1 = 0.978"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, 0.3407408183324765, -0.9401572712701395, 0.0, -0.9753622151814396, 0.20740762064839802, 0.07517065979040907, 0.0, 0.22060949480100622, 0.9169938787249807, 0.33234571937150076, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [4.5893463765709175, -3.26630526730231, 4.2629348521890496], "radius": 21.688013409766274, "theta": -2.4229125285621698, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "qFM9P/o3kL83PWTABqa7Pmgyyr8OUFHABqa7Pmgyyr8OUFHAA72NPj+FRr+0lVDAqFM9P/o3kL83PWTAA72NPj+FRr+0lVDAA72NPj+FRr+0lVDAHo9wPgfIRb+by3LAqFM9P/o3kL83PWTAHo9wPgfIRb+by3LAHo9wPgfIRb+by3LAkjCmPs3Tyb/0hXPAqFM9P/o3kL83PWTAkjCmPs3Tyb/0hXPAkjCmPs3Tyb/0hXPABqa7Pmgyyr8OUFHAeFjjPi/AGsAnZWPAb9wRvgUAG8DwZ1DAb9wRvgUAG8DwZ1DAeOzUPnYF67+h6k/AeFjjPi/AGsAnZWPAeOzUPnYF67+h6k/AeOzUPnYF67+h6k/AhbjHPpD75r/dGXLAeFjjPi/AGsAnZWPAhbjHPpD75r/dGXLAhbjHPpD75r/dGXLAVEQsvhL7GMAsl3LAeFjjPi/AGsAnZWPAVEQsvhL7GMAsl3LAVEQsvhL7GMAsl3LAb9wRvgUAG8DwZ1DA7obAv8lNdMA4mmXAfynPvz6eT8AqV1LAfynPvz6eT8AqV1LA9jdyvzFobMCqy1DA7obAv8lNdMA4mmXA9jdyvzFobMCqy1DA9jdyvzFobMCqy1DAotpmv0v+acCt8XLA7obAv8lNdMA4mmXAotpmv0v+acCt8XLAotpmv0v+acCt8XLA1XrJv1c0TcAtfXTA7obAv8lNdMA4mmXA1XrJv1c0TcAtfXTA1XrJv1c0TcAtfXTAfynPvz6eT8AqV1LAL1hkwBMVfcBlJ2nAWMhTwAgGXMDCElXAWMhTwAgGXMDCElXAxE9DwACQhsBJnVTAL1hkwBMVfcBlJ2nAxE9DwACQhsBJnVTAxE9DwACQhsBJnVTAjnw/wJUUhsAPvXbAL1hkwBMVfcBlJ2nAjnw/wJUUhsAPvXbAjnw/wJUUhsAPvXbAIvVPwDIPW8CIMnfAL1hkwBMVfcBlJ2nAIvVPwDIPW8CIMnfAIvVPwDIPW8CIMnfAWMhTwAgGXMDCElXAJweawKgJ7b/nx2jAyQKKwNFvx79NA1XAyQKKwNFvx79NA1XAejCQwOQDFsCIAFXAJweawKgJ7b/nx2jAejCQwOQDFsCIAFXAejCQwOQDFsCIAFXAMJ6OwHTLFsBWM3fAJweawKgJ7b/nx2jAMJ6OwHTLFsBWM3fAMJ6OwHTLFsBWM3fAf3CIwPL+yL8bNnfAJweawKgJ7b/nx2jAf3CIwPL+yL8bNnfAf3CIwPL+yL8bNnfAyQKKwNFvx79NA1XADKSNwFwx9L41RGfAfDR2wJ3YCb9gylPAfDR2wJ3YCb9gylPA8vWOwHRoh7+0xFPADKSNwFwx9L41RGfA8vWOwHRoh7+0xFPA8vWOwHRoh7+0xFPAcwiOwBjji7+97XXADKSNwFwx9L41RGfAcwiOwBjji7+97XXAcwiOwBjji7+97XXAf1l0wOXNEr9o83XADKSNwFwx9L41RGfAf1l0wOXNEr9o83XAf1l0wOXNEr9o83XAfDR2wJ3YCb9gylPAMC4PwIUUCr3PGWbAk7H/v6lsEb8eAFPAk7H/v6lsEb8eAFPAwocwwPyClb5bgVLAMC4PwIUUCr3PGWbAwocwwPyClb5bgVLAwocwwPyClb5bgVLABMUxwEUrqb6zrXTAMC4PwIUUCr3PGWbABMUxwEUrqb6zrXTABMUxwEUrqb6zrXTACxYBwM5AG792LHXAMC4PwIUUCr3PGWbACxYBwM5AG792LHXACxYBwM5AG792LHXAk7H/v6lsEb8eAFPAmcuwv63szr3zsWXA9YWhv8H3K7+eTFLA9YWhv8H3K7+eTFLAVgH5v6wmdL4NAVLAmcuwv63szr3zsWXAVgH5v6wmdL4NAVLAVgH5v6wmdL4NAVLApoL8vzJHjb7zMHTAmcuwv63szr3zsWXApoL8vzJHjb7zMHTApoL8vzJHjb7zMHTARQelv6+RNb+EfHTAmcuwv63szr3zsWXARQelv6+RNb+EfHTARQelv6+RNb+EfHTA9YWhv8H3K7+eTFLA8R6lvaCvGr9w12TAAnOCvitOlb/hI1LAAnOCvitOlb/hI1LAM7gjvyDX6L6y5lDA8R6lvaCvGr9w12TAM7gjvyDX6L6y5lDAM7gjvyDX6L6y5lDAwrwuv2hP7b4VGnPA8R6lvaCvGr9w12TAwrwuv2hP7b4VGnPAwrwuv2hP7b4VGnPAIHyYvj1slr9FV3TA8R6lvaCvGr9w12TAIHyYvj1slr9FV3TAIHyYvj1slr9FV3TAAnOCvitOlb/hI1LAFx+jwAADEMBVVmnAmOaqwHgmMcDBo1TAmOaqwHgmMcDBo1TAwwy0wEu1AMDPolXAFx+jwAADEMBVVmnAwwy0wEu1AMDPolXAwwy0wEu1AMDPolXA5re1wIGrAsClu3fAFx+jwAADEMBVVmnA5re1wIGrAsClu3fA5re1wIGrAsClu3fAu5GswK4cM8CXvHbAFx+jwAADEMBVVmnAu5GswK4cM8CXvHbAu5GswK4cM8CXvHbAmOaqwHgmMcDBo1TA", "size": 160}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.3445152795909487, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
 (function () {
@@ -217,6 +231,65 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     applyCamera();
   }, {passive: false});
 
+  // ------------------------------------------------------------------- progress
+  // A determinate bar over the bytes still to come. The size of every payload is known from the
+  // trace count (7 bytes per point, 1 byte per distance), so the bar never depends on
+  // Content-Length surviving compression, and it measures what actually arrives rather than
+  // what was promised.
+  var prog = {
+    total: 0, done: 0, phase: '', el: document.getElementById('prog'),
+    fill: document.getElementById('progfill'), text: document.getElementById('progtxt')
+  };
+  function progPaint() {
+    var share = prog.total > 0 ? Math.min(1, prog.done / prog.total) : 1;
+    prog.fill.style.width = (100 * share).toFixed(1) + '%';
+    prog.text.textContent = prog.phase + ' ' + Math.floor(100 * share) + ' %';
+  }
+  function progStart(total, phase) {
+    if (!prog.el) { return false; }
+    prog.total = Math.max(total, 1); prog.done = 0; prog.phase = phase;
+    prog.el.style.display = 'flex';
+    progPaint();
+    return true;
+  }
+  function progAdd(delta) {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = Math.min(prog.done + delta, prog.total);
+    progPaint();
+  }
+  function progFinish() {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = prog.total;
+    progPaint();
+    setTimeout(function () { prog.el.style.display = 'none'; }, 350);
+  }
+
+  // fetch() into an ArrayBuffer while reporting bytes as they arrive. Without a readable body the
+  // download still happens, the bar just jumps to the end in one step.
+  function fetchBuffer(url, expected, onBytes) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + url); }
+      if (!response.body || !response.body.getReader) {
+        return response.arrayBuffer().then(function (buffer) { onBytes(expected); return buffer; });
+      }
+      var reader = response.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (step) {
+          if (step.done) {
+            var out = new Uint8Array(got), at = 0;
+            for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], at); at += chunks[i].length; }
+            return out.buffer;
+          }
+          chunks.push(step.value);
+          got += step.value.length;
+          onBytes(step.value.length);
+          return pump();
+        });
+      }
+      return pump();
+    });
+  }
+
   // ------------------------------------------------------------- payload load
   function loadPositions(key) {
     var spec = META.traces[key];
@@ -224,10 +297,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     if (spec.object) { return Promise.resolve(spec.object); }
     if (spec.pending) { return spec.pending; }
     var started = performance.now();
-    spec.pending = fetch(spec.pos).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.pos); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.pending = fetchBuffer(spec.pos, 7 * spec.count, progAdd).then(function (buffer) {
       var n = spec.count;
       if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
       var geo = new THREE.BufferGeometry();
@@ -252,10 +322,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     var spec = META.traces[key];
     if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
     if (spec.dist_pending) { return spec.dist_pending; }
-    spec.dist_pending = fetch(spec.dist).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.dist); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.dist_pending = fetchBuffer(spec.dist, spec.count, progAdd).then(function (buffer) {
       var values = new Uint8Array(buffer);
       if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
       spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
@@ -294,18 +361,25 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     document.getElementById('size').value = state.size;
   }
   function apply() {
-    var keys = chosen(), loading = [];
+    var keys = chosen(), loading = [], expected = 0;
     for (var i = 0; i < keys.length; i++) {
-      if (META.traces[keys[i]]) { loading.push(loadPositions(keys[i])); }
+      var trace = META.traces[keys[i]];
+      if (!trace) { continue; }
+      if (!trace.object) { expected += 7 * trace.count; }
+      if (state.colour === 'dist' && trace.dist && !trace.dist_done) { expected += trace.count; }
+      loading.push(loadPositions(keys[i]));
     }
-    hint('загрузка точек…');
+    // Nothing to download (a revisit): no bar, and no flicker of a bar that finishes instantly.
+    var bar = expected > 0 && progStart(expected, 'загрузка точек…');
     Promise.all(loading).then(function () {
       var extra = [];
       if (state.colour === 'dist') {
         for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
       }
+      if (bar) { prog.phase = 'обработка…'; prog.done = prog.total; progPaint(); }
       return Promise.all(extra);
     }).then(function () {
+      if (bar) { progFinish(); }
       var shown = 0;
       for (var key in META.traces) {
         var spec = META.traces[key];
@@ -323,7 +397,10 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
       toHash();
       dirty = true;
       if (!ready) { ready = true; firstReady(); }
-    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+    }).catch(function (error) {
+      if (bar) { prog.el.style.display = 'none'; }
+      hint('не загрузилось: ' + error.message);
+    });
   }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();

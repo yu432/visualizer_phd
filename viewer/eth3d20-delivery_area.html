@@ -7,7 +7,7 @@
 <link rel='icon' href='data:,'>
 <style>
 html, body { margin: 0; background: #14171c; color: #e8e8e8; }
-#gl { width: 100%; height: 86vh; overflow: hidden; }
+#gl { width: 100%; height: 86vh; overflow: hidden; position: relative; }
 #gl canvas { display: block; }
 .pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
         padding:4px 11px; font:inherit; cursor:pointer; }
@@ -41,7 +41,21 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   <span id="hint" style="color:#8f98a3"></span>
 </div>
 
-<div id='gl'></div>
+<div id='gl'>
+<div id="prog" style="display:none;position:absolute;left:50%;top:50%;
+     transform:translate(-50%,-50%);z-index:5;flex-direction:column;align-items:center;gap:11px;
+     pointer-events:none;background:rgba(20,23,28,.92);border:1px solid #2b313a;
+     border-radius:10px;padding:15px 24px 17px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+     font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <span id="progtxt" style="color:#dfe5ec;font-size:13px;font-variant-numeric:tabular-nums;
+        letter-spacing:.2px"></span>
+  <span style="display:block;width:300px;height:8px;background:#262b33;
+        border-radius:4px;overflow:hidden">
+    <span id="progfill" style="display:block;width:0%;height:100%;background:#6cb6ff;
+          transition:width .15s linear"></span>
+  </span>
+</div>
+</div>
 <script>window.VIEWER = {"traces": {"gt": {"count": 750000, "centre": [-0.8626270294189453, 7.258179664611816, -2.431808326393366], "half": [16.55083465576172, 17.5024995803833, 2.5456820987164974], "pal": "9vb16ejp5+HZ3d3d2NfU1NXT09LS5NS928itz87Oy8rMzMi8yMfGxsTAxcK8wsC9vr29xb6pvrqxu7m2ube1x7R7urSdtrWytLKws7CvtLGmtK6UsK+srq2orKqmqKinrqugrKmfq6qOtKJhqqWSqKadqJ1pp6WfpqGOpKOfpKGVo5yCn56doJ2TnJuVm5iTnZmOnZh/nJFrmJeTlpWRlJOQl5SKl5OClJGHk46DlYx2l4pdkI+MjYyIh4qLkIx7j4l1iop0k4VjjoRmjIRriYZ9ioJphoWDhoV+g4J/hYJ4hYFxin5Zhn5iiXhRhX1khHdSgn1sgnZTgIB9fX16f310fHp3fHpxfnprfHdqgHlef3ZcfHRjfXRafnNVe3BWfnJQfnJEfG1IeHl1d3ZxdnRudHJudXFneHNed3BddG9gd25SdGxadWtQdWpLdWhAcG9qcG1kb2thaGxtbGhhaGdiYWZocGpVb2dOamhWbmVLaWRWb2JEamJKaGJPZGJeZGFaZWFRa15Cd00xZlxFZFxHYl5QYlhDYF9bXlxYX1xTX1tKXlhNX1dCXlI8WVlXWVhSWVdPVlRPUlNQWVdHWFRHV1JGU1BJUU9KU09EVk89Uk1AUkk3Q1NnTUxITEtGSkhERUdHTUs+TUk8Skg+S0c6SEY+RkRARkQ9QUNCSEQ5SUM0REI4RUA4QkA5QD88QD83Pzw3NTtDOzo2Ojk0RD4vPjsxPjguOjkwODYyOTYtQTEnNjUuNjIqNTQwNTMqNDAoMzIuMzAnMi4mMTAsMS8mMCwlLi8rLS0qLi4lLiwlLSsmLSoiLCghKisnKSkmKigjKCcjKikgKCYhKCYeKCUfJiUgJSQgJiQcJiMdJCMeJSIaJSAaICs7IiIfISEgIiEcIiMaIiAbISAbIiAZHyAZHx8dIB8aHx4aIR8ZHx4ZHx4XHR4YHh0ZHRwZGhweHRwXHBsXGxoXGhkXGxkVGBgYGBgUGBgTFxcSFRYSFhURFBQREhMQERAODw8NCwsK", "pal_count": 256, "pos": "data/eth3d20-delivery_area-gt.bin", "dist": "data/eth3d20-delivery_area-gt-dist.bin", "colour_error": 1.84, "label": "GT: лидар"}, "da3": {"count": 357619, "centre": [0.5414300495247604, 5.933628367378531, -2.5730760873328635], "half": [15.194401989458811, 16.065733758636224, 2.498208505791854], "pal": "+fj34eDd1dPKzczHx8XCycKqwr+5vry3u7iyt7Wxt7OqwbKMsrGsr62qsa6kr62Yr6qhramhrKmhqqiiqKWfraeZs6JsqKWaqKGQpqOco6OepKGaop+Zn52ao5+UoJ2ToKB5oZmMp5NenZiJnJmSm5SAmZiSmZWNmZSEmY94lpWPlZOMlJGLlZGFlZF+lI+Ck4x/lItwkI+Ij42Ej4yDjoqAi4qEiod/h4aCg4SDj41sjoh2jYZ1joVmiodvioNxiIVzg4VqiIJwiX9tj3xTh3xbhIF4hH9thHxlhHdYgYB6gH11gX1vgXxngHpogHdkgXdYgHJRfHt5e3p0e3lwfXprfHhre3dqeHVueXVpeXRnfHZjfHVZeXNhe3JWeHBdeW5PdHRxdXNqc3FrdXJkdHBkcm9mc25hcm1ib25rb25jb2xkbmtibWlhbGpkZ2lpZmVidW9YdG1Yc2xXcmpYc2pMbGxYbWlYbWhXbGZYamZZbWVQbmVFaWVbaWRTZWRZd11DaWBJZ19MZWFUZV1IY2FcY2FVY15VY15LY1lDYF9aX1xXYF1SYFxLX1lMX1c/W1taW1pVW1lTVlZUVlVRW1lPWFVPVVNOW1hLWVlDWlZHWVRJWlRCV1NIVFJKWFJAgD8rWks3VlFCVkw7U1BLU1BDU05AU0k5UE9NUE9JT01IUE1FUE0/T0tCUEo7T0Y3S0tJS0pFTEpDSkhDSEdDTEo9S0g9S0c8SUY/R0ZASkU4SEQ7SUQ1ST4xQ0hPRURAREM/QkE/Q0E8RUM3REE4QkA6REA0QT86Pz47QT43PT06Qj41Qz4wPz02PzwyPjs1PDs2Ozo2Ozk0PDkyPTktOzYtODg1OTcxODYxNjUyMjQ5ODUvODUrNTQtNTMtNDIsMjEtMzArMDAsLy4rNDAmMi0lLiwmKywsKyonKyomKCclKyojKSgjKSchJyYiKSQfJSQgJCMfIyIeICAgIB8cHR0dHh0ZHhoXGhkXGRgWFxcVFRQSEhIRDw8ODQ0LCAgG", "pal_count": 256, "pos": "data/eth3d20-delivery_area-da3.bin", "dist": "data/eth3d20-delivery_area-da3-dist.bin", "colour_error": 1.77, "label": "DA3-Giant — F@1 = 0.879"}, "omega": {"count": 353782, "centre": [0.5462345693095436, 5.933943349919759, -2.7130171357339563], "half": [15.19838232300462, 16.066269851972617, 2.5332851074261526], "pal": "6+rn1tXMzszEx8bBw8G9xb2mvLq0ubiyuLSttbKssrCrrq2qsq6ku66PraukrKuUraifq6ifqaefp6agpqOdqaSYpaKYrKGOsZ9do6GZop+WoJ+Zn5yVm5qXoJyRnJmQnpmNm5tmnJaLmZaMl5WMlZSNlZGJoJBomI93lZCAlYpwkpGKkY+GkY6GkI2Dj4qAkYx8kYtxj4d1kIVkjIuEjIl/i4h/ioZ8h4aAhoR8hYJ7goF9ioZ1iYdch4J0iYJnhYBziIBljntXh31ghX5rhXtbg31sg3lcgX51gXxugXpjgXZZfnx3fntufXltfXdrfXdlfnZbfXJVenlyeXdueXZseXVrd3Nsd3Jnd3JlenRheHJhd3FgeXJXeHBXdm9cdmxZd2xNc3Nrc3Bncm9mcm5kcG1lcWxgcGthbWxmbWpibGhhaWhjaWVgZGVlc21YcmtWcWpVcGhXcWhKamxXbGhZbGdXa2ZXa2RWaWRXbGRNbWNDZ2RbZ2NTY2NYcF5EZ19JZWBRZVxGY2BZY19TY11KY1lCX15bX11WYF1SXlpSX1pNX1lFXlZGX1U7W1pXV1dVWlhRVVRRWldOV1ROVFJNWldKWVhEWVVGV1NJWVNCVlJIU1FJV1FAeUUvWE05VU4+U1BFU0w9UU9KUk9DUU0/UUk5T05MT05ITkxIT0xET0w+TkpAT0k6TkY4SkpISkhES0lCSUdCR0ZCS0g/S0g5SkY8SEU9RkU/SUQ5SkQ1R0M6SEI1Rz4xQ0ZKRENAQkI/RUM5REE4QkI4QUA9Qj86Qz83Qz8zPz46QD04QD03PDw5QT00QjwvPzwzPTszPTo0Ozo1Ojk1Ozg0PDkyNzc3ODczODcyNjUxPTkvOTcvPTgqOTYqNzUvNjQvNzUqNTMuMzIvNTIrMzEsMTAsNjEmMjAnMi0lLS4tLSwpLSwoLSwnKikmLiwjLCojKykjKigiKyYfKCYhJyYhJiUhJSMcIyMgISAeIiEbIB8aIB0ZHRwYGhoXFxcUFBQSDg4M", "pal_count": 256, "pos": "data/eth3d20-delivery_area-omega.bin", "dist": "data/eth3d20-delivery_area-omega-dist.bin", "colour_error": 1.65, "label": "VGGT-Ω — F@1 = 0.971"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, -0.44472075068033445, -0.8956692770851973, 0.0, -0.9769307165921395, -0.19127598818455913, 0.09497300312609526, 0.0, -0.21355649130562362, 0.8750068286924053, -0.43446136164553334, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [-6.366894675904427, -4.254794817549067, 0.6494533429556707], "radius": 28.228090620646682, "theta": 0.6261644417372636, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 320}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.48446215219800026, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
@@ -217,6 +231,65 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     applyCamera();
   }, {passive: false});
 
+  // ------------------------------------------------------------------- progress
+  // A determinate bar over the bytes still to come. The size of every payload is known from the
+  // trace count (7 bytes per point, 1 byte per distance), so the bar never depends on
+  // Content-Length surviving compression, and it measures what actually arrives rather than
+  // what was promised.
+  var prog = {
+    total: 0, done: 0, phase: '', el: document.getElementById('prog'),
+    fill: document.getElementById('progfill'), text: document.getElementById('progtxt')
+  };
+  function progPaint() {
+    var share = prog.total > 0 ? Math.min(1, prog.done / prog.total) : 1;
+    prog.fill.style.width = (100 * share).toFixed(1) + '%';
+    prog.text.textContent = prog.phase + ' ' + Math.floor(100 * share) + ' %';
+  }
+  function progStart(total, phase) {
+    if (!prog.el) { return false; }
+    prog.total = Math.max(total, 1); prog.done = 0; prog.phase = phase;
+    prog.el.style.display = 'flex';
+    progPaint();
+    return true;
+  }
+  function progAdd(delta) {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = Math.min(prog.done + delta, prog.total);
+    progPaint();
+  }
+  function progFinish() {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = prog.total;
+    progPaint();
+    setTimeout(function () { prog.el.style.display = 'none'; }, 350);
+  }
+
+  // fetch() into an ArrayBuffer while reporting bytes as they arrive. Without a readable body the
+  // download still happens, the bar just jumps to the end in one step.
+  function fetchBuffer(url, expected, onBytes) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + url); }
+      if (!response.body || !response.body.getReader) {
+        return response.arrayBuffer().then(function (buffer) { onBytes(expected); return buffer; });
+      }
+      var reader = response.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (step) {
+          if (step.done) {
+            var out = new Uint8Array(got), at = 0;
+            for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], at); at += chunks[i].length; }
+            return out.buffer;
+          }
+          chunks.push(step.value);
+          got += step.value.length;
+          onBytes(step.value.length);
+          return pump();
+        });
+      }
+      return pump();
+    });
+  }
+
   // ------------------------------------------------------------- payload load
   function loadPositions(key) {
     var spec = META.traces[key];
@@ -224,10 +297,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     if (spec.object) { return Promise.resolve(spec.object); }
     if (spec.pending) { return spec.pending; }
     var started = performance.now();
-    spec.pending = fetch(spec.pos).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.pos); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.pending = fetchBuffer(spec.pos, 7 * spec.count, progAdd).then(function (buffer) {
       var n = spec.count;
       if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
       var geo = new THREE.BufferGeometry();
@@ -252,10 +322,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     var spec = META.traces[key];
     if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
     if (spec.dist_pending) { return spec.dist_pending; }
-    spec.dist_pending = fetch(spec.dist).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.dist); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.dist_pending = fetchBuffer(spec.dist, spec.count, progAdd).then(function (buffer) {
       var values = new Uint8Array(buffer);
       if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
       spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
@@ -294,18 +361,25 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     document.getElementById('size').value = state.size;
   }
   function apply() {
-    var keys = chosen(), loading = [];
+    var keys = chosen(), loading = [], expected = 0;
     for (var i = 0; i < keys.length; i++) {
-      if (META.traces[keys[i]]) { loading.push(loadPositions(keys[i])); }
+      var trace = META.traces[keys[i]];
+      if (!trace) { continue; }
+      if (!trace.object) { expected += 7 * trace.count; }
+      if (state.colour === 'dist' && trace.dist && !trace.dist_done) { expected += trace.count; }
+      loading.push(loadPositions(keys[i]));
     }
-    hint('загрузка точек…');
+    // Nothing to download (a revisit): no bar, and no flicker of a bar that finishes instantly.
+    var bar = expected > 0 && progStart(expected, 'загрузка точек…');
     Promise.all(loading).then(function () {
       var extra = [];
       if (state.colour === 'dist') {
         for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
       }
+      if (bar) { prog.phase = 'обработка…'; prog.done = prog.total; progPaint(); }
       return Promise.all(extra);
     }).then(function () {
+      if (bar) { progFinish(); }
       var shown = 0;
       for (var key in META.traces) {
         var spec = META.traces[key];
@@ -323,7 +397,10 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
       toHash();
       dirty = true;
       if (!ready) { ready = true; firstReady(); }
-    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+    }).catch(function (error) {
+      if (bar) { prog.el.style.display = 'none'; }
+      hint('не загрузилось: ' + error.message);
+    });
   }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();

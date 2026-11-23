@@ -7,7 +7,7 @@
 <link rel='icon' href='data:,'>
 <style>
 html, body { margin: 0; background: #14171c; color: #e8e8e8; }
-#gl { width: 100%; height: 86vh; overflow: hidden; }
+#gl { width: 100%; height: 86vh; overflow: hidden; position: relative; }
 #gl canvas { display: block; }
 .pick { background:#1e242c; color:#dfe5ec; border:1px solid #2e3742; border-radius:6px;
         padding:4px 11px; font:inherit; cursor:pointer; }
@@ -41,7 +41,21 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   <span id="hint" style="color:#8f98a3"></span>
 </div>
 
-<div id='gl'></div>
+<div id='gl'>
+<div id="prog" style="display:none;position:absolute;left:50%;top:50%;
+     transform:translate(-50%,-50%);z-index:5;flex-direction:column;align-items:center;gap:11px;
+     pointer-events:none;background:rgba(20,23,28,.92);border:1px solid #2b313a;
+     border-radius:10px;padding:15px 24px 17px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+     font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+  <span id="progtxt" style="color:#dfe5ec;font-size:13px;font-variant-numeric:tabular-nums;
+        letter-spacing:.2px"></span>
+  <span style="display:block;width:300px;height:8px;background:#262b33;
+        border-radius:4px;overflow:hidden">
+    <span id="progfill" style="display:block;width:0%;height:100%;background:#6cb6ff;
+          transition:width .15s linear"></span>
+  </span>
+</div>
+</div>
 <script>window.VIEWER = {"traces": {"gt": {"count": 723324, "centre": [-1.2448574602603912, -1.0779975652694702, 0.4210842251777649], "half": [1.8798249661922455, 2.4012140035629272, 2.0778161883354187], "pal": "8/DT6+K15dis2s6nz8OjzMCaxrubxbqVw7eWwLWVwrWQvrSPvbGRu7CQvLGLu66KuK+MuK2Lt6yKtquLtaqFs6iKs6iGs6iEs6eDsqZ/sKaDr6WCrqSCrqKArKJ/q6B/qaF+q55+qZ59qJ58p517ppt7pJt8pJt3o5l6opd5p5x0pZt0pJp0o5p0o5dyoplzophzoZZ0oZZvn5d4n5dzn5Zyn5R3n5Ryn5Zvn5Vun5NtnZVznZRxnJNwnJJvm5NwmZNwnZFum5BumpFumo9umZBumY9tmI9xmI9smI9ql41slY1xlYxslY5qlYxqlItqk4ptk4ppkohrmo9nl41nl4tmlYxmlYlklItmlIpmk4pjk4llkopmkolkkohlkYhikYdkkYZjkIhnj4dokIdhj4Zoj4Zkj4ZhjoVojoVkjoVgjYRnjYRjjYRfjIJnjIJjjINhi4FhjINfjIJci4FdioNjioJhiYFjiYFciYBiiYBciX9iiX9eiH9ah4Bfh35dhn9eg39eh31chn1fhn1ZhXxehXxYhHxfhHxZhnpahHtahHlZg3pdg3pXg3hZgnpfgnpbgnpXgnlWgXhYgXZXf3hdf3hYfnZbfnVXf3hUf3ZUfnVVfnVSfXRafXRWfXRUfXNTfXNQfHJTfHBRenNWeXJUeXFWeXFQeHBVeXBPeG5UeG5QeG5PeG5LdnBUdm5Rdm1QdWxPcHBgc2xQc2tTc2tPc2tOcmhPcGhQdGpLcWlLcmdKcGdKb2dQb2dLb2dIbmVIbGZQbGZIbmNIbGNJa2NJamNJamBGaWJLaWJFaF9GZmBLZmBGZV5IZmBEZV5DZF1HZF1CZFpDYVxFYVpDYFlCX1hCXlZDXlY+XFdCW1VAW1Q/WlM+WVM/WFE9VVJCWE87Vk88VU47VE47U0w5UUw8UEo6UUs3UEk3TUk6TUc2S0Y3S0UzSUM1SUMxR0AxREAzQz0wQTwwPTsxPDgsOjUqNTMpMTErMC0lKiokJiYiHx8bFxcUEhIQDQ0MBwcG", "pal_count": 256, "pos": "data/eth3d20-office-gt.bin", "dist": "data/eth3d20-office-gt-dist.bin", "colour_error": 1.05, "label": "GT: лидар"}, "da3": {"count": 526676, "centre": [-1.2377853741159783, -1.101361944449497, 0.41762179460089865], "half": [1.8851881542229205, 2.399036335773273, 2.096835930918485], "pal": "5Nq01cqlzsKdyb6ZxruXxbmSwriRwLePwLSQvbSQvbGOvrOKvLGJu7CJuq+Nua+HuK6JtK6Gt6yJtauItamHsqmHsaaGtaqCtKeAsqeBsaeBsKSArqWDrqOCrqR+raJ9rKKBrKJ7qKJ7rJ98qp99qZ98qJ98qJx6p519p513pp18pp12pZp4o5t7o5l6o5p3oph5oZd3oZZ3oph0oplwoZVyn5Z3npV1nZR0nJJ1nJJznJJynpRwnZRsnJFwnJFrmpFwmpBvmY9umI9ulZBtnIthmI1rl41sl4tnlo1ulo1olopmlYxvlYxslYxnlIpplIhikopukopqk4plkollkohqkohkkYdmkYRcj4hqj4ZojYVpjoVlj4dhjoVhjYRhjINnjINjjIJhjIJdi4Fki4Bhi4FcjHxLiIJjiIBkiIBciH9iiH9bh35hh35ahn1hhn1ehn1ZhXtghXtdhXtchXxYhHtYhHpYhXpSg3xeg3peg3pWgnlcgnlVgHpegnhbgnhVf3hbgXdagXdUfndah3I/gXNMgHVTf3ZZf3VTf3JOfnVWfnNRfHRdfHRZfHRWfXRSfHNSfHJWfHJRe3FSfG1FeXJaeXFUeXBWeG9VenFQeXBQeG9Pd25Ud25Rd25Pd21Ld2xNeGc7dG5TdGxTdGxNc2tSdGtMcmpScmlPcmlMc2lKcWhPb2dQcGhMcWdIb2ZMcWZEcWI5bWhQbWZNbWVNbWVJbGRMbWRIbGNLbGJEamRNaWJKaWFIaWBJaWBEZ2BIZWBJbVw1Z1w/ZlxDZVxEY11IY1tHY1xCY1g8YVtGYFlEX1hEXldEW1dGW1VEX1g/XlY+W1Y/YFI0W1M9WlM+WVJAWFE6VlE/VU8+VlA6VE46YEYtU0w5Uks4T0o6T0o2Tkc0S0c5SUU1RkI2R0IwRD8yRD4sPzwyPTkrOTcuODQoNTInMTEsLi0nLCskKiggJiUgIyIcIR8ZHh4aHBwYGxsXGhkVGBgWFxYTFRUSEhMREBEODg4MCwwKCAgH", "pal_count": 256, "pos": "data/eth3d20-office-da3.bin", "dist": "data/eth3d20-office-da3-dist.bin", "colour_error": 1.16, "label": "DA3-Giant — F@1 = 0.854"}, "omega": {"count": 750000, "centre": [-1.2429047174420673, -1.119961495691032, 0.4159658556259149], "half": [1.8831747524584554, 2.4160022755824375, 2.113817211981326], "pal": "5dm02c2o0sahzMKdyb2ayLyTxbmVwrmTwraUv7OTwLSNvrONvLKQvLCQvLGKubCLua2Nt6yMuKyGtquJtKqKs6iKtKmFtKmAsqiHsaWHsaaCsaZ+r6SFrqR/rKR/raKCraGBq6GBqaCAqZ6BrKB6qp96qZ96qJ56pp1+pp17pZt8ppx4pZx0pZp7pZl0opp6oph5oppzophzoZZ5oZZ2oZZzoZZvn5Z2npR2n5VxnpVtnZR1nZRvm5Rxn5BpnJFwm5Fzm5BsmpFympFsmo5smZBymZBwmZBrmI5tmIxplo5xlo5tloxvlottlo1qlo1mlYpnlIxtk4pskolskohpk4tnk4lnkohnkollkolhkIdrkIdokIdmj4VokIZkkIZgkIRfjoZmjYVojYVhjYRnjYRgjINnjYNjjINfi4JmjIJji4JeioBlioBiioBhioFeioBbin5ah4FiiH9fhn9gh35hh35ahn5fh31gh31ahX1ehnxghnxdhXxZhHtcg3tdiXZJhHlYg3pdg3pWg3ZTgnldgnlWgndWgXlcgXhWgXZVf3dff3dbf3dZgHdVf3ZUf3VYf3VTfnRVf3BJfHVafHRYfHNYe3JXfXRSfHNSe3JSenFXenFTenFRenBOeW9Qe2k9d3FVd29Vd29Pdm5Ud25OdW1UdW1QdWxOdmxLc2tTdGtPc2tNcmlPc2pMdGpIdGZAcGpQcGhQcGhKb2dOcGdKb2ZOb2VKb2VHbWZNbWRKbGNJa2RLamJJaGNLb186amBGaWBHaGBHZ2BHZ11FZl9JZl5EZVxFZF1HY1tGYVxHYVlFXllGY1xCYVpBYFlBX1hBYlY6XlZBXVZBXFVAWlRCWlQ/WVJAWVM8WlE7V1A9VlA8X0oyVE88VEw4UU09UUs5UEo4T0k3TEg4TEY3TUUxSkQ0R0Q2R0ExREAyQj4vQTssPTsyOzguOjYqNTUuNTEmLy8oLSohKSghJSUhISEcHh4ZGxwZGRkWFxYTFBUTEhMQDxAODA0LCgoJBgYG", "pal_count": 256, "pos": "data/eth3d20-office-omega.bin", "dist": "data/eth3d20-office-omega-dist.bin", "colour_error": 1.11, "label": "VGGT-Ω — F@1 = 0.936"}}, "predictions": ["da3", "omega"], "default_cloud": "both", "basis": [0.0, -0.2922409981559579, -0.9563447072038459, 0.0, -0.9787740005863055, 0.19599573924925404, -0.05989262035023528, 0.0, 0.20494256701885774, 0.9360453350094471, -0.286037890900442, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [1.2051987477165702, 0.5145189323327419, 1.1356023436945368], "radius": 6.585479656208539, "theta": -0.6680783774498267, "phi": 1.5707963267948966}, "fov": 45.0, "frustums": {"b64": "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", "size": 320}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.07382401028866449, "tau_note": "1% диагонали GT-облака", "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
@@ -217,6 +231,65 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     applyCamera();
   }, {passive: false});
 
+  // ------------------------------------------------------------------- progress
+  // A determinate bar over the bytes still to come. The size of every payload is known from the
+  // trace count (7 bytes per point, 1 byte per distance), so the bar never depends on
+  // Content-Length surviving compression, and it measures what actually arrives rather than
+  // what was promised.
+  var prog = {
+    total: 0, done: 0, phase: '', el: document.getElementById('prog'),
+    fill: document.getElementById('progfill'), text: document.getElementById('progtxt')
+  };
+  function progPaint() {
+    var share = prog.total > 0 ? Math.min(1, prog.done / prog.total) : 1;
+    prog.fill.style.width = (100 * share).toFixed(1) + '%';
+    prog.text.textContent = prog.phase + ' ' + Math.floor(100 * share) + ' %';
+  }
+  function progStart(total, phase) {
+    if (!prog.el) { return false; }
+    prog.total = Math.max(total, 1); prog.done = 0; prog.phase = phase;
+    prog.el.style.display = 'flex';
+    progPaint();
+    return true;
+  }
+  function progAdd(delta) {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = Math.min(prog.done + delta, prog.total);
+    progPaint();
+  }
+  function progFinish() {
+    if (!prog.el || prog.el.style.display === 'none') { return; }
+    prog.done = prog.total;
+    progPaint();
+    setTimeout(function () { prog.el.style.display = 'none'; }, 350);
+  }
+
+  // fetch() into an ArrayBuffer while reporting bytes as they arrive. Without a readable body the
+  // download still happens, the bar just jumps to the end in one step.
+  function fetchBuffer(url, expected, onBytes) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) { throw new Error(response.status + ' на ' + url); }
+      if (!response.body || !response.body.getReader) {
+        return response.arrayBuffer().then(function (buffer) { onBytes(expected); return buffer; });
+      }
+      var reader = response.body.getReader(), chunks = [], got = 0;
+      function pump() {
+        return reader.read().then(function (step) {
+          if (step.done) {
+            var out = new Uint8Array(got), at = 0;
+            for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], at); at += chunks[i].length; }
+            return out.buffer;
+          }
+          chunks.push(step.value);
+          got += step.value.length;
+          onBytes(step.value.length);
+          return pump();
+        });
+      }
+      return pump();
+    });
+  }
+
   // ------------------------------------------------------------- payload load
   function loadPositions(key) {
     var spec = META.traces[key];
@@ -224,10 +297,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     if (spec.object) { return Promise.resolve(spec.object); }
     if (spec.pending) { return spec.pending; }
     var started = performance.now();
-    spec.pending = fetch(spec.pos).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.pos); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.pending = fetchBuffer(spec.pos, 7 * spec.count, progAdd).then(function (buffer) {
       var n = spec.count;
       if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
       var geo = new THREE.BufferGeometry();
@@ -252,10 +322,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     var spec = META.traces[key];
     if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
     if (spec.dist_pending) { return spec.dist_pending; }
-    spec.dist_pending = fetch(spec.dist).then(function (response) {
-      if (!response.ok) { throw new Error(response.status + ' на ' + spec.dist); }
-      return response.arrayBuffer();
-    }).then(function (buffer) {
+    spec.dist_pending = fetchBuffer(spec.dist, spec.count, progAdd).then(function (buffer) {
       var values = new Uint8Array(buffer);
       if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
       spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
@@ -294,18 +361,25 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     document.getElementById('size').value = state.size;
   }
   function apply() {
-    var keys = chosen(), loading = [];
+    var keys = chosen(), loading = [], expected = 0;
     for (var i = 0; i < keys.length; i++) {
-      if (META.traces[keys[i]]) { loading.push(loadPositions(keys[i])); }
+      var trace = META.traces[keys[i]];
+      if (!trace) { continue; }
+      if (!trace.object) { expected += 7 * trace.count; }
+      if (state.colour === 'dist' && trace.dist && !trace.dist_done) { expected += trace.count; }
+      loading.push(loadPositions(keys[i]));
     }
-    hint('загрузка точек…');
+    // Nothing to download (a revisit): no bar, and no flicker of a bar that finishes instantly.
+    var bar = expected > 0 && progStart(expected, 'загрузка точек…');
     Promise.all(loading).then(function () {
       var extra = [];
       if (state.colour === 'dist') {
         for (var j = 0; j < keys.length; j++) { extra.push(loadDistances(keys[j])); }
       }
+      if (bar) { prog.phase = 'обработка…'; prog.done = prog.total; progPaint(); }
       return Promise.all(extra);
     }).then(function () {
+      if (bar) { progFinish(); }
       var shown = 0;
       for (var key in META.traces) {
         var spec = META.traces[key];
@@ -323,7 +397,10 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
       toHash();
       dirty = true;
       if (!ready) { ready = true; firstReady(); }
-    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
+    }).catch(function (error) {
+      if (bar) { prog.el.style.display = 'none'; }
+      hint('не загрузилось: ' + error.message);
+    });
   }
   document.getElementById('cams').addEventListener('change', function () {
     state.cams = this.checked; apply();
