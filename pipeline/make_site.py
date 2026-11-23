@@ -74,7 +74,7 @@ TEMPLATE = """<!doctype html>
 </div>
 
 <h2 id="scenes">Сцены</h2>
-<p>Девять страниц, по одной на сцену. Мышь вращает, колесо зумит, правая кнопка сдвигает.
+<p>__SCENE_NOTE__ Мышь вращает, колесо зумит, правая кнопка сдвигает.
 Сверху переключается облако (GT, DA3-Giant, VGGT-Ω или оба предсказания) и раскраска —
 цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога).
 Каждая страница самодостаточна, кроме соседнего <code>plotly.min.js</code>.</p>
@@ -347,7 +347,16 @@ def main() -> int:
                   "лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы. "
                   "В последней таблице одна ячейка показывает пару «16 → 100».")
 
+    counts = []
+    for dataset in ("eth3d", "tnt", "tnt100"):
+        found = sum(1 for key in pairs if key[0] == dataset)
+        if found:
+            counts.append("%d — %s" % (found, TITLES[dataset].lower()))
+    scene_note = ("По странице на сцену, всего %d (%s)."
+                  % (len(pairs), ", ".join(counts)) if counts else "По странице на сцену.")
+
     html = (TEMPLATE
+            .replace("__SCENE_NOTE__", scene_note)
             .replace("__TITLE__", args.title)
             .replace("__LEDE__", lede)
             .replace("__REPO__", args.repo)
