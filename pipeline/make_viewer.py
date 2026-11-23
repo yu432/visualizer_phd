@@ -62,7 +62,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 #legend { display:none; position:fixed; left:14px; bottom:14px; z-index:6; pointer-events:none;
           background:rgba(20,23,28,.88); border:1px solid #2b313a; border-radius:8px;
           padding:8px 10px 7px; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-          box-shadow:0 8px 22px rgba(0,0,0,.45); max-width:260px; }
+          box-shadow:0 8px 22px rgba(0,0,0,.45); max-width:330px; }
 #legendtitle { color:#dfe5ec; font-size:12px; margin-bottom:6px; }
 #legendbar { height:10px; border-radius:4px; border:1px solid #39424e; }
 #legendticks { display:flex; justify-content:space-between; color:#a8b0ba; font-size:11px;
@@ -1163,9 +1163,8 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
         legend=dict(
             pred=("расстояние до GT, ед. GT" if has_gt else "расхождение методов"),
             gt=("GT → ближайшее предсказание, ед. GT" if has_gt else None),
-            note=("всё, что дальше τ, закрашено одним красным; τ = 1 % диагонали GT"
-                  if has_gt else
-                  "всё, что дальше τ, закрашено одним красным; τ = 1 % диагонали предсказаний"),
+            note=("дальше τ — одним красным; τ = 1 % диагонали GT" if has_gt
+                  else "дальше τ — одним красным; τ = 1 % диагонали предсказаний"),
         ),
         hint_rgb="цвет пикселей, из которых получены точки",
         hint_dist=("зелёный — на поверхности GT, красный — дальше \u03c4" if has_gt
