@@ -913,7 +913,7 @@ def orbit_camera(rotation, centre, eye, radius):
                 phi=float(np.arccos(np.clip(direction[1], -1.0, 1.0))))
 
 
-def framing_radius(rotation, centre, eye, points, aspect=1.6, margin=1.06):
+def framing_radius(rotation, centre, eye, points, aspect=1.6, margin=1.10):
     """Camera distance that actually fills the frame with the points that are drawn.
 
     The bounding-box diagonal over-estimates the distance badly for flat, elongated scenes
@@ -1115,9 +1115,17 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
     # Open the page from a three-quarter view built on camera 0 of the scene: the axis-aligned
     # default tends to look straight into a wall, and the exact camera-0 view is so frontal that
     # a cloud reads as a flat picture instead of a 3D model.
-    _, down, forward = view_basis(extrinsics[0])
-    eye, up = three_quarter(-np.asarray(forward, dtype=np.float64),
-                            -np.asarray(down, dtype=np.float64), yaw=32.0, pitch=20.0)
+    # Tanks and Temples keeps its cameras and its laser scan in different frames, so the shot has
+    # to be built in the frame the cloud is drawn in: taken raw, the view is rolled by whatever
+    # the official transform is, and the barn opened upside down.
+    frame = frame_transform(dataset, scene)
+    to_cloud = np.eye(3) if frame is None else frame[:3, :3] / np.cbrt(abs(np.linalg.det(frame[:3, :3])))
+    # A single camera carries the tilt of a hand-held shot; averaging the "up" row over all of
+    # them cancels it and recovers the vertical of the reconstruction itself.
+    averaged = -extrinsics[:, :3, :3][:, 1, :].mean(axis=0)
+    _, _, forward = view_basis(extrinsics[0])
+    eye, up = three_quarter(-(to_cloud @ np.asarray(forward, dtype=np.float64)),
+                            to_cloud @ averaged, yaw=32.0, pitch=20.0)
     rotation, basis = scene_basis(up)
     span = float(np.linalg.norm(high - low))
     drawn = np.concatenate(framed) if framed else 0.5 * (low + high)[None, :]
@@ -1130,8 +1138,13 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
     if intrinsics is not None:
         # Pyramids have to be big enough to aim at with the mouse, and they are the only hint of
         # where the photos were taken from, so 3.5% of the scene span rather than a token 2.5%.
-        wire = frustum_wireframes(extrinsics, intrinsics, 0.035 * span)
-        frame = frame_transform(dataset, scene)
+        # They are built in the camera frame and then moved into the cloud's frame, so the scale
+        # the transform carries has to be divided out first: on the T&T scenes (scale ~4) they
+        # otherwise came out four times the intended size and covered the building.
+        wire_size = 0.035 * span
+        if frame is not None:
+            wire_size /= np.cbrt(abs(np.linalg.det(frame[:3, :3])))
+        wire = frustum_wireframes(extrinsics, intrinsics, wire_size)
         if frame is not None:
             moved = wire.reshape(-1, 3) @ frame[:3, :3].T + frame[:3, 3]
             wire = moved.reshape(wire.shape).astype(np.float32)

@@ -93,6 +93,35 @@ def world_up(extrinsics):
     return mean / norm
 
 
+def cloud_frame_rotation(dataset, scene):
+    """Rotation that takes COLMAP-frame directions into the frame the clouds are drawn in.
+
+    Tanks and Temples keeps its cameras and its laser scan in different coordinate systems, and
+    pose_align composes the official transform from gt_meta.json into the alignment, so every
+    cloud is drawn in the laser frame while cameras.npz still lives in the COLMAP frame. A view
+    built from the raw cameras is then rolled by whatever that transform happens to be: the barn
+    and courthouse comparison figures used to look down on the scene as if from straight above.
+    """
+    path = GT / dataset / scene / "gt_meta.json"
+    value = read_json(path).get("frame_transform") if path.exists() else None
+    if value is None:
+        return np.eye(3)
+    rotation = np.asarray(value, dtype=np.float64)[:3, :3]
+    # A similarity carries a scale; only its rotation is of any use for a viewing direction.
+    return rotation / np.cbrt(abs(float(np.linalg.det(rotation))))
+
+
+def cloud_frame_extrinsics(dataset, scene, extrinsics):
+    """The same cameras, turned into the cloud's frame. Directions only, translations unused.
+
+    World directions are the rows of a world-to-camera rotation, so moving them through the frame
+    rotation means right-multiplying by its transpose.
+    """
+    moved = np.asarray(extrinsics, dtype=np.float64).copy()
+    moved[:, :3, :3] = moved[:, :3, :3] @ cloud_frame_rotation(dataset, scene).T
+    return moved
+
+
 def scene_basis(points, extrinsics=None, elevation=22.0, seed=0):
     """3/4 aerial orthographic basis chosen from the cloud, not from one camera.
 
@@ -273,7 +302,8 @@ def clouds_figure(dataset, scene, method, out_path):
     aligned = apply_sim3(pred_points, params)
     aligned, pred_colours = crop_to_region(dataset, scene, aligned, pred_colours)
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        basis = view_basis(np.asarray(handle["extrinsics"])[0])
+        extrinsics = cloud_frame_extrinsics(dataset, scene, np.asarray(handle["extrinsics"]))
+    basis = view_basis(extrinsics[0])
     from scipy.spatial import cKDTree
 
     # The lidar ground truth covers the whole scan area; crop it to the region the
@@ -316,7 +346,8 @@ def pred_cloud_figure(dataset, scene, method, out_path):
     keep = np.all((aligned > low) & (aligned < high), axis=1)
     aligned, pred_colours = aligned[keep], pred_colours[keep]
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
+        extrinsics = cloud_frame_extrinsics(dataset, scene,
+                                            np.asarray(handle["extrinsics"], dtype=np.float64))
     basis = view_basis(extrinsics[0])
     forwards = extrinsics[:, :3, :3][:, 2, :]
     angles = np.degrees(np.arccos(np.clip(forwards @ (forwards[0] / np.linalg.norm(forwards[0])), -1.0, 1.0)))
@@ -453,7 +484,8 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     gt_path = GT / dataset / scene / "gt_cloud.ply"
     gt_points, gt_colours = read_ply(gt_path) if gt_path.exists() else (None, None)
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
+        extrinsics = cloud_frame_extrinsics(dataset, scene,
+                                            np.asarray(handle["extrinsics"], dtype=np.float64))
     from pose_align import sim3 as pose_sim3
 
     aligned = {}
@@ -588,7 +620,8 @@ def sky_cloud_figure(dataset, scene, method, out_path):
 
     params = pose_sim3(dataset, scene, method)
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
+        extrinsics = cloud_frame_extrinsics(dataset, scene,
+                                            np.asarray(handle["extrinsics"], dtype=np.float64))
     basis = view_basis(extrinsics[0])
     # No radius crop: a ball around the camera centres cut the cloud in half whenever the
     # trajectory was small next to the reconstructed area (office keeps 12 % of the points),
