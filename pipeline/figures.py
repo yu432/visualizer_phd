@@ -1,5 +1,6 @@
 """Render qualitative figures: input frames, aligned cloud comparisons, depth panels."""
 import argparse
+import json
 import sys
 import textwrap
 from pathlib import Path
@@ -15,8 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from align import apply_sim3  # noqa: E402
 from pose_align import centres  # noqa: E402
 from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, load_crop,  # noqa: E402
-                    metric_text, percentile_box, read_json, read_ply, view_basis,
-                    voxel_downsample_attributed)
+                    metric_text, percentile_box, read_json, read_ply,
+                    stratified_subsample, view_basis, voxel_downsample_attributed)
 
 RENDER_POINTS = 320000
 VIEW_FRAMES = 8
@@ -48,12 +49,8 @@ def save(figure, out_path, tight=True, **adjust):
 
 
 def subsample(points, colours, limit, seed=0):
-    if len(points) <= limit:
-        return points, colours
-    rng = np.random.default_rng(seed)
-    index = rng.choice(len(points), size=limit, replace=False)
-    index.sort()
-    return points[index], None if colours is None else colours[index]
+    """Stratified cap: a random cut here re-thinned whatever region happened to be dense."""
+    return stratified_subsample(points, colours, limit, seed=seed)
 
 
 def render_sample(points, colours, extent, limit=RENDER_POINTS, columns=760, seed=0):
@@ -242,6 +239,100 @@ def frame_limits(clouds, basis, up, aspect=1.4, trim=0.03, letterbox=0.06):
             (v_mid - 0.5 * v_span, v_mid + 0.5 * v_span))
 
 
+def fit_aspect(box, aspect):
+    """Widen a framing box to a required width/height ratio without cropping anything."""
+    (u_low, u_high), (v_low, v_high) = box
+    u_span, v_span = u_high - u_low, v_high - v_low
+    if aspect is not None:
+        if u_span / max(v_span, 1e-9) < aspect:
+            extra = 0.5 * (v_span * aspect - u_span)
+            u_low, u_high = u_low - extra, u_high + extra
+        else:
+            extra = 0.5 * (u_span / aspect - v_span)
+            v_low, v_high = v_low - extra, v_high + extra
+    return (u_low, u_high), (v_low, v_high)
+
+
+def scene_schemes(scene):
+    """Every frame scheme present on disk for a scene, shortest name first (the sparse one)."""
+    found = []
+    for path in CLOUDS.iterdir():
+        if path.is_dir() and (path / scene).is_dir() and (GT / path.name / scene).exists():
+            found.append(path.name)
+    return sorted(found, key=lambda name: (len(name), name))
+
+
+def scene_reference(scene, elevation=22.0):
+    """One viewpoint, one sampling scale and one frame per scene, shared by every frame scheme.
+
+    Each scheme used to pick its own viewpoint: the 16-frame figure looked along its own first
+    camera and framed the prediction box of its own cloud, the 100-frame figure did the same with
+    a different camera and a larger, noisier cloud. Two panels of the same barn therefore showed
+    different sides at different zoom, and the reader could not tell a real difference between the
+    16- and 100-frame reconstructions from a difference between two viewports. The reference is
+    built from everything on disk for the scene — every scheme's prediction and the laser scan —
+    and cached, so both schemes render the same view at the same points per pixel.
+
+    Returns the scene up vector, the orthographic basis, the framing box before aspect fitting and
+    the diagonal of the box (the sampling scale for render_sample), or None if nothing is on disk.
+    """
+    cache = OUTPUTS / "views" / ("%s-%g.json" % (scene, elevation))
+    if cache.exists():
+        stored = read_json(cache)
+        return {"up": np.asarray(stored["up"], dtype=np.float64),
+                "basis": [np.asarray(row, dtype=np.float64) for row in stored["basis"]],
+                "box": ((float(stored["box"][0][0]), float(stored["box"][0][1])),
+                        (float(stored["box"][1][0]), float(stored["box"][1][1]))),
+                "extent": float(stored["extent"])}
+
+    schemes = scene_schemes(scene)
+    if not schemes:
+        return None
+    base = schemes[0]
+    with np.load(GT / base / scene / "cameras.npz") as handle:
+        extrinsics = cloud_frame_extrinsics(base, scene,
+                                            np.asarray(handle["extrinsics"], dtype=np.float64))
+    samples = []
+    for scheme in schemes:
+        for method in ("da3-giant", "vggt-omega"):
+            cloud_path = CLOUDS / scheme / scene / (method + ".ply")
+            evaluation_path = OUTPUTS / scheme / scene / method / "evaluation.json"
+            if not cloud_path.exists() or not evaluation_path.exists():
+                continue
+            points, _ = read_ply(cloud_path)
+            points, _ = subsample(points, None, 200000, seed=7)
+            evaluation = read_json(evaluation_path)
+            params = dict(s=evaluation["alignment"]["s"],
+                          R=np.asarray(evaluation["alignment_rotation"]),
+                          t=np.asarray(evaluation["alignment_translation"]))
+            aligned, _ = crop_to_region(scheme, scene, apply_sim3(points, params), None)
+            if len(aligned):
+                samples.append(np.asarray(aligned, dtype=np.float64))
+    if not samples:
+        return None
+    union = np.concatenate(samples)
+    up = world_up(extrinsics)
+    basis = scene_basis(union, extrinsics, elevation=elevation)
+    low, high = percentile_box(union)
+    extent = float(np.linalg.norm(high - low))
+    gt_path = GT / base / scene / "gt_cloud.ply"
+    content = [union]
+    if gt_path.exists():
+        gt_points, _ = read_ply(gt_path)
+        gt_points, _ = subsample(gt_points, None, 300000, seed=11)
+        box = 0.06 * extent
+        inside = np.all((gt_points > low - box) & (gt_points < high + box), axis=1)
+        if np.count_nonzero(inside):
+            content.append(np.asarray(gt_points[inside], dtype=np.float64))
+    box = frame_limits(content, basis, up, aspect=None)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps({"up": up.tolist(), "basis": [row.tolist() for row in basis],
+                                 "box": [[box[0][0], box[0][1]], [box[1][0], box[1][1]]],
+                                 "extent": extent,
+                                 "schemes": schemes}, indent=2, sort_keys=True) + chr(10))
+    return {"up": up, "basis": list(basis), "box": box, "extent": extent}
+
+
 def draw_cloud(ax, points, colours, basis, title, limits=None, depth_tint=False, point_size=1.3,
                wrap=40, equal_aspect=False):
     """Painter's-algorithm scatter: far points first, image-plane orthographic projection."""
@@ -324,10 +415,16 @@ def clouds_figure(dataset, scene, method, out_path):
                   t=np.asarray(evaluation["alignment_translation"]))
     aligned = apply_sim3(pred_points, params)
     aligned, pred_colours = crop_to_region(dataset, scene, aligned, pred_colours)
-    with np.load(GT / dataset / scene / "cameras.npz") as handle:
-        extrinsics = cloud_frame_extrinsics(dataset, scene, np.asarray(handle["extrinsics"]))
-    basis = view_basis(extrinsics[0])
     from scipy.spatial import cKDTree
+
+    # Shared with the other frame scheme of the same scene: same viewpoint, same points per pixel.
+    reference = scene_reference(scene)
+    if reference is not None:
+        basis = reference["basis"]
+    else:
+        with np.load(GT / dataset / scene / "cameras.npz") as handle:
+            extrinsics = cloud_frame_extrinsics(dataset, scene, np.asarray(handle["extrinsics"]))
+        basis = view_basis(extrinsics[0])
 
     # The lidar ground truth covers the whole scan area; crop it to the region the
     # ten frames actually reconstructed so both panels show the same buildings.
@@ -338,10 +435,11 @@ def clouds_figure(dataset, scene, method, out_path):
     gt_colours = None if gt_colours is None else gt_colours[inside]
     # One sampling grid for all three panels, tied to the box the panels are framed on: the
     # prediction, the lidar and the distance colouring then show the same density per pixel.
-    extent = float(np.linalg.norm(high - low))
+    extent = reference["extent"] if reference is not None else float(np.linalg.norm(high - low))
     gt_points, gt_colours = render_sample(gt_points, gt_colours, extent)
     aligned, pred_colours = render_sample(aligned, pred_colours, extent, seed=1)
-    xlim, ylim = robust_limits([gt_points, aligned], basis)
+    xlim, ylim = (reference["box"] if reference is not None
+                  else robust_limits([gt_points, aligned], basis))
     cloud = evaluation["cloud"]
     tau = 0.01 * evaluation["ground_diagonal"]
     distance = cKDTree(gt_points).query(aligned, k=1)[0]
@@ -541,7 +639,8 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     # the same point count over a larger area and read as sparse, which is a sampling artefact
     # and not a property of the reconstruction.
     low, high = percentile_box(union)
-    extent = float(np.linalg.norm(high - low))
+    reference = scene_reference(scene, elevation=elevation)
+    extent = reference["extent"] if reference is not None else float(np.linalg.norm(high - low))
     panels = []
     if gt_points is not None:
         box = 0.06 * extent
@@ -563,10 +662,16 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     # The panel is made roughly as wide as the framed content, so a wide building is not
     # letterboxed into a square with empty sky above and below it (that is what made the T&T
     # panels look like a strip in the middle of nothing at thumbnail size).
-    raw = frame_limits(clouds, basis, up, aspect=None)
+    if reference is not None:
+        # Same frame as every other scheme of this scene, so two figures of one barn are directly
+        # comparable instead of being two different viewports of it.
+        basis, up = reference["basis"], reference["up"]
+        raw = reference["box"]
+    else:
+        raw = frame_limits(clouds, basis, up, aspect=None)
     content_aspect = (raw[0][1] - raw[0][0]) / max(raw[1][1] - raw[1][0], 1e-9)
     panel_aspect = float(np.clip(content_aspect, 1.25, 2.1))
-    limits = frame_limits(clouds, basis, up, aspect=panel_aspect)
+    limits = fit_aspect(raw, panel_aspect)
     width = 4.9 * len(panels)
     wspace = 0.035
     left, right, bottom = 0.01, 0.99, 0.02

@@ -29,7 +29,7 @@ from align import apply_sim3  # noqa: E402
 from pose_align import centres, sim3 as pose_sim3  # noqa: E402
 from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, diagonal,  # noqa: E402
                     load_crop, metric_text, percentile_box, read_json, read_ply,
-                    view_basis)
+                    stratified_subsample, view_basis)
 
 VENDOR = Path(__file__).resolve().parent / "vendor"
 LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9"}
@@ -842,12 +842,8 @@ def budget(sizes, limit, page_limit):
 
 
 def subsample(points, colours, limit, seed=0):
-    if len(points) <= limit:
-        return points, colours
-    rng = np.random.default_rng(seed)
-    index = rng.choice(len(points), size=limit, replace=False)
-    index.sort()
-    return points[index], None if colours is None else colours[index]
+    """Stratified reduction: see common.stratified_subsample for why not a random cut."""
+    return stratified_subsample(points, colours, limit, seed=seed)
 
 
 # ------------------------------------------------------------------- geometry

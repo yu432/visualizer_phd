@@ -152,6 +152,43 @@ def test_render_sample_keeps_density_not_the_point_count():
     assert 90 <= len(drawn_coarse) <= 110
 
 
+def occupied(points, voxel=0.05):
+    keys = np.floor(points / voxel).astype(np.int64)
+    keys -= keys.min(axis=0)
+    span = keys.max(axis=0) + 1
+    return np.unique((keys[:, 0] * span[1] + keys[:, 1]) * span[2] + keys[:, 2]).size
+
+
+def test_stratified_subsample_keeps_every_patch():
+    """A budget cut must thin the crowded patch, not delete the thin one.
+
+    The dense scheme stacks a hundred frames on the same wall and a couple of them on the far side
+    of the barn. A random cut keeps the same fraction of both, so the far side loses most of its
+    dots and reads as holes; capping the density keeps the thin patch whole and takes the budget
+    out of the stacked points instead.
+    """
+    from common import stratified_subsample
+    rng = np.random.default_rng(0)
+    stacked = rng.normal(size=(180000, 3)) * 0.02          # the wall every frame saw
+    thin = rng.normal(size=(3000, 3)) * 0.02 + [2.0, 0, 0]  # the far side, few frames
+    points = np.concatenate([stacked, thin])
+    random_cut = points[rng.choice(len(points), size=30000, replace=False)]
+    kept, _ = stratified_subsample(points, None, 30000, seed=0)
+    assert len(kept) == 30000
+    # The far side survives whole under the density cap, and mostly disappears under a random cut.
+    assert occupied(kept[kept[:, 0] > 1.0], 0.05) >= 0.95 * occupied(thin, 0.05)
+    assert occupied(random_cut[random_cut[:, 0] > 1.0], 0.05) < 0.5 * occupied(thin, 0.05)
+    # And the budget really went into the thin patch rather than being spent at random.
+    assert np.count_nonzero(kept[:, 0] > 1.0) > 5 * np.count_nonzero(random_cut[:, 0] > 1.0)
+
+
+def test_stratified_subsample_is_a_no_op_below_the_budget():
+    from common import stratified_subsample
+    points = np.zeros((100, 3))
+    kept, _ = stratified_subsample(points, None, 1000)
+    assert len(kept) == 100
+
+
 def test_translation_error_in_centimetres():
     """The pose error is stored as a fraction of the GT camera diagonal; the site prints it in cm.
 
