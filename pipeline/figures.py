@@ -480,8 +480,9 @@ def pred_cloud_figure(dataset, scene, method, out_path):
     aligned = apply_sim3(pred_points, params)
     # Percentile box, not a ball around the camera centres: see common.percentile_box.
     low, high = percentile_box(aligned)
-    aligned, pred_colours = render_sample(aligned, pred_colours,
-                                          float(np.linalg.norm(high - low)), seed=3)
+    reference = scene_reference(scene)
+    extent = reference["extent"] if reference is not None else float(np.linalg.norm(high - low))
+    aligned, pred_colours = render_sample(aligned, pred_colours, extent, seed=3)
     keep = np.all((aligned > low) & (aligned < high), axis=1)
     aligned, pred_colours = aligned[keep], pred_colours[keep]
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
@@ -493,9 +494,17 @@ def pred_cloud_figure(dataset, scene, method, out_path):
     other = int(np.argmax(angles))
     basis_other = view_basis(extrinsics[other])
     figure, axes = plt.subplots(1, 2, figsize=(12, 4.8))
-    draw_cloud(axes[0], aligned, pred_colours, basis,
-               "%s: камера GT 0, %d точек, x%.2f sim(3)" % (method, len(aligned), params["s"]),
-               limits=robust_limits([aligned], basis), point_size=1.8, wrap=56)
+    if reference is not None:
+        # Same viewpoint and frame as every other figure of the scene, so the 16- and 100-frame
+        # versions of this panel show the same side of the scene instead of two private ones.
+        basis = reference["basis"]
+        first_limits = fit_aspect(reference["box"], 1.6)
+        first_title = "%s: общий ракурс сцены, %d точек, x%.2f sim(3)" % (method, len(aligned), params["s"])
+    else:
+        first_limits = robust_limits([aligned], basis)
+        first_title = "%s: камера GT 0, %d точек, x%.2f sim(3)" % (method, len(aligned), params["s"])
+    draw_cloud(axes[0], aligned, pred_colours, basis, first_title,
+               limits=first_limits, point_size=1.8, wrap=56)
     draw_cloud(axes[1], aligned, pred_colours, basis_other,
                "то же облако, камера GT %d: самый другой ракурс, %.0f°" % (other, angles[other]),
                limits=robust_limits([aligned], basis_other), point_size=1.8, wrap=56)
