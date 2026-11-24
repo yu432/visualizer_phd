@@ -132,6 +132,19 @@ def test_focused_voxel_without_a_focus_is_plain_voxel():
 def test_align_rejects_degenerate_input():
     assert align_clouds(np.zeros((10, 3)), np.zeros((10, 3)))["status"] == "failed"
 
+def test_translation_error_in_centimetres():
+    """The pose error is stored as a fraction of the GT camera diagonal; the site prints it in cm.
+
+    A scene whose GT cameras span 10 m diagonally and a 2 % mean centre offset is 20 cm, whatever
+    the scene's own units look like in the report tables (2 % of the diagonal).
+    """
+    from summarize import translation_cm
+    assert translation_cm(0.02, 10.0) == pytest.approx(20.0)
+    assert translation_cm(0.0032, 9.744) == pytest.approx(3.118, abs=1e-3)
+    assert translation_cm(None, 10.0) is None
+    assert translation_cm(0.02, None) is None
+
+
 def test_drive_url_carries_resource_key():
     """Without the resource key Drive answers with a sign-in page, so the key has to be in the URL."""
     from fetch_tnt_gt_drive import drive_url

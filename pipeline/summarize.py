@@ -14,6 +14,20 @@ from common import OUTPUTS, read_json, write_json  # noqa: E402
 DATASETS = ("eth3d", "tnt", "tnt100", "eth3d20", "eth3d20dense")
 
 
+def translation_cm(fraction, extent):
+    """Camera translation error in centimetres.
+
+    pose_evaluation.json stores the error as a fraction of the diagonal of the ground-truth camera
+    bounding box, which is unit-free and comparable across scenes. The GT cameras of both datasets
+    are reconstructed in metres (ETH3D and Tanks and Temples ground truth is metric), so the same
+    error multiplied by that diagonal is a length in centimetres — the number the papers call
+    "mean translation error".
+    """
+    if fraction is None or extent is None:
+        return None
+    return 100.0 * float(fraction) * float(extent)
+
+
 def scene_row(dataset, scene, method):
     root = OUTPUTS / dataset / scene / method
     if not (root / "inference.json").exists():
@@ -71,6 +85,10 @@ def scene_row(dataset, scene, method):
             translation_mean_fraction=poses["translation"]["mean_fraction"],
             translation_median_fraction=poses["translation"]["median_fraction"],
             gt_camera_extent=poses["gt_camera_extent"],
+            translation_mean_cm=translation_cm(poses["translation"]["mean_fraction"],
+                                               poses["gt_camera_extent"]),
+            translation_median_cm=translation_cm(poses["translation"]["median_fraction"],
+                                                 poses["gt_camera_extent"]),
         )
     if (root / "sky_ablation.json").exists():
         row["sky_ablation"] = read_json(root / "sky_ablation.json")

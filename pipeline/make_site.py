@@ -91,7 +91,12 @@ TEMPLATE = """<!doctype html>
 <h2 id="scenes">Сцены</h2>
 <p>__SCENE_NOTE__ Одна строка — одна сцена, четыре плитки в ней: схема кадров × метод, то есть
 10 и 20 кадров (для T&amp;T — 16 и 100) для DA3-Giant и VGGT-Ω. Плитка открывает страницу сразу в
-нужном виде — нужный метод уже выбран. Подпись под плиткой — F@1 этого метода в этой схеме.
+нужном виде — нужный метод уже выбран. Подпись под плиткой — средняя ошибка положения камеры
+(mean translation error) этого метода в этой схеме, в сантиметрах: расстояние от предсказанного
+центра камеры до эталонного после sim(3), усреднённое по кадрам. Это единственное число, которое
+определено для всех сцен, — у ignatius и meetingroom лазерного эталона нет, и F@1 там не посчитать;
+при этом оно не зависит от того, сколько точек страница оставила в облаке. Точность самого облака
+(F@1) — в таблицах ниже.
 На самой странице облако переключается (GT, DA3-Giant, VGGT-Ω или оба предсказания), раскраска —
 цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога τ).
 Мышь вращает, колесо зумит, правая кнопка сдвигает. Страница берёт рядом лежащие
@@ -237,15 +242,22 @@ def fit_ratio(image, ratio, background=(11, 14, 18)):
 
 
 def tile_caption(rows, dataset, scene, method):
-    """Tile caption: this method's F@1 in that scheme, or the pose error when there is no GT cloud."""
+    """Tile caption: this method's mean camera translation error in that scheme, in centimetres.
+
+    A row of tiles compares one building in four variants (two frame schemes, two methods), so the
+    caption has to be a number all four share. Cloud F-scores are not that number: they are defined
+    only where a laser GT exists (ignatius and meetingroom have none), they are relative to τ of that
+    scene, and on the dense scheme they mix in surface the GT never saw. The pose error is defined
+    for every scene, is a length in centimetres, and does not depend on how many points the page
+    budget left in the cloud — so four tiles of a row are directly comparable.
+    """
     row = next((row for row in rows if row["dataset"] == dataset and row["scene"] == scene
                 and row.get("method") == method), None)
     if row is None:
         return ""
-    if "cloud" in row:
-        text = report.value(row, "fscore_one", ("cloud",))
-        if text not in ("", "—"):
-            return "F@1 <b>%s</b>" % text
+    text = report.value(row, "translation_mean_cm", ("pose",), "%.1f")
+    if text not in ("", "—"):
+        return "позы: <b>%s</b> см" % text
     if "pose" in row:
         return "поз: поворот <b>%s°</b>" % report.value(row, "rotation_mean_deg", ("pose",), "%.2f")
     return ""
@@ -269,13 +281,15 @@ def compare_columns(sparse, dense, old_dataset="tnt", new_dataset="tnt100"):
                              report.value(new, "fscore_one", ("cloud",))),
                 "%s → %s" % (report.tolerance_value(old, "accuracy_median_cm"),
                              report.tolerance_value(new, "accuracy_median_cm")),
+                "%s → %s" % (report.value(old, "translation_mean_cm", ("pose",), "%.1f"),
+                             report.value(new, "translation_mean_cm", ("pose",), "%.1f")),
                 "%s → %s" % (report.value(old, "rotation_mean_deg", ("pose",), "%.2f"),
                              report.value(new, "rotation_mean_deg", ("pose",), "%.2f"))]
 
     body = [row for row in (cells(scene, method)
                             for scene in sorted({row["scene"] for row in dense})
                             for method in ("da3-giant", "vggt-omega")) if row is not None]
-    header = ["сцена", "метод", "F@1%, %", "точн. мед., см", "rot, °"]
+    header = ["сцена", "метод", "F@1%, %", "точн. мед., см", "позы, см", "rot, °"]
     return header, body, [None] * len(header)
 
 
@@ -284,7 +298,7 @@ def eth3d_compare_columns(sparse, dense, coverage_matched=()):
     index = {(row["dataset"], row["scene"], row["method"]): row for row in sparse + dense}
     matched = {(row["dataset"], row["scene"], row["method"]): row for row in coverage_matched}
     header = ["сцена", "метод", "F@1%, 10 → 20", "prec@1%, 10 → 20", "rec@1%, 10 → 20",
-              "rot, °, 10 → 20", "F@1%, GT 20"]
+              "позы, см, 10 → 20", "rot, °, 10 → 20", "F@1%, GT 20"]
     body = []
     for scene in sorted({row["scene"] for row in dense}):
         for method in ("da3-giant", "vggt-omega"):
@@ -301,6 +315,8 @@ def eth3d_compare_columns(sparse, dense, coverage_matched=()):
                              report.value(new, "precision_one", ("cloud",))),
                 "%s → %s" % (report.value(old, "recall_one", ("cloud",)),
                              report.value(new, "recall_one", ("cloud",))),
+                "%s → %s" % (report.value(old, "translation_mean_cm", ("pose",), "%.1f"),
+                             report.value(new, "translation_mean_cm", ("pose",), "%.1f")),
                 "%s → %s" % (report.value(old, "rotation_mean_deg", ("pose",), "%.2f"),
                              report.value(new, "rotation_mean_deg", ("pose",), "%.2f")),
                 report.value(match, "fscore_one", ("cloud",)) if match else "—",
@@ -454,41 +470,45 @@ def main() -> int:
     dense = [row for row in rows if row.get("dataset") == "tnt100"]
     tables = []
     if eth3d:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "rot, °"]
-        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы, см", "rot, °"]
+        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
                  report.value(row, "fscore_one", ("cloud",)),
                  report.value(row, "absrel_scale_shift", ("depth",), "%.4f"),
+                 report.value(row, "translation_mean_cm", ("pose",), "%.1f"),
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in eth3d]
         tables.append(table_html(header, body, kinds, "ETH3D, 10 кадров"))
     if eth3d20:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "rot, °"]
-        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы, см", "rot, °"]
+        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
                  report.value(row, "fscore_one", ("cloud",)),
                  report.value(row, "absrel_scale_shift", ("depth",), "%.4f"),
+                 report.value(row, "translation_mean_cm", ("pose",), "%.1f"),
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in eth3d20]
         tables.append(table_html(header, body, kinds, "ETH3D, 20 кадров (плотная схема)"))
         tables.append(table_html(*eth3d_compare_columns(eth3d, eth3d20, eth3d20dense),
                                  title="ETH3D: 10 → 20 кадров, что изменилось"))
     if tnt:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "rot, °"]
-        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы, см", "rot, °"]
+        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
                  report.value(row, "fscore_one", ("cloud",)),
                  report.tolerance_value(row, "accuracy_median_cm"),
+                 report.value(row, "translation_mean_cm", ("pose",), "%.1f"),
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in tnt]
         tables.append(table_html(header, body, kinds, "Tanks and Temples, 16 кадров"))
     if dense:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "rot, °"]
-        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы, см", "rot, °"]
+        kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
                  report.value(row, "fscore_one", ("cloud",)),
                  report.tolerance_value(row, "accuracy_median_cm"),
+                 report.value(row, "translation_mean_cm", ("pose",), "%.1f"),
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in dense]
         tables.append(table_html(header, body, kinds, "Tanks and Temples, 100 кадров"))
         tables.append(table_html(*compare_columns(tnt, dense), title="Кадров 16 → 100: что изменилось"))
@@ -507,12 +527,18 @@ def main() -> int:
               "43 см на courtyard, 59 см на terrace, 79 см на delivery_area, 89 см на courthouse, 94 см на "
               "facade. Доля, а не абсолютное число, потому что 1 см на office — это 0.14 % сцены, а на facade — "
               "0.01 %. Тот же τ стоит на шкале под раскраской в просмотрщике и в подписи рисунков облаков "
-              "(цвет = clip(расстояние / τ, 0, 1)), поэтому шкала, рисунки и F@1 всегда говорят об одном пороге.")
+              "(цвет = clip(расстояние / τ, 0, 1)), поэтому шкала, рисунки и F@1 всегда говорят об одном пороге. "
+              "«позы, см» — mean translation error: средняя по кадрам длина сдвига между предсказанным и "
+              "эталонным центром камеры после того же sim(3), в сантиметрах (эталонные позы обоих наборов "
+              "метрические, поэтому доля диагонали бокса GT-камер превращается в длину). Это метрика только "
+              "поз: плотность облака и бюджет страницы на неё не влияют.")
     table_note = ("Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, "
                   "10 кадров — официальный протокол, 20 — плотная схема на тех же камерах. Tanks and Temples: "
                   "4 сцены в двух схемах — 16 и 100 кадров, лазерный GT есть только у barn и courthouse — "
                   "у ignatius и meetingroom остаются позы. В таблицах сравнения одна ячейка показывает пару "
-                  "«10 → 20» или «16 → 100». Падение F@1% у плотной схемы ETH3D против 10-кадрового эталона — "
+                  "«10 → 20» или «16 → 100». Подпись под плиткой — «позы, см» (mean translation error), а не F@1: "
+                  "она определена для всех сцен, включая ignatius и meetingroom без лазерного эталона. "
+                  "Падение F@1% у плотной схемы ETH3D против 10-кадрового эталона — "
                   "не деградация: лишние кадры видят поверхность, которой в эталоне нет, и она засчитывается "
                   "как ошибка. Поэтому последняя колонка — F@1% против эталона, пересобранного из тех же "
                   "20 кадров: на нём точность (precision) растёт.")

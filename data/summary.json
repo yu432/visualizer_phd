@@ -98,7 +98,9 @@
         "gt_camera_extent": 13.45166432505247,
         "rotation_mean_deg": 1.1064857410034992,
         "rotation_median_deg": 0.9176852159429824,
+        "translation_mean_cm": 11.772267711580593,
         "translation_mean_fraction": 0.00875153246996793,
+        "translation_median_cm": 11.85671711068666,
         "translation_median_fraction": 0.008814312358809482
       },
       "scene": "courtyard",
@@ -246,7 +248,9 @@
         "gt_camera_extent": 13.45166432505247,
         "rotation_mean_deg": 0.5452205402580381,
         "rotation_median_deg": 0.40631452305160554,
+        "translation_mean_cm": 10.474665600248958,
         "translation_mean_fraction": 0.007786891902097848,
+        "translation_median_cm": 8.843936944159735,
         "translation_median_fraction": 0.006574604250039697
       },
       "scene": "courtyard",
@@ -395,7 +399,9 @@
         "gt_camera_extent": 9.15903019525028,
         "rotation_mean_deg": 6.862969147685078,
         "rotation_median_deg": 2.956180461361419,
+        "translation_mean_cm": 53.5888443617115,
         "translation_mean_fraction": 0.05850929980501842,
+        "translation_median_cm": 35.41162842851593,
         "translation_median_fraction": 0.03866307641051321
       },
       "scene": "delivery_area",
@@ -543,7 +549,9 @@
         "gt_camera_extent": 9.15903019525028,
         "rotation_mean_deg": 2.910472489073711,
         "rotation_median_deg": 2.631941669575947,
+        "translation_mean_cm": 20.545775926451856,
         "translation_mean_fraction": 0.022432261373159956,
+        "translation_median_cm": 19.549748392875124,
         "translation_median_fraction": 0.021344779934248166
       },
       "scene": "delivery_area",
@@ -692,7 +700,9 @@
         "gt_camera_extent": 26.214718254806808,
         "rotation_mean_deg": 0.4324762373387763,
         "rotation_median_deg": 0.21034507293858196,
+        "translation_mean_cm": 16.76393071539721,
         "translation_mean_fraction": 0.006394854429657403,
+        "translation_median_cm": 5.588623984366704,
         "translation_median_fraction": 0.0021318649813609793
       },
       "scene": "facade",
@@ -840,7 +850,9 @@
         "gt_camera_extent": 26.214718254806808,
         "rotation_mean_deg": 1.3955280191420272,
         "rotation_median_deg": 1.1073221331967864,
+        "translation_mean_cm": 17.19942166780303,
         "translation_mean_fraction": 0.006560979027363491,
+        "translation_median_cm": 14.05882443323309,
         "translation_median_fraction": 0.00536295080365978
       },
       "scene": "facade",
@@ -989,7 +1001,9 @@
         "gt_camera_extent": 1.1836282677173402,
         "rotation_mean_deg": 1.8228100203945417,
         "rotation_median_deg": 1.7475209354206025,
+        "translation_mean_cm": 3.324255409759785,
         "translation_mean_fraction": 0.028085299248307948,
+        "translation_median_cm": 3.232701763931765,
         "translation_median_fraction": 0.027311799254052284
       },
       "scene": "office",
@@ -1137,7 +1151,9 @@
         "gt_camera_extent": 1.1836282677173402,
         "rotation_mean_deg": 0.7733845630465568,
         "rotation_median_deg": 0.7020905170038256,
+        "translation_mean_cm": 2.272621249202248,
         "translation_mean_fraction": 0.019200464463264812,
+        "translation_median_cm": 2.01134349283554,
         "translation_median_fraction": 0.016993033604329775
       },
       "scene": "office",
@@ -1286,7 +1302,9 @@
         "gt_camera_extent": 7.032231661884273,
         "rotation_mean_deg": 1.3048394871427842,
         "rotation_median_deg": 1.2267416235064799,
+        "translation_mean_cm": 7.190480071094384,
         "translation_mean_fraction": 0.010225032986424267,
+        "translation_median_cm": 6.540251536752637,
         "translation_median_fraction": 0.009300392608226717
       },
       "scene": "terrace",
@@ -1434,7 +1452,9 @@
         "gt_camera_extent": 7.032231661884273,
         "rotation_mean_deg": 0.4394575993498259,
         "rotation_median_deg": 0.2981610746725023,
+        "translation_mean_cm": 2.819957324362733,
         "translation_mean_fraction": 0.004010046113308973,
+        "translation_median_cm": 2.107253230456755,
         "translation_median_fraction": 0.0029965640095140442
       },
       "scene": "terrace",
@@ -1573,7 +1593,9 @@
         "gt_camera_extent": 9.744097512223481,
         "rotation_mean_deg": 0.481498835870523,
         "rotation_median_deg": 0.43066319704618883,
+        "translation_mean_cm": 3.243944370450861,
         "translation_mean_fraction": 0.0033291378358862845,
+        "translation_median_cm": 1.7374708829552603,
         "translation_median_fraction": 0.0017831008780194268
       },
       "scene": "barn",
@@ -1691,7 +1713,9 @@
         "gt_camera_extent": 9.744097512223481,
         "rotation_mean_deg": 0.6376459519297145,
         "rotation_median_deg": 0.5172516641648561,
+        "translation_mean_cm": 3.065066851945098,
         "translation_mean_fraction": 0.0031455625809369467,
+        "translation_median_cm": 1.834805513990503,
         "translation_median_fraction": 0.001882991741091293
       },
       "scene": "barn",
@@ -1810,7 +1834,9 @@
         "gt_camera_extent": 10.788486862777178,
         "rotation_mean_deg": 3.5052529461250117,
         "rotation_median_deg": 3.5555229449456336,
+        "translation_mean_cm": 10.980899041733885,
         "translation_mean_fraction": 0.010178349551150285,
+        "translation_median_cm": 3.650198716440042,
         "translation_median_fraction": 0.0033834204581868546
       },
       "scene": "courthouse",
@@ -1928,7 +1954,9 @@
         "gt_camera_extent": 10.788486862777178,
         "rotation_mean_deg": 47.321704542207996,
         "rotation_median_deg": 36.954901846581194,
+        "translation_mean_cm": 149.18704090868462,
         "translation_mean_fraction": 0.13828356358611796,
+        "translation_median_cm": 77.29980720790807,
         "translation_median_fraction": 0.0716502769953872
       },
       "scene": "courthouse",
@@ -2031,7 +2059,9 @@
         "gt_camera_extent": 10.802532570054856,
         "rotation_mean_deg": 0.5439248743215157,
         "rotation_median_deg": 0.44794890458473735,
+        "translation_mean_cm": 3.17079695382287,
         "translation_mean_fraction": 0.0029352348009692403,
+        "translation_median_cm": 3.144968726231739,
         "translation_median_fraction": 0.0029113253821143248
       },
       "scene": "ignatius",
@@ -2105,7 +2135,9 @@
         "gt_camera_extent": 10.802532570054856,
         "rotation_mean_deg": 0.4387518341052131,
         "rotation_median_deg": 0.3693372311230747,
+        "translation_mean_cm": 3.1498534840545718,
         "translation_mean_fraction": 0.002915847245659891,
+        "translation_median_cm": 3.5801726738136637,
         "translation_median_fraction": 0.0033141975278446058
       },
       "scene": "ignatius",
@@ -2180,7 +2212,9 @@
         "gt_camera_extent": 7.425997273000856,
         "rotation_mean_deg": 0.46008233707248675,
         "rotation_median_deg": 0.3694921577056221,
+        "translation_mean_cm": 1.9527115339453522,
         "translation_mean_fraction": 0.002629561339922575,
+        "translation_median_cm": 1.5808791609124542,
         "translation_median_fraction": 0.0021288442518827087
       },
       "scene": "meetingroom",
@@ -2254,7 +2288,9 @@
         "gt_camera_extent": 7.425997273000856,
         "rotation_mean_deg": 0.5435020471902605,
         "rotation_median_deg": 0.5120506741200921,
+        "translation_mean_cm": 2.3330403001993076,
         "translation_mean_fraction": 0.0031417198450660387,
+        "translation_median_cm": 1.6589918083616966,
         "translation_median_fraction": 0.0022340323425560533
       },
       "scene": "meetingroom",
@@ -2345,7 +2381,9 @@
         "gt_camera_extent": 11.39730146855509,
         "rotation_mean_deg": 0.38622952800315036,
         "rotation_median_deg": 0.35129326239271025,
+        "translation_mean_cm": 2.4663901187520123,
         "translation_mean_fraction": 0.002164012354640903,
+        "translation_median_cm": 2.2744295444965443,
         "translation_median_fraction": 0.00199558601724421
       },
       "scene": "barn",
@@ -2631,7 +2669,9 @@
         "gt_camera_extent": 11.39730146855509,
         "rotation_mean_deg": 0.5507331308309066,
         "rotation_median_deg": 0.46810639458425807,
+        "translation_mean_cm": 2.5868053148400185,
         "translation_mean_fraction": 0.0022696647289509354,
+        "translation_median_cm": 1.8053156467940548,
         "translation_median_fraction": 0.0015839851668176734
       },
       "scene": "barn",
@@ -2918,7 +2958,9 @@
         "gt_camera_extent": 10.788486862777178,
         "rotation_mean_deg": 1.6923413509346017,
         "rotation_median_deg": 1.6813735439012523,
+        "translation_mean_cm": 3.6324214972069373,
         "translation_mean_fraction": 0.0033669425039943713,
+        "translation_median_cm": 2.677428717306115,
         "translation_median_fraction": 0.0024817462832010992
       },
       "scene": "courthouse",
@@ -3204,7 +3246,9 @@
         "gt_camera_extent": 10.788486862777178,
         "rotation_mean_deg": 3.6788903979554233,
         "rotation_median_deg": 1.0955093911588252,
+        "translation_mean_cm": 21.652151399540333,
         "translation_mean_fraction": 0.020069683241906108,
+        "translation_median_cm": 9.69194396202247,
         "translation_median_fraction": 0.008983598984081782
       },
       "scene": "courthouse",
@@ -3475,7 +3519,9 @@
         "gt_camera_extent": 12.828568287776195,
         "rotation_mean_deg": 0.8100626513608582,
         "rotation_median_deg": 0.7224017711282984,
+        "translation_mean_cm": 4.616031826792346,
         "translation_mean_fraction": 0.0035982439530612077,
+        "translation_median_cm": 3.933145863624235,
         "translation_median_fraction": 0.003065927370376915
       },
       "scene": "ignatius",
@@ -3717,7 +3763,9 @@
         "gt_camera_extent": 12.828568287776195,
         "rotation_mean_deg": 0.36492935551283945,
         "rotation_median_deg": 0.3384059810651323,
+        "translation_mean_cm": 2.5111676883539724,
         "translation_mean_fraction": 0.0019574808599232066,
+        "translation_median_cm": 2.39834275706008,
         "translation_median_fraction": 0.0018695326736853093
       },
       "scene": "ignatius",
@@ -3960,7 +4008,9 @@
         "gt_camera_extent": 8.451325299151003,
         "rotation_mean_deg": 0.32196772312877087,
         "rotation_median_deg": 0.3163580002762425,
+        "translation_mean_cm": 1.6275638162183348,
         "translation_mean_fraction": 0.0019258089809675593,
+        "translation_median_cm": 1.585497897233249,
         "translation_median_fraction": 0.0018760346349376985
       },
       "scene": "meetingroom",
@@ -4202,7 +4252,9 @@
         "gt_camera_extent": 8.451325299151003,
         "rotation_mean_deg": 0.2337689717919627,
         "rotation_median_deg": 0.16255744056181387,
+        "translation_mean_cm": 2.000493809996176,
         "translation_mean_fraction": 0.0023670770431675845,
+        "translation_median_cm": 1.6995139058372053,
         "translation_median_fraction": 0.0020109436634842747
       },
       "scene": "meetingroom",
@@ -4471,7 +4523,9 @@
         "gt_camera_extent": 14.91560973896648,
         "rotation_mean_deg": 0.5732784378565997,
         "rotation_median_deg": 0.523697166929352,
+        "translation_mean_cm": 4.855354275580653,
         "translation_mean_fraction": 0.003255216756507257,
+        "translation_median_cm": 4.257579428336773,
         "translation_median_fraction": 0.0028544454453068744
       },
       "scene": "courtyard",
@@ -4607,7 +4661,9 @@
         "gt_camera_extent": 14.91560973896648,
         "rotation_mean_deg": 0.3345335156601131,
         "rotation_median_deg": 0.254013791063641,
+        "translation_mean_cm": 5.584373670832645,
         "translation_mean_fraction": 0.0037439794742307277,
+        "translation_median_cm": 6.060821588894105,
         "translation_median_fraction": 0.004063408533048724
       },
       "scene": "courtyard",
@@ -4744,7 +4800,9 @@
         "gt_camera_extent": 10.923773650874779,
         "rotation_mean_deg": 12.598135085060921,
         "rotation_median_deg": 5.485967386007335,
+        "translation_mean_cm": 26.46387088587077,
         "translation_mean_fraction": 0.024225942180476738,
+        "translation_median_cm": 13.843867220604652,
         "translation_median_fraction": 0.012673154592045242
       },
       "scene": "delivery_area",
@@ -4880,7 +4938,9 @@
         "gt_camera_extent": 10.923773650874779,
         "rotation_mean_deg": 0.8719957186889671,
         "rotation_median_deg": 0.8495741687509993,
+        "translation_mean_cm": 5.718070268863831,
         "translation_mean_fraction": 0.005234519179556532,
+        "translation_median_cm": 4.903348848320477,
         "translation_median_fraction": 0.004488695028872019
       },
       "scene": "delivery_area",
@@ -5017,7 +5077,9 @@
         "gt_camera_extent": 32.29267480874931,
         "rotation_mean_deg": 0.3934587266349343,
         "rotation_median_deg": 0.23428195936699137,
+        "translation_mean_cm": 9.775867064513161,
         "translation_mean_fraction": 0.0030272707734524695,
+        "translation_median_cm": 8.361231646592408,
         "translation_median_fraction": 0.002589203804302712
       },
       "scene": "facade",
@@ -5153,7 +5215,9 @@
         "gt_camera_extent": 32.29267480874931,
         "rotation_mean_deg": 0.9028940091466344,
         "rotation_median_deg": 0.7864154689612133,
+        "translation_mean_cm": 19.66953619755785,
         "translation_mean_fraction": 0.006091021048596639,
+        "translation_median_cm": 13.842747573031332,
         "translation_median_fraction": 0.004286652516403134
       },
       "scene": "facade",
@@ -5290,7 +5354,9 @@
         "gt_camera_extent": 2.0846325514344795,
         "rotation_mean_deg": 0.8576752890664727,
         "rotation_median_deg": 0.7349702419562849,
+        "translation_mean_cm": 1.5990800934568996,
         "translation_mean_fraction": 0.0076708007478658,
+        "translation_median_cm": 1.0312212658015312,
         "translation_median_fraction": 0.004946777143491912
       },
       "scene": "office",
@@ -5426,7 +5492,9 @@
         "gt_camera_extent": 2.0846325514344795,
         "rotation_mean_deg": 0.5086760379910754,
         "rotation_median_deg": 0.3723884943479324,
+        "translation_mean_cm": 1.4524815288720148,
         "translation_mean_fraction": 0.006967566192289052,
+        "translation_median_cm": 0.9747642968098207,
         "translation_median_fraction": 0.004675952585212511
       },
       "scene": "office",
@@ -5563,7 +5631,9 @@
         "gt_camera_extent": 7.645249111402259,
         "rotation_mean_deg": 0.8963209500720157,
         "rotation_median_deg": 0.8384386254200189,
+        "translation_mean_cm": 5.371628078341292,
         "translation_mean_fraction": 0.007026099477033328,
+        "translation_median_cm": 4.500276139499683,
         "translation_median_fraction": 0.0058863695269103684
       },
       "scene": "terrace",
@@ -5699,7 +5769,9 @@
         "gt_camera_extent": 7.645249111402259,
         "rotation_mean_deg": 0.43379846766736063,
         "rotation_median_deg": 0.3032531008940952,
+        "translation_mean_cm": 2.3467424612430663,
         "translation_mean_fraction": 0.0030695434864811575,
+        "translation_median_cm": 2.2693662343411605,
         "translation_median_fraction": 0.002968335238359451
       },
       "scene": "terrace",

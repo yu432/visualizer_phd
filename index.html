@@ -73,7 +73,12 @@
 <h2 id="scenes">Сцены</h2>
 <p>По странице на сцену, всего 18 (5 — ETH3D, 10 кадров, 5 — ETH3D, 20 кадров, 4 — T&T, 16 кадров, 4 — T&T, 100 кадров). Одна строка — одна сцена, четыре плитки в ней: схема кадров × метод, то есть
 10 и 20 кадров (для T&amp;T — 16 и 100) для DA3-Giant и VGGT-Ω. Плитка открывает страницу сразу в
-нужном виде — нужный метод уже выбран. Подпись под плиткой — F@1 этого метода в этой схеме.
+нужном виде — нужный метод уже выбран. Подпись под плиткой — средняя ошибка положения камеры
+(mean translation error) этого метода в этой схеме, в сантиметрах: расстояние от предсказанного
+центра камеры до эталонного после sim(3), усреднённое по кадрам. Это единственное число, которое
+определено для всех сцен, — у ignatius и meetingroom лазерного эталона нет, и F@1 там не посчитать;
+при этом оно не зависит от того, сколько точек страница оставила в облаке. Точность самого облака
+(F@1) — в таблицах ниже.
 На самой странице облако переключается (GT, DA3-Giant, VGGT-Ω или оба предсказания), раскраска —
 цветом пикселей или расстоянием до GT (зелёный — на поверхности, красный — дальше порога τ).
 Мышь вращает, колесо зумит, правая кнопка сдвигает. Страница берёт рядом лежащие
@@ -82,201 +87,201 @@
 <div class='gridhead'><div class='ghead'></div><div class='ghead'>10 кадров · DA3-Giant</div><div class='ghead'>10 кадров · VGGT-Ω</div><div class='ghead'>20 кадров · DA3-Giant</div><div class='ghead'>20 кадров · VGGT-Ω</div></div>
 <div class='scene'><div class='slabel'>courtyard</div><a class="tile" href="viewer/eth3d-courtyard.html#da3">
   <img src="viewer/tile-eth3d-courtyard-da3-giant.jpg" alt="ETH3D / courtyard, DA3-Giant, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.966</b></div>
+  <div class="cap">позы: <b>11.8</b> см</div>
 </a><a class="tile" href="viewer/eth3d-courtyard.html#omega">
   <img src="viewer/tile-eth3d-courtyard-vggt-omega.jpg" alt="ETH3D / courtyard, VGGT-Ω, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.970</b></div>
+  <div class="cap">позы: <b>10.5</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-courtyard.html#da3">
   <img src="viewer/tile-eth3d20-courtyard-da3-giant.jpg" alt="ETH3D, 20 кадров / courtyard, DA3-Giant, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.914</b></div>
+  <div class="cap">позы: <b>4.9</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-courtyard.html#omega">
   <img src="viewer/tile-eth3d20-courtyard-vggt-omega.jpg" alt="ETH3D, 20 кадров / courtyard, VGGT-Ω, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.920</b></div>
+  <div class="cap">позы: <b>5.6</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>delivery_area</div><a class="tile" href="viewer/eth3d-delivery_area.html#da3">
   <img src="viewer/tile-eth3d-delivery_area-da3-giant.jpg" alt="ETH3D / delivery_area, DA3-Giant, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.881</b></div>
+  <div class="cap">позы: <b>53.6</b> см</div>
 </a><a class="tile" href="viewer/eth3d-delivery_area.html#omega">
   <img src="viewer/tile-eth3d-delivery_area-vggt-omega.jpg" alt="ETH3D / delivery_area, VGGT-Ω, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.972</b></div>
+  <div class="cap">позы: <b>20.5</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-delivery_area.html#da3">
   <img src="viewer/tile-eth3d20-delivery_area-da3-giant.jpg" alt="ETH3D, 20 кадров / delivery_area, DA3-Giant, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.879</b></div>
+  <div class="cap">позы: <b>26.5</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-delivery_area.html#omega">
   <img src="viewer/tile-eth3d20-delivery_area-vggt-omega.jpg" alt="ETH3D, 20 кадров / delivery_area, VGGT-Ω, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.971</b></div>
+  <div class="cap">позы: <b>5.7</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>facade</div><a class="tile" href="viewer/eth3d-facade.html#da3">
   <img src="viewer/tile-eth3d-facade-da3-giant.jpg" alt="ETH3D / facade, DA3-Giant, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.976</b></div>
+  <div class="cap">позы: <b>16.8</b> см</div>
 </a><a class="tile" href="viewer/eth3d-facade.html#omega">
   <img src="viewer/tile-eth3d-facade-vggt-omega.jpg" alt="ETH3D / facade, VGGT-Ω, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.979</b></div>
+  <div class="cap">позы: <b>17.2</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-facade.html#da3">
   <img src="viewer/tile-eth3d20-facade-da3-giant.jpg" alt="ETH3D, 20 кадров / facade, DA3-Giant, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.970</b></div>
+  <div class="cap">позы: <b>9.8</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-facade.html#omega">
   <img src="viewer/tile-eth3d20-facade-vggt-omega.jpg" alt="ETH3D, 20 кадров / facade, VGGT-Ω, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.970</b></div>
+  <div class="cap">позы: <b>19.7</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>office</div><a class="tile" href="viewer/eth3d-office.html#da3">
   <img src="viewer/tile-eth3d-office-da3-giant.jpg" alt="ETH3D / office, DA3-Giant, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.937</b></div>
+  <div class="cap">позы: <b>3.3</b> см</div>
 </a><a class="tile" href="viewer/eth3d-office.html#omega">
   <img src="viewer/tile-eth3d-office-vggt-omega.jpg" alt="ETH3D / office, VGGT-Ω, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.966</b></div>
+  <div class="cap">позы: <b>2.3</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-office.html#da3">
   <img src="viewer/tile-eth3d20-office-da3-giant.jpg" alt="ETH3D, 20 кадров / office, DA3-Giant, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.854</b></div>
+  <div class="cap">позы: <b>1.6</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-office.html#omega">
   <img src="viewer/tile-eth3d20-office-vggt-omega.jpg" alt="ETH3D, 20 кадров / office, VGGT-Ω, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.936</b></div>
+  <div class="cap">позы: <b>1.5</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>terrace</div><a class="tile" href="viewer/eth3d-terrace.html#da3">
   <img src="viewer/tile-eth3d-terrace-da3-giant.jpg" alt="ETH3D / terrace, DA3-Giant, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.975</b></div>
+  <div class="cap">позы: <b>7.2</b> см</div>
 </a><a class="tile" href="viewer/eth3d-terrace.html#omega">
   <img src="viewer/tile-eth3d-terrace-vggt-omega.jpg" alt="ETH3D / terrace, VGGT-Ω, 10 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.978</b></div>
+  <div class="cap">позы: <b>2.8</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-terrace.html#da3">
   <img src="viewer/tile-eth3d20-terrace-da3-giant.jpg" alt="ETH3D, 20 кадров / terrace, DA3-Giant, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.971</b></div>
+  <div class="cap">позы: <b>5.4</b> см</div>
 </a><a class="tile" href="viewer/eth3d20-terrace.html#omega">
   <img src="viewer/tile-eth3d20-terrace-vggt-omega.jpg" alt="ETH3D, 20 кадров / terrace, VGGT-Ω, 20 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.976</b></div>
+  <div class="cap">позы: <b>2.3</b> см</div>
 </a></div>
 <h3>Tanks and Temples: 16 кадров и плотная схема на 100 кадрах</h3>
 <div class='gridhead'><div class='ghead'></div><div class='ghead'>16 кадров · DA3-Giant</div><div class='ghead'>16 кадров · VGGT-Ω</div><div class='ghead'>100 кадров · DA3-Giant</div><div class='ghead'>100 кадров · VGGT-Ω</div></div>
 <div class='scene'><div class='slabel'>barn</div><a class="tile" href="viewer/tnt-barn.html#da3">
   <img src="viewer/tile-tnt-barn-da3-giant.jpg" alt="Tanks and Temples / barn, DA3-Giant, 16 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.677</b></div>
+  <div class="cap">позы: <b>3.2</b> см</div>
 </a><a class="tile" href="viewer/tnt-barn.html#omega">
   <img src="viewer/tile-tnt-barn-vggt-omega.jpg" alt="Tanks and Temples / barn, VGGT-Ω, 16 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.767</b></div>
+  <div class="cap">позы: <b>3.1</b> см</div>
 </a><a class="tile" href="viewer/tnt100-barn.html#da3">
   <img src="viewer/tile-tnt100-barn-da3-giant.jpg" alt="Tanks and Temples, 100 кадров / barn, DA3-Giant, 100 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.753</b></div>
+  <div class="cap">позы: <b>2.5</b> см</div>
 </a><a class="tile" href="viewer/tnt100-barn.html#omega">
   <img src="viewer/tile-tnt100-barn-vggt-omega.jpg" alt="Tanks and Temples, 100 кадров / barn, VGGT-Ω, 100 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.834</b></div>
+  <div class="cap">позы: <b>2.6</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>courthouse</div><a class="tile" href="viewer/tnt-courthouse.html#da3">
   <img src="viewer/tile-tnt-courthouse-da3-giant.jpg" alt="Tanks and Temples / courthouse, DA3-Giant, 16 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.423</b></div>
+  <div class="cap">позы: <b>11.0</b> см</div>
 </a><a class="tile" href="viewer/tnt-courthouse.html#omega">
   <img src="viewer/tile-tnt-courthouse-vggt-omega.jpg" alt="Tanks and Temples / courthouse, VGGT-Ω, 16 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.055</b></div>
+  <div class="cap">позы: <b>149.2</b> см</div>
 </a><a class="tile" href="viewer/tnt100-courthouse.html#da3">
   <img src="viewer/tile-tnt100-courthouse-da3-giant.jpg" alt="Tanks and Temples, 100 кадров / courthouse, DA3-Giant, 100 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.586</b></div>
+  <div class="cap">позы: <b>3.6</b> см</div>
 </a><a class="tile" href="viewer/tnt100-courthouse.html#omega">
   <img src="viewer/tile-tnt100-courthouse-vggt-omega.jpg" alt="Tanks and Temples, 100 кадров / courthouse, VGGT-Ω, 100 кадров" loading="lazy">
-  <div class="cap">F@1 <b>0.546</b></div>
+  <div class="cap">позы: <b>21.7</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>ignatius</div><a class="tile" href="viewer/tnt-ignatius.html#da3">
   <img src="viewer/tile-tnt-ignatius-da3-giant.jpg" alt="Tanks and Temples / ignatius, DA3-Giant, 16 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.54°</b></div>
+  <div class="cap">позы: <b>3.2</b> см</div>
 </a><a class="tile" href="viewer/tnt-ignatius.html#omega">
   <img src="viewer/tile-tnt-ignatius-vggt-omega.jpg" alt="Tanks and Temples / ignatius, VGGT-Ω, 16 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.44°</b></div>
+  <div class="cap">позы: <b>3.1</b> см</div>
 </a><a class="tile" href="viewer/tnt100-ignatius.html#da3">
   <img src="viewer/tile-tnt100-ignatius-da3-giant.jpg" alt="Tanks and Temples, 100 кадров / ignatius, DA3-Giant, 100 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.81°</b></div>
+  <div class="cap">позы: <b>4.6</b> см</div>
 </a><a class="tile" href="viewer/tnt100-ignatius.html#omega">
   <img src="viewer/tile-tnt100-ignatius-vggt-omega.jpg" alt="Tanks and Temples, 100 кадров / ignatius, VGGT-Ω, 100 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.36°</b></div>
+  <div class="cap">позы: <b>2.5</b> см</div>
 </a></div>
 <div class='scene'><div class='slabel'>meetingroom</div><a class="tile" href="viewer/tnt-meetingroom.html#da3">
   <img src="viewer/tile-tnt-meetingroom-da3-giant.jpg" alt="Tanks and Temples / meetingroom, DA3-Giant, 16 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.46°</b></div>
+  <div class="cap">позы: <b>2.0</b> см</div>
 </a><a class="tile" href="viewer/tnt-meetingroom.html#omega">
   <img src="viewer/tile-tnt-meetingroom-vggt-omega.jpg" alt="Tanks and Temples / meetingroom, VGGT-Ω, 16 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.54°</b></div>
+  <div class="cap">позы: <b>2.3</b> см</div>
 </a><a class="tile" href="viewer/tnt100-meetingroom.html#da3">
   <img src="viewer/tile-tnt100-meetingroom-da3-giant.jpg" alt="Tanks and Temples, 100 кадров / meetingroom, DA3-Giant, 100 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.32°</b></div>
+  <div class="cap">позы: <b>1.6</b> см</div>
 </a><a class="tile" href="viewer/tnt100-meetingroom.html#omega">
   <img src="viewer/tile-tnt100-meetingroom-vggt-omega.jpg" alt="Tanks and Temples, 100 кадров / meetingroom, VGGT-Ω, 100 кадров" loading="lazy">
-  <div class="cap">поз: поворот <b>0.23°</b></div>
+  <div class="cap">позы: <b>2.0</b> см</div>
 </a></div>
 
 <h2>Что показано</h2>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>ETH3D, 10 кадров</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>AbsRel (s+t)</th><th>rot, °</th></tr></thead><tbody>
-<tr><td>courtyard</td><td>da3-giant</td><td>0.931</td><td>0.966</td><td>0.0085</td><td>1.11</td></tr>
-<tr><td>courtyard</td><td>vggt-omega</td><td>0.928</td><td>0.970</td><td class="best">0.0056</td><td>0.55</td></tr>
-<tr><td>delivery_area</td><td>da3-giant</td><td>0.855</td><td>0.881</td><td>0.0273</td><td>6.86</td></tr>
-<tr><td>delivery_area</td><td>vggt-omega</td><td>0.928</td><td>0.972</td><td>0.0112</td><td>2.91</td></tr>
-<tr><td>facade</td><td>da3-giant</td><td>0.961</td><td>0.976</td><td>0.0105</td><td class="best">0.43</td></tr>
-<tr><td>facade</td><td>vggt-omega</td><td>0.965</td><td class="best">0.979</td><td>0.0082</td><td>1.40</td></tr>
-<tr><td>office</td><td>da3-giant</td><td>0.807</td><td>0.937</td><td>0.0096</td><td>1.82</td></tr>
-<tr><td>office</td><td>vggt-omega</td><td>0.898</td><td>0.966</td><td>0.0067</td><td>0.77</td></tr>
-<tr><td>terrace</td><td>da3-giant</td><td>0.952</td><td>0.975</td><td>0.0268</td><td>1.30</td></tr>
-<tr><td>terrace</td><td>vggt-omega</td><td class="best">0.967</td><td>0.978</td><td>0.0059</td><td>0.44</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>AbsRel (s+t)</th><th>позы, см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>courtyard</td><td>da3-giant</td><td>0.931</td><td>0.966</td><td>0.0085</td><td>11.8</td><td>1.11</td></tr>
+<tr><td>courtyard</td><td>vggt-omega</td><td>0.928</td><td>0.970</td><td class="best">0.0056</td><td>10.5</td><td>0.55</td></tr>
+<tr><td>delivery_area</td><td>da3-giant</td><td>0.855</td><td>0.881</td><td>0.0273</td><td>53.6</td><td>6.86</td></tr>
+<tr><td>delivery_area</td><td>vggt-omega</td><td>0.928</td><td>0.972</td><td>0.0112</td><td>20.5</td><td>2.91</td></tr>
+<tr><td>facade</td><td>da3-giant</td><td>0.961</td><td>0.976</td><td>0.0105</td><td>16.8</td><td class="best">0.43</td></tr>
+<tr><td>facade</td><td>vggt-omega</td><td>0.965</td><td class="best">0.979</td><td>0.0082</td><td>17.2</td><td>1.40</td></tr>
+<tr><td>office</td><td>da3-giant</td><td>0.807</td><td>0.937</td><td>0.0096</td><td>3.3</td><td>1.82</td></tr>
+<tr><td>office</td><td>vggt-omega</td><td>0.898</td><td>0.966</td><td>0.0067</td><td class="best">2.3</td><td>0.77</td></tr>
+<tr><td>terrace</td><td>da3-giant</td><td>0.952</td><td>0.975</td><td>0.0268</td><td>7.2</td><td>1.30</td></tr>
+<tr><td>terrace</td><td>vggt-omega</td><td class="best">0.967</td><td>0.978</td><td>0.0059</td><td>2.8</td><td>0.44</td></tr>
 </tbody></table></div>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>ETH3D, 20 кадров (плотная схема)</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>AbsRel (s+t)</th><th>rot, °</th></tr></thead><tbody>
-<tr><td>courtyard</td><td>da3-giant</td><td>0.867</td><td>0.914</td><td>0.0076</td><td>0.57</td></tr>
-<tr><td>courtyard</td><td>vggt-omega</td><td>0.862</td><td>0.920</td><td>0.0051</td><td class="best">0.33</td></tr>
-<tr><td>delivery_area</td><td>da3-giant</td><td>0.850</td><td>0.879</td><td>0.0207</td><td>12.60</td></tr>
-<tr><td>delivery_area</td><td>vggt-omega</td><td>0.950</td><td>0.971</td><td>0.0101</td><td>0.87</td></tr>
-<tr><td>facade</td><td>da3-giant</td><td>0.947</td><td>0.970</td><td>0.0106</td><td>0.39</td></tr>
-<tr><td>facade</td><td>vggt-omega</td><td>0.937</td><td>0.970</td><td>0.0081</td><td>0.90</td></tr>
-<tr><td>office</td><td>da3-giant</td><td>0.818</td><td>0.854</td><td>0.0061</td><td>0.86</td></tr>
-<tr><td>office</td><td>vggt-omega</td><td>0.879</td><td>0.936</td><td class="best">0.0049</td><td>0.51</td></tr>
-<tr><td>terrace</td><td>da3-giant</td><td>0.936</td><td>0.971</td><td>0.0236</td><td>0.90</td></tr>
-<tr><td>terrace</td><td>vggt-omega</td><td class="best">0.961</td><td class="best">0.976</td><td>0.0055</td><td>0.43</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>AbsRel (s+t)</th><th>позы, см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>courtyard</td><td>da3-giant</td><td>0.867</td><td>0.914</td><td>0.0076</td><td>4.9</td><td>0.57</td></tr>
+<tr><td>courtyard</td><td>vggt-omega</td><td>0.862</td><td>0.920</td><td>0.0051</td><td>5.6</td><td class="best">0.33</td></tr>
+<tr><td>delivery_area</td><td>da3-giant</td><td>0.850</td><td>0.879</td><td>0.0207</td><td>26.5</td><td>12.60</td></tr>
+<tr><td>delivery_area</td><td>vggt-omega</td><td>0.950</td><td>0.971</td><td>0.0101</td><td>5.7</td><td>0.87</td></tr>
+<tr><td>facade</td><td>da3-giant</td><td>0.947</td><td>0.970</td><td>0.0106</td><td>9.8</td><td>0.39</td></tr>
+<tr><td>facade</td><td>vggt-omega</td><td>0.937</td><td>0.970</td><td>0.0081</td><td>19.7</td><td>0.90</td></tr>
+<tr><td>office</td><td>da3-giant</td><td>0.818</td><td>0.854</td><td>0.0061</td><td>1.6</td><td>0.86</td></tr>
+<tr><td>office</td><td>vggt-omega</td><td>0.879</td><td>0.936</td><td class="best">0.0049</td><td class="best">1.5</td><td>0.51</td></tr>
+<tr><td>terrace</td><td>da3-giant</td><td>0.936</td><td>0.971</td><td>0.0236</td><td>5.4</td><td>0.90</td></tr>
+<tr><td>terrace</td><td>vggt-omega</td><td class="best">0.961</td><td class="best">0.976</td><td>0.0055</td><td>2.3</td><td>0.43</td></tr>
 </tbody></table></div>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>ETH3D: 10 → 20 кадров, что изменилось</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@1%, 10 → 20</th><th>prec@1%, 10 → 20</th><th>rec@1%, 10 → 20</th><th>rot, °, 10 → 20</th><th>F@1%, GT 20</th></tr></thead><tbody>
-<tr><td>courtyard</td><td>da3-giant</td><td>0.966 → 0.914</td><td>0.989 → 0.871</td><td>0.944 → 0.960</td><td>1.11 → 0.57</td><td>0.967</td></tr>
-<tr><td>courtyard</td><td>vggt-omega</td><td>0.970 → 0.920</td><td>0.994 → 0.866</td><td>0.948 → 0.981</td><td>0.55 → 0.33</td><td>0.983</td></tr>
-<tr><td>delivery_area</td><td>da3-giant</td><td>0.881 → 0.879</td><td>0.998 → 0.966</td><td>0.789 → 0.806</td><td>6.86 → 12.60</td><td>0.884</td></tr>
-<tr><td>delivery_area</td><td>vggt-omega</td><td>0.972 → 0.971</td><td>0.987 → 0.967</td><td>0.958 → 0.975</td><td>2.91 → 0.87</td><td>0.984</td></tr>
-<tr><td>facade</td><td>da3-giant</td><td>0.976 → 0.970</td><td>0.986 → 0.946</td><td>0.967 → 0.996</td><td>0.43 → 0.39</td><td>0.998</td></tr>
-<tr><td>facade</td><td>vggt-omega</td><td>0.979 → 0.970</td><td>0.988 → 0.943</td><td>0.969 → 0.998</td><td>1.40 → 0.90</td><td>0.998</td></tr>
-<tr><td>office</td><td>da3-giant</td><td>0.937 → 0.854</td><td>0.954 → 0.880</td><td>0.919 → 0.829</td><td>1.82 → 0.86</td><td>0.893</td></tr>
-<tr><td>office</td><td>vggt-omega</td><td>0.966 → 0.936</td><td>0.969 → 0.917</td><td>0.963 → 0.956</td><td>0.77 → 0.51</td><td>0.951</td></tr>
-<tr><td>terrace</td><td>da3-giant</td><td>0.975 → 0.971</td><td>0.975 → 0.967</td><td>0.976 → 0.975</td><td>1.30 → 0.90</td><td>0.972</td></tr>
-<tr><td>terrace</td><td>vggt-omega</td><td>0.978 → 0.976</td><td>0.976 → 0.972</td><td>0.980 → 0.981</td><td>0.44 → 0.43</td><td>0.976</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@1%, 10 → 20</th><th>prec@1%, 10 → 20</th><th>rec@1%, 10 → 20</th><th>позы, см, 10 → 20</th><th>rot, °, 10 → 20</th><th>F@1%, GT 20</th></tr></thead><tbody>
+<tr><td>courtyard</td><td>da3-giant</td><td>0.966 → 0.914</td><td>0.989 → 0.871</td><td>0.944 → 0.960</td><td>11.8 → 4.9</td><td>1.11 → 0.57</td><td>0.967</td></tr>
+<tr><td>courtyard</td><td>vggt-omega</td><td>0.970 → 0.920</td><td>0.994 → 0.866</td><td>0.948 → 0.981</td><td>10.5 → 5.6</td><td>0.55 → 0.33</td><td>0.983</td></tr>
+<tr><td>delivery_area</td><td>da3-giant</td><td>0.881 → 0.879</td><td>0.998 → 0.966</td><td>0.789 → 0.806</td><td>53.6 → 26.5</td><td>6.86 → 12.60</td><td>0.884</td></tr>
+<tr><td>delivery_area</td><td>vggt-omega</td><td>0.972 → 0.971</td><td>0.987 → 0.967</td><td>0.958 → 0.975</td><td>20.5 → 5.7</td><td>2.91 → 0.87</td><td>0.984</td></tr>
+<tr><td>facade</td><td>da3-giant</td><td>0.976 → 0.970</td><td>0.986 → 0.946</td><td>0.967 → 0.996</td><td>16.8 → 9.8</td><td>0.43 → 0.39</td><td>0.998</td></tr>
+<tr><td>facade</td><td>vggt-omega</td><td>0.979 → 0.970</td><td>0.988 → 0.943</td><td>0.969 → 0.998</td><td>17.2 → 19.7</td><td>1.40 → 0.90</td><td>0.998</td></tr>
+<tr><td>office</td><td>da3-giant</td><td>0.937 → 0.854</td><td>0.954 → 0.880</td><td>0.919 → 0.829</td><td>3.3 → 1.6</td><td>1.82 → 0.86</td><td>0.893</td></tr>
+<tr><td>office</td><td>vggt-omega</td><td>0.966 → 0.936</td><td>0.969 → 0.917</td><td>0.963 → 0.956</td><td>2.3 → 1.5</td><td>0.77 → 0.51</td><td>0.951</td></tr>
+<tr><td>terrace</td><td>da3-giant</td><td>0.975 → 0.971</td><td>0.975 → 0.967</td><td>0.976 → 0.975</td><td>7.2 → 5.4</td><td>1.30 → 0.90</td><td>0.972</td></tr>
+<tr><td>terrace</td><td>vggt-omega</td><td>0.978 → 0.976</td><td>0.976 → 0.972</td><td>0.980 → 0.981</td><td>2.8 → 2.3</td><td>0.44 → 0.43</td><td>0.976</td></tr>
 </tbody></table></div>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Tanks and Temples, 16 кадров</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
-<tr><td>barn</td><td>da3-giant</td><td>0.462</td><td>0.677</td><td class="best">10.6</td><td>0.48</td></tr>
-<tr><td>barn</td><td>vggt-omega</td><td class="best">0.527</td><td class="best">0.767</td><td>10.7</td><td>0.64</td></tr>
-<tr><td>courthouse</td><td>da3-giant</td><td>0.276</td><td>0.423</td><td>86.7</td><td>3.51</td></tr>
-<tr><td>courthouse</td><td>vggt-omega</td><td>0.028</td><td>0.055</td><td>384.3</td><td>47.32</td></tr>
-<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.54</td></tr>
-<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td class="best">0.44</td></tr>
-<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.46</td></tr>
-<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>0.54</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>позы, см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.462</td><td>0.677</td><td class="best">10.6</td><td>3.2</td><td>0.48</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td class="best">0.527</td><td class="best">0.767</td><td>10.7</td><td>3.1</td><td>0.64</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.276</td><td>0.423</td><td>86.7</td><td>11.0</td><td>3.51</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.028</td><td>0.055</td><td>384.3</td><td>149.2</td><td>47.32</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>3.2</td><td>0.54</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>3.1</td><td class="best">0.44</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td class="best">2.0</td><td>0.46</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>2.3</td><td>0.54</td></tr>
 </tbody></table></div>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Tanks and Temples, 100 кадров</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
-<tr><td>barn</td><td>da3-giant</td><td>0.471</td><td>0.753</td><td>18.5</td><td>0.39</td></tr>
-<tr><td>barn</td><td>vggt-omega</td><td class="best">0.585</td><td class="best">0.834</td><td class="best">13.5</td><td>0.55</td></tr>
-<tr><td>courthouse</td><td>da3-giant</td><td>0.384</td><td>0.586</td><td>61.6</td><td>1.69</td></tr>
-<tr><td>courthouse</td><td>vggt-omega</td><td>0.379</td><td>0.546</td><td>57.9</td><td>3.68</td></tr>
-<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.81</td></tr>
-<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>0.36</td></tr>
-<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>0.32</td></tr>
-<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td class="best">0.23</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@0.5%</th><th>F@1%</th><th>точн. мед., см</th><th>позы, см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.471</td><td>0.753</td><td>18.5</td><td>2.5</td><td>0.39</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td class="best">0.585</td><td class="best">0.834</td><td class="best">13.5</td><td>2.6</td><td>0.55</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.384</td><td>0.586</td><td>61.6</td><td>3.6</td><td>1.69</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.379</td><td>0.546</td><td>57.9</td><td>21.7</td><td>3.68</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td>4.6</td><td>0.81</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>2.5</td><td>0.36</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>—</td><td>—</td><td>—</td><td class="best">1.6</td><td>0.32</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>—</td><td>—</td><td>—</td><td>2.0</td><td class="best">0.23</td></tr>
 </tbody></table></div>
 <h3 style='font-size:14px;color:#c9d1db;margin:24px 0 4px'>Кадров 16 → 100: что изменилось</h3>
-<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@1%, %</th><th>точн. мед., см</th><th>rot, °</th></tr></thead><tbody>
-<tr><td>barn</td><td>da3-giant</td><td>0.677 → 0.753</td><td>10.6 → 18.5</td><td>0.48 → 0.39</td></tr>
-<tr><td>barn</td><td>vggt-omega</td><td>0.767 → 0.834</td><td>10.7 → 13.5</td><td>0.64 → 0.55</td></tr>
-<tr><td>courthouse</td><td>da3-giant</td><td>0.423 → 0.586</td><td>86.7 → 61.6</td><td>3.51 → 1.69</td></tr>
-<tr><td>courthouse</td><td>vggt-omega</td><td>0.055 → 0.546</td><td>384.3 → 57.9</td><td>47.32 → 3.68</td></tr>
-<tr><td>ignatius</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>0.54 → 0.81</td></tr>
-<tr><td>ignatius</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>0.44 → 0.36</td></tr>
-<tr><td>meetingroom</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>0.46 → 0.32</td></tr>
-<tr><td>meetingroom</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>0.54 → 0.23</td></tr>
+<div class="scroll"><table><thead><tr><th>сцена</th><th>метод</th><th>F@1%, %</th><th>точн. мед., см</th><th>позы, см</th><th>rot, °</th></tr></thead><tbody>
+<tr><td>barn</td><td>da3-giant</td><td>0.677 → 0.753</td><td>10.6 → 18.5</td><td>3.2 → 2.5</td><td>0.48 → 0.39</td></tr>
+<tr><td>barn</td><td>vggt-omega</td><td>0.767 → 0.834</td><td>10.7 → 13.5</td><td>3.1 → 2.6</td><td>0.64 → 0.55</td></tr>
+<tr><td>courthouse</td><td>da3-giant</td><td>0.423 → 0.586</td><td>86.7 → 61.6</td><td>11.0 → 3.6</td><td>3.51 → 1.69</td></tr>
+<tr><td>courthouse</td><td>vggt-omega</td><td>0.055 → 0.546</td><td>384.3 → 57.9</td><td>149.2 → 21.7</td><td>47.32 → 3.68</td></tr>
+<tr><td>ignatius</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>3.2 → 4.6</td><td>0.54 → 0.81</td></tr>
+<tr><td>ignatius</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>3.1 → 2.5</td><td>0.44 → 0.36</td></tr>
+<tr><td>meetingroom</td><td>da3-giant</td><td>— → —</td><td>— → —</td><td>2.0 → 1.6</td><td>0.46 → 0.32</td></tr>
+<tr><td>meetingroom</td><td>vggt-omega</td><td>— → —</td><td>— → —</td><td>2.3 → 2.0</td><td>0.54 → 0.23</td></tr>
 </tbody></table></div>
-<p class="note">Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, 10 кадров — официальный протокол, 20 — плотная схема на тех же камерах. Tanks and Temples: 4 сцены в двух схемах — 16 и 100 кадров, лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы. В таблицах сравнения одна ячейка показывает пару «10 → 20» или «16 → 100». Падение F@1% у плотной схемы ETH3D против 10-кадрового эталона — не деградация: лишние кадры видят поверхность, которой в эталоне нет, и она засчитывается как ошибка. Поэтому последняя колонка — F@1% против эталона, пересобранного из тех же 20 кадров: на нём точность (precision) растёт.</p>
+<p class="note">Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, 10 кадров — официальный протокол, 20 — плотная схема на тех же камерах. Tanks and Temples: 4 сцены в двух схемах — 16 и 100 кадров, лазерный GT есть только у barn и courthouse — у ignatius и meetingroom остаются позы. В таблицах сравнения одна ячейка показывает пару «10 → 20» или «16 → 100». Подпись под плиткой — «позы, см» (mean translation error), а не F@1: она определена для всех сцен, включая ignatius и meetingroom без лазерного эталона. Падение F@1% у плотной схемы ETH3D против 10-кадрового эталона — не деградация: лишние кадры видят поверхность, которой в эталоне нет, и она засчитывается как ошибка. Поэтому последняя колонка — F@1% против эталона, пересобранного из тех же 20 кадров: на нём точность (precision) растёт.</p>
 
 <h2>Как это посчитано</h2>
-<p>Облако предсказания приводится в систему координат эталона через sim(3) по центрам камер (Umeyama), на ETH3D дополнительно уточняется ICP. F-score считается при порогах 0.5 % и 1 % диагонали эталонного облака. Для Tanks and Temples облако обрезано официальным полигоном GT и выровнено только по позам — без ICP; «точн. мед.» — медианное расстояние от точки предсказания до ближайшей точки лазерного скана. Порог τ — это 1 % диагонали эталонного облака, то есть конкретная длина в метрах, своя у каждой сцены: 7.4 см на office, 26 см на barn, 43 см на courtyard, 59 см на terrace, 79 см на delivery_area, 89 см на courthouse, 94 см на facade. Доля, а не абсолютное число, потому что 1 см на office — это 0.14 % сцены, а на facade — 0.01 %. Тот же τ стоит на шкале под раскраской в просмотрщике и в подписи рисунков облаков (цвет = clip(расстояние / τ, 0, 1)), поэтому шкала, рисунки и F@1 всегда говорят об одном пороге.</p>
+<p>Облако предсказания приводится в систему координат эталона через sim(3) по центрам камер (Umeyama), на ETH3D дополнительно уточняется ICP. F-score считается при порогах 0.5 % и 1 % диагонали эталонного облака. Для Tanks and Temples облако обрезано официальным полигоном GT и выровнено только по позам — без ICP; «точн. мед.» — медианное расстояние от точки предсказания до ближайшей точки лазерного скана. Порог τ — это 1 % диагонали эталонного облака, то есть конкретная длина в метрах, своя у каждой сцены: 7.4 см на office, 26 см на barn, 43 см на courtyard, 59 см на terrace, 79 см на delivery_area, 89 см на courthouse, 94 см на facade. Доля, а не абсолютное число, потому что 1 см на office — это 0.14 % сцены, а на facade — 0.01 %. Тот же τ стоит на шкале под раскраской в просмотрщике и в подписи рисунков облаков (цвет = clip(расстояние / τ, 0, 1)), поэтому шкала, рисунки и F@1 всегда говорят об одном пороге. «позы, см» — mean translation error: средняя по кадрам длина сдвига между предсказанным и эталонным центром камеры после того же sim(3), в сантиметрах (эталонные позы обоих наборов метрические, поэтому доля диагонали бокса GT-камер превращается в длину). Это метрика только поз: плотность облака и бюджет страницы на неё не влияют.</p>
 
 <footer>
 <p>Данные и веса моделей в репозиторий не входят: сюда попадают только код, числа и страницы
