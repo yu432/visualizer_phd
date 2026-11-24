@@ -242,7 +242,7 @@ def fit_ratio(image, ratio, background=(11, 14, 18)):
 
 
 def tile_caption(rows, dataset, scene, method):
-    """Tile caption: this method's mean camera translation error in that scheme, in centimetres.
+    """Tile caption: this method's mean camera translation error (MTE over camera centres), in cm.
 
     A row of tiles compares one building in four variants (two frame schemes, two methods), so the
     caption has to be a number all four share. Cloud F-scores are not that number: they are defined
@@ -257,9 +257,9 @@ def tile_caption(rows, dataset, scene, method):
         return ""
     text = report.value(row, "translation_mean_cm", ("pose",), "%.1f")
     if text not in ("", "—"):
-        return "позы: <b>%s</b> см" % text
+        return "позы камеры: <b>%s</b> см" % text
     if "pose" in row:
-        return "поз: поворот <b>%s°</b>" % report.value(row, "rotation_mean_deg", ("pose",), "%.2f")
+        return "позы камеры: поворот <b>%s°</b>" % report.value(row, "rotation_mean_deg", ("pose",), "%.2f")
     return ""
 
 
@@ -289,7 +289,7 @@ def compare_columns(sparse, dense, old_dataset="tnt", new_dataset="tnt100"):
     body = [row for row in (cells(scene, method)
                             for scene in sorted({row["scene"] for row in dense})
                             for method in ("da3-giant", "vggt-omega")) if row is not None]
-    header = ["сцена", "метод", "F@1%, %", "точн. мед., см", "позы, см", "rot, °"]
+    header = ["сцена", "метод", "F@1%, %", "точн. мед., см", "позы камеры, см", "rot, °"]
     return header, body, [None] * len(header)
 
 
@@ -298,7 +298,7 @@ def eth3d_compare_columns(sparse, dense, coverage_matched=()):
     index = {(row["dataset"], row["scene"], row["method"]): row for row in sparse + dense}
     matched = {(row["dataset"], row["scene"], row["method"]): row for row in coverage_matched}
     header = ["сцена", "метод", "F@1%, 10 → 20", "prec@1%, 10 → 20", "rec@1%, 10 → 20",
-              "позы, см, 10 → 20", "rot, °, 10 → 20", "F@1%, GT 20"]
+              "позы камеры, см, 10 → 20", "rot, °, 10 → 20", "F@1%, GT 20"]
     body = []
     for scene in sorted({row["scene"] for row in dense}):
         for method in ("da3-giant", "vggt-omega"):
@@ -470,7 +470,7 @@ def main() -> int:
     dense = [row for row in rows if row.get("dataset") == "tnt100"]
     tables = []
     if eth3d:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы, см", "rot, °"]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы камеры, см", "rot, °"]
         kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
@@ -480,7 +480,7 @@ def main() -> int:
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in eth3d]
         tables.append(table_html(header, body, kinds, "ETH3D, 10 кадров"))
     if eth3d20:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы, см", "rot, °"]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "AbsRel (s+t)", "позы камеры, см", "rot, °"]
         kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
@@ -492,7 +492,7 @@ def main() -> int:
         tables.append(table_html(*eth3d_compare_columns(eth3d, eth3d20, eth3d20dense),
                                  title="ETH3D: 10 → 20 кадров, что изменилось"))
     if tnt:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы, см", "rot, °"]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы камеры, см", "rot, °"]
         kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
@@ -502,7 +502,7 @@ def main() -> int:
                  report.value(row, "rotation_mean_deg", ("pose",), "%.2f")] for row in tnt]
         tables.append(table_html(header, body, kinds, "Tanks and Temples, 16 кадров"))
     if dense:
-        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы, см", "rot, °"]
+        header = ["сцена", "метод", "F@0.5%", "F@1%", "точн. мед., см", "позы камеры, см", "rot, °"]
         kinds = [None, None, report.HIGH, report.HIGH, report.LOW, report.LOW, report.LOW]
         body = [[row["scene"], row["method"],
                  report.value(row, "fscore_half", ("cloud",)),
@@ -528,15 +528,15 @@ def main() -> int:
               "facade. Доля, а не абсолютное число, потому что 1 см на office — это 0.14 % сцены, а на facade — "
               "0.01 %. Тот же τ стоит на шкале под раскраской в просмотрщике и в подписи рисунков облаков "
               "(цвет = clip(расстояние / τ, 0, 1)), поэтому шкала, рисунки и F@1 всегда говорят об одном пороге. "
-              "«позы, см» — mean translation error: средняя по кадрам длина сдвига между предсказанным и "
-              "эталонным центром камеры после того же sim(3), в сантиметрах (эталонные позы обоих наборов "
+              "«позы камеры, см» — mean translation error по позам: средняя по кадрам длина сдвига между "
+              "предсказанным и эталонным центром камеры после того же sim(3), в сантиметрах (эталонные позы обоих наборов "
               "метрические, поэтому доля диагонали бокса GT-камер превращается в длину). Это метрика только "
               "поз: плотность облака и бюджет страницы на неё не влияют.")
     table_note = ("Лучшее значение в каждой колонке выделено жирным. ETH3D: 5 сцен со зданиями, "
                   "10 кадров — официальный протокол, 20 — плотная схема на тех же камерах. Tanks and Temples: "
                   "4 сцены в двух схемах — 16 и 100 кадров, лазерный GT есть только у barn и courthouse — "
                   "у ignatius и meetingroom остаются позы. В таблицах сравнения одна ячейка показывает пару "
-                  "«10 → 20» или «16 → 100». Подпись под плиткой — «позы, см» (mean translation error), а не F@1: "
+                  "«10 → 20» или «16 → 100». Подпись под плиткой — «позы камеры: X см» (mean translation error), а не F@1: "
                   "она определена для всех сцен, включая ignatius и meetingroom без лазерного эталона. "
                   "Падение F@1% у плотной схемы ETH3D против 10-кадрового эталона — "
                   "не деградация: лишние кадры видят поверхность, которой в эталоне нет, и она засчитывается "
