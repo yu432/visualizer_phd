@@ -28,5 +28,7 @@ cd "$SITE_REPO"
 git add -A
 git -c user.name="yu432" -c user.email="yu432@users.noreply.github.com" \
   commit -q -m "${1:-Update site}" || echo "nothing to commit"
-git push -q origin main
+# The payload is a few hundred megabytes: HTTP/1.1 with a large post buffer keeps a spotty
+# connection from killing the push (GitHub drops HTTP/2 streams at ~300 MB with a broken pipe).
+git -c http.version=HTTP/1.1 -c http.postBuffer=524288000 push -q origin main
 echo "pushed; site https://yu432.github.io/visualizer_phd/"

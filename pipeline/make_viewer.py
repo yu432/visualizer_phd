@@ -1464,9 +1464,13 @@ def main() -> int:
         total = sum(sizes.values())
         budget_text = ("целиком, %s на облако" % thousands(args.points)
                        if args.points else "целиком, без прореживания")
-        note = ("Облака после sim(3) по позам камер. Точек: %s (%s; GT-лидар — до %s). "
+        # The GT-lidar budget only means something on a scene that has the lidar: on ignatius and
+        # meetingroom the plaque used to promise "GT-лидар — до 300 000" with no GT cloud in sight.
+        gt_part = ("GT-лидар — до %s" % thousands(args.gt_points) if "gt" in meta["traces"]
+                   else "лазерного GT у этой сцены нет")
+        note = ("Облака после sim(3) по позам камер. Точек: %s (%s; %s). "
                 "Раскраска «расстояние»: τ = %s (%s), всё, что дальше, — одним красным."
-                % (thousands(total), budget_text, thousands(args.gt_points),
+                % (thousands(total), budget_text, gt_part,
                    metric_text(meta["tau"]), meta["tau_note"]))
         note += (" <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃"
                  " (или ПКМ, СКМ), зум — колесо.</span>")
