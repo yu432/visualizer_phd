@@ -36,7 +36,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 <script src='three.min.js'></script>
 </head>
 <body>
-<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:9px 16px 4px;background:#14171c;color:#e8e8e8;font-size:13.5px;line-height:1.35'><div style='font-size:12px;margin-bottom:5px'><a href='../index.html' style='color:#6cb6ff;text-decoration:none'>&larr; все сцены</a></div><b>tnt / courthouse</b><br><span style='color:#a8b0ba'>Облака после sim(3) по позам камер. Точек: 2 000 000 (до 750 000 на облако). Раскраска «расстояние»: τ = 0.89 м (1% диагонали GT-облака, та же τ, что у F@1 в отчёте), всё, что дальше, — одним красным. <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃ (или ПКМ, СКМ), зум — колесо.</span> <span style='color:#ffb020'>Внимание: vggt-omega: позы не сходятся (средняя ошибка поворота 47.3°), облако смещено относительно GT.</span></span></div>
+<div style='font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:9px 16px 4px;background:#14171c;color:#e8e8e8;font-size:13.5px;line-height:1.35'><div style='font-size:12px;margin-bottom:5px'><a href='../index.html' style='color:#6cb6ff;text-decoration:none'>&larr; все сцены</a></div><b>tnt / courthouse</b><br><span style='color:#a8b0ba'>Облака после sim(3) по позам камер. Точек: 1 852 635 (целиком, без прореживания; GT-лидар — до 300 000). Раскраска «расстояние»: τ = 0.89 м (1% диагонали GT-облака, та же τ, что у F@1 в отчёте), всё, что дальше, — одним красным. <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃ (или ПКМ, СКМ), зум — колесо.</span> <span style='color:#ffb020'>Внимание: vggt-omega: позы не сходятся (средняя ошибка поворота 47.3°), облако смещено относительно GT.</span></span></div>
 <div id="bar" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;
      padding:6px 16px 10px;background:#14171c;color:#e8e8e8;
      font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:13px">
@@ -85,7 +85,7 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
 
 <div id="camshot"><div id="camshotimg"></div><div id="camshotcap"></div></div>
 
-<script>window.VIEWER = {"traces": {"gt": {"count": 515318, "centre": [35.79412484169006, -40.60704326629639, -14.808331370353699], "half": [28.44937491416931, 26.427258491516113, 11.598931431770325], "pal": "mqSw", "pal_count": 1, "pos": "data/tnt-courthouse-gt.bin", "dist": "data/tnt-courthouse-gt-dist.bin", "colour_error": 0.0, "label": "GT: лидар"}, "da3": {"count": 734682, "centre": [37.44685999617324, -37.65841458093915, -20.035412228494277], "half": [25.492227056126673, 23.937222605184616, 12.215718089647776], "pal": "+Pj22drTz87FycrFyMW6xMS8wsK9wcC7vr+7wLmmvLmuu7esubaqtraxtrGhsbKutq2XsquVsKqWrqyiraWOqamlqaSPqKCMqJ6Do6Seo52JopqEm56bmpqRm5iKoJV5nJV8mpR8mJOEmJF6l45yk5OIko5+k416k410kYp4kolqjY+HjYp7jYh4jYd1jYdxi4VzioNyi4Nqh4mBh4R2hoN0h4NvhoBxhoBuhn9thn5ogoV9goBygn5ugn1sgnxnfoF5fnxudIB5hXlmgXpogHhlfnpqf3llfnZkfXprfXlmfHZke3lse3dlenNhd3hxeHdndnRpd3Rkd3Vid3Jhd3JednFhdnBcdW5fdW1YcXZwcXJpcXBmbm5lb25gcnFdcW5db21dcWxabmteb2tab2tYbmhbb2lWbWZUaW5maWpiampbaGlhaWhcamhZZmdfZ2daaWZYaWZUZWReZmRYZmRWZ2NUZ2NTZ2NQZmBPYmZeYmNcYmJVYWFbYWFVYmBRYV9UYV5NX2JZX15ZXl5SXGBYTWRKaFlNYFtNXl1RXllMXFxWXVtNXFdLW1tXWltQW1lKWlVJWFlWV1dVV1hQWFlLWFdKWFZGV1RLV1RHV1NDVFdRVFVRVFRKU1NNTVdSTlJOUFBPT1BLUFBJTE9NRk9MVFVFVFJFSlY3U1FDT1BDUU9CTU5CVktBTkxATExGTEo9SktISkk9SEpLSElEQkpHREdGSEk+RkY/R0c5VEM8RkQ5REQ+REI1Q0NAQ0I1QENBQEFAQEE3STo3QD0zPj41PjgzN0kwN0E2OD42PDw2MzwzOzszNDozODg6ODgwOjgrNzcrNzUpNDY1NDUsLzYxJjYkMzMuMy8wLjEuLS8rLSwsNDElMTAkLy8kMCwiLCwjKi0rKisjJS4mHS0bLSclKCgjJyciJiQgJCYkJCUdIyIdICUiICMbICAbHx8aHCIeGCAdGCETHhwZGhsXGBoWFRkYFBcVFBgQFRQREhMREBIQDxAODA4NCgsKBwcH", "pal_count": 256, "pos": "data/tnt-courthouse-da3.bin", "dist": "data/tnt-courthouse-da3-dist.bin", "colour_error": 1.7, "label": "DA3-Giant — F@1 = 0.423"}, "omega": {"count": 750000, "centre": [35.2341727557726, -26.865992017801556, -27.457863114508477], "half": [21.7191953542362, 13.479885464846308, 8.89506380640716], "pal": "/f377/Hq4uLb0tLLy8m8xcS7wMG9vr6zwbefvLakuraouLast6+ZtLOrtK2Zrq+nsqmSrqeSrKWRqqSSp6WcqKGLpp6KppyBoaCYoZuGoJiCnJuRnJaDlZmPnpN8mpN9mJJ9lpB8lJKGlI95k4t2kI6CkIt2j4h2j4dvi4yCi4h6i4Z2jIdxi4RxiYJwiYFphoZ7hoJygIV9hYFwf4B3gn5wfH11hYFrhX9shX5pg31peoFefnxohHpmgXpogHhlfnpqf3llfnZkfHprfXllfXZkfHRie3lse3dle3RienJfeHhweHZoeHZmeHVkeHVed3Jkd3Jgd3Fdd25cc3Vyc3RodHNjcnBlcnBgc3Fcc25dc25Zcm1dcWpccmtXcWhVbXFubm9ibG1lbmxeampia2pcbW9VbWpYa2hZbGhVaGZeaWZYaWVWamZVaGJUaWRTaWRQZ2BPYmliY2RcZGNYX2JcYGFYWWo8X2JLY2BRW2BIYl9SYl5NXF5YWV5GZltNYFtNXlxQXltLXldLXFxSXVtLXFdKWVtXWlpPWllMWVZOWVdJWVdFWVRFVlhVVldMVVVOVldIVlVIVlZCVVJHVVFBT1dUT1JTTlNNUlNHUlFGS1FITk5NT05FSE1LUVI/RVUtUU9BTE49T01ASkw8U0o+TEo+SkpBSkg5SElDSEc5RUhIRUdCRkc5TEQ5RkQ5REQ+REM1Q0RAQ0M2TDw1Qj81PkdCP0I/PkE9PT88PkUtP0AyPz4yPDw5PTwxPTstOzkvPDQwM04aMkQmMz8tNjs4MTskODgzMDgrNjc1NzYqLjYqNDQzNDQrNTMoNTMjMDMsKDMjLy4yLS8sLi8qMC8oLCwnMi8jLy4iLC0hLCogKCwpKCknKCwbKCggJCsiHSsaKiciJichKCMhJSUgJCIdIyQiIyMaIiAbISQeICAbHiIfHh8cHiAWHR0YGiEZFCEQGBwXHBoXGRkVFRkYFRkRFxYTFRYSExUSFBIPDxYPDxIPDxAODQ8MCwwKBwcH", "pal_count": 256, "pos": "data/tnt-courthouse-omega.bin", "dist": "data/tnt-courthouse-omega-dist.bin", "colour_error": 1.79, "label": "VGGT-Ω — F@1 = 0.055"}}, "predictions": ["da3", "omega"], "default_cloud": "omega", "cams": true, "camshots": {"url": "data/tnt-courthouse-cams.jpg", "cols": 5, "rows": 4, "w": 256, "h": 192, "tile": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [0, 3]], "names": ["000111.jpg", "000156.jpg", "000406.jpg", "000549.jpg", "000550.jpg", "000551.jpg", "000552.jpg", "000553.jpg", "000554.jpg", "000555.jpg", "000556.jpg", "000557.jpg", "000558.jpg", "000559.jpg", "000636.jpg", "000757.jpg"]}, "basis": [0.0, -0.1066246536352987, -0.9942993428727349, 0.0, -0.9917024329862321, 0.12782175131787687, -0.013707089378083136, 0.0, 0.12855459699749333, 0.986049077443503, -0.10573992842644002, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [37.24667986481547, -29.988382562269155, -33.18514075156352], "radius": 62.01709366031517, "theta": -1.3501482628280947, "phi": 1.2217304763960306}, "fov": 45.0, "frustums": {"b64": "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", "size": 16, "per": 48, "edge": 2.6890646973539485}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.8943208337212138, "tau_note": "1% диагонали GT-облака, та же τ, что у F@1 в отчёте", "ramp_css": "linear-gradient(90deg, #1a9850 0%, #91cf60 25%, #d9ef8b 50%, #fdae61 75%, #f46d43 90%, #d73027 100%)", "legend": {"pred": "расстояние до GT, м", "gt": "GT → ближайшее предсказание, м", "note": "дальше τ — одним красным; τ = 1 % диагонали GT"}, "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
+<script>window.VIEWER = {"traces": {"gt": {"count": 300000, "centre": [36.63933610916138, -29.77442979812622, -15.465400457382202], "half": [27.61460828781128, 15.577929973602295, 10.936800241470337], "pal": "mqSw", "pal_count": 1, "chunks": [{"pos": "data/tnt-courthouse-gt-000.bin", "count": 300000}], "dist": "data/tnt-courthouse-gt-dist.bin", "colour_error": 0.0, "label": "GT: лидар"}, "da3": {"count": 560595, "centre": [37.46353609216148, -27.85901142004821, -17.401141479284], "half": [24.353921310926285, 13.728414962387962, 9.107790582072536], "pal": "6uvm1dXPzs3GysrFx8fDx8W3w8O+wMK9wb+2vb65vruwv7egurq2uLeyuLWptLWxtLKrr6+rubGata+asqycs6uSsKiSr6WNq6umqaecq6SOpaScqaGOqaCHoqCUpJ2KoZqHpJyBoJh/m5uTl5eOnZeBm5V/mZN/mpJ4k5KGlZB6k417lI10kYp0jY2BjYl5jYh3jYdyi4Z0i4VyioRzioRxi4RsioJsh4Z5h4Jwh4FthIR3hIBvfoJ3gn9xg39thH5rg31sgH1tgHprhn1mgnxngHtngHhle3x4fHtufXtreXhve3hpfHpnfHhme3dlenVoenVkdnVqdnRkfHVhenRheHRid3NhdnJldnJgd3FednBhdm9cdW1ccXRxcnNkcXFlcXBicW9hb21jcG1fcG1dcm1ab21bbmtdb2tabmhccGpWbWlXbWZVam1kampeamlcaWhcamdWaGVZaWVVaWVTaGNRZWhgZWVZZWRWZWNWZWJRY2RaWWZbZ19SZF9QY19QYV9TYV1MX2BYX19RX1xRX1xMX1lKWV1aXFxQV1lXWVlQXFtLW1lLWlhKXFZKWVZIV1ZKV1VFVFZTVVVKVVVHWFJHVVJFVFJFUlJKUlJEVFBEUU9DVExBTldRT1FMT1BJTk9HTU5HTk1ATUtETUs/TUs9TEk8SU9NSUpFSUlARk5KRkhEP0xESUc9RUZBR0Q+Q0RASEQ3REQ3RUE0Q0E0QUVDQUJCQUI4QEA4QT8yPUNBPUA5OkI+NUE6Qj01Pj0zPT02PjsyPzY3Ojw7OjsxOjkxOjUwNjw6Njg6NzkxNjcvNTY0NjUqNTQqNTAtMjk1LDkxLzQwMjIsLDIuMDAsMTAlLTAsJzAqLS0tLS0mLi0iKysiKSwqKSsjIywmLScmKSgjKCcjJygjJiUhJCclJCYeJCQeJCEeICYjHiQeHyIeICEaHx8cHx8YGx8bHhwaGxwXGhsXGRsYGBgVFhoYFRgVFhcTExYUFBQREhMREBMREA8NDRAODA0LCAgI", "pal_count": 256, "chunks": [{"pos": "data/tnt-courthouse-da3-000.bin", "count": 560595}], "dist": "data/tnt-courthouse-da3-dist.bin", "colour_error": 1.45, "label": "DA3-Giant — F@1 = 0.423"}, "omega": {"count": 992040, "centre": [35.64352911743706, -24.573574421210818, -26.750405137118985], "half": [20.724566156686457, 11.18746786825557, 8.16404431055113], "pal": "9/nz5+jh0dDGycrFyMS2xcO6wsG5v7+9vr21wLmkvrOZuranuLSltbWxr7CutrCbsLChtKyWsaqWrKqgrKaUqqKRsqiLraSLqqOMqqCIpaWdpaCPpp+Io5yJpJuCnZ6Zn5uGoJiFoJh/nJeFm5SBlJSOlpGAn5V6mZJ5lZF5lI55k4x4kIt4jol4jYh4k4pwjYdwjYRuiop/ioZ2ioRzhId9h4J0h4JwgYF2fH95iYNth4Fsh39qgYJohX5rgH5qhXxog3xpgnpmgHtqgHlkf3trf3llfnZkfXprfXdifHRienlxendnenZjenVeeXNheXJdeXBfdXd1dXZqdnVlc3Jrc3JkdHJidXNedXFfdXBbcm9gdG9cc25bcm1ccWpdcmxZcmxVcWhVbXJsbW5jbG1ibmxca2pja2pcbGlabWxWbGhXbWhUamZbamZWa2ZUa2VSaWJQY2tlZGZeZGVbYmNbWmw9YmRNZWJSXGJJY2FVXGBaZGBPV2BCZ11QYl1OYF1SYFxKX11SX11LXllLXV1TXFlQXFlIWVtZWVpQWltLWVhLWFdLWFRMWVhEWFRFV1JCU1hXTFhWTlVPVVRHUFNHUFBMUlBESE9LUlY9UlBBQ1opQ1IuUU9ASk46U0tATks/TExCTEk6S0tESkg6SElESEc4RElLQ0lGQkhEQUhBQEVARUg6REQ5QEkrQUQuUDwyREE1QkI3QjwyQUE6QD0yPkA+PkAwPTw1PTssPTYwOj89OTw4Oj4rOjouOTgxOTcoOTIrMk8XL0YeNUAxKkAbMzs3LjseNDg2MTcxNTcnKTcbMjQzMzQsNDQnMzMiLTMpJDMeLi8xLS8sLS4rMDAmLCwmMC4gLC4eLCofJy4qJyooJiknJy0aJygeIiwmIisWGysWKCcfJSYgKCQeJCQdIyUeIiIbICQhHyEfICIWHx4YHCIeHCEUGx0XGCEWEiELFhwUGxoVGBoVFxkUFBkTFxYSFBYSExURExIODxYNDxIODhENDQ4LCg0KCAkH", "pal_count": 256, "chunks": [{"pos": "data/tnt-courthouse-omega-000.bin", "count": 992040}], "dist": "data/tnt-courthouse-omega-dist.bin", "colour_error": 1.85, "label": "VGGT-Ω — F@1 = 0.055"}}, "predictions": ["da3", "omega"], "default_cloud": "omega", "cams": true, "camshots": {"url": "data/tnt-courthouse-cams.jpg", "cols": 5, "rows": 4, "w": 256, "h": 192, "tile": [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [0, 2], [1, 2], [2, 2], [3, 2], [4, 2], [0, 3]], "names": ["000111.jpg", "000156.jpg", "000406.jpg", "000549.jpg", "000550.jpg", "000551.jpg", "000552.jpg", "000553.jpg", "000554.jpg", "000555.jpg", "000556.jpg", "000557.jpg", "000558.jpg", "000559.jpg", "000636.jpg", "000757.jpg"]}, "basis": [0.0, -0.1066246536352987, -0.9942993428727349, 0.0, -0.9917024329862321, 0.12782175131787687, -0.013707089378083136, 0.0, 0.12855459699749333, 0.986049077443503, -0.10573992842644002, 0.0, 0.0, 0.0, 0.0, 1.0], "camera": {"target": [25.8169846871678, -28.445076871373658, -34.65289152236281], "radius": 46.00366897781169, "theta": -1.3501482628280947, "phi": 1.2217304763960306}, "fov": 45.0, "frustums": {"b64": "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", "size": 16, "per": 48, "edge": 2.1957717369950056}, "ramp": "GphQHJlQHppRIJtRIZtRI5xRJZ1SJ55SKZ9SK6BSLaFTL6FTMKJTMqNTNKRUNqVUOKZUOqdUPKhVPahVP6lVQapVQ6tWRaxWR61WSa5WS65XTK9XTrBXULFXUrJYVLNYVrRYWLRYWbVZW7ZZXbdZX7hZYblaY7paZbtaZ7taaLxbar1bbL5bbr9bcMBccsFcdMFcdcJcd8NdecRde8VdfcZdf8degcdeg8hehMlehspfiMtfisxfjM1fjs1gkM5gkc9gktBhlNBildFiltFjl9JkmNJkmdNlmtNmm9RmndRnntVon9VooNZpodZqotdqo9drpNhspthsp9ltqNluqdpuqtpvq9twrNtwrtxxr9xysN1ysd1zst50s950tN91td92t+B2uOB3ueF4uuF4u+J5vOJ6veN6vuN7wOR8weR8wuV9w+V+xOZ/xeZ/xueAx+eByeiByuiCy+mDzOmDzeqEzuqFz+uF0euG0uyH0+yH1O2I1e2J1u6J1+6K2O+L2e6L2u2K2uyJ2+uJ3OqI3OmH3eiH3eeG3uaF3uWF3+SE3+OD4OKD4eGC4eCB4t+B4t6A491/49x/5Nt+5dp95dl95th85td859Z759V66NR66dN56dJ46tF46tB3689268527M117Mx07ct07spz7sly78hy78dx8MZw8MVw8cRv8sNu8sJu88Ft88Bs9L9s9L5r9b1q9rxq9rpp97lo97ho+Ldn+LZm+bVm+bRl+rNk+7Jk+7Fj/LBi/K9i/a5h/a1g/atg/Klf/Khe/KZd/KRc+6Nc+6Fb+59a+51Z+pxZ+ppY+phX+pdW+pVV+ZNV+ZJU+ZBT+Y5S+IxS+ItR+IlQ+IdP94ZO94RO94JN94FM9n9L9n1K9ntK9npJ9nhI9XZH9XVH9XNG9XFF9HBE9G5D82xC8mlB8WdA8GU/72I+7mA97V0861s76lk66VY56FQ351E25k815U005Eoz4kgy4UYx4EMw30Ev3j4u3Tws3Dor2jcq2TUp2DIo1zAn", "ramp_size": 256, "point_size": 2.2, "tau": 0.8943208337212138, "tau_note": "1% диагонали GT-облака, та же τ, что у F@1 в отчёте", "ramp_css": "linear-gradient(90deg, #1a9850 0%, #91cf60 25%, #d9ef8b 50%, #fdae61 75%, #f46d43 90%, #d73027 100%)", "legend": {"pred": "расстояние до GT, м", "gt": "GT → ближайшее предсказание, м", "note": "дальше τ — одним красным; τ = 1 % диагонали GT"}, "hint_rgb": "цвет пикселей, из которых получены точки", "hint_dist": "зелёный — на поверхности GT, красный — дальше τ"};</script>
 
 <script>
 (function () {
@@ -371,30 +371,60 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   }
 
   // ------------------------------------------------------------- payload load
+  // A cloud arrives in chunks, so the first one paints the scene and the rest grows the draw
+  // range behind it; a 10.9 M point cloud is 76 MB and waiting for all of it before the first
+  // frame would make the page feel broken.
+  function bumpRange(attribute, itemSize, first, count) {
+    if (attribute.updateRange) {   // three.js uploads only this slice when the driver supports it
+      attribute.updateRange.offset = first * itemSize;
+      attribute.updateRange.count = count * itemSize;
+    }
+    attribute.needsUpdate = true;
+  }
   function loadPositions(key) {
     var spec = META.traces[key];
     if (!spec) { return Promise.resolve(null); }
     if (spec.object) { return Promise.resolve(spec.object); }
     if (spec.pending) { return spec.pending; }
     var started = performance.now();
-    spec.pending = fetchBuffer(spec.pos, 7 * spec.count, progAdd).then(function (buffer) {
-      var n = spec.count;
-      if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
-      var geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(new Int16Array(buffer, 0, 3 * n), 3, true));
-      geo.setAttribute('aIndex', new THREE.BufferAttribute(new Uint8Array(buffer, 6 * n, n), 1, false));
-      geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
-      var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
-                             + spec.half[2] * spec.half[2]);
-      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
-      var object = new THREE.Points(geo, materialFor(spec));
-      object.material.uniforms.uRefDist.value = REF_DIST;
-      object.visible = false;
-      root.add(object);
-      spec.object = object;
-      spec.decode_ms = Math.round(performance.now() - started);
-      dirty = true;
-      return object;
+    var n = spec.count, chunks = spec.chunks || [{pos: spec.pos, count: n}];
+    var positions = new Int16Array(3 * n), indices = new Uint8Array(n);
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3, true));
+    geo.setAttribute('aIndex', new THREE.BufferAttribute(indices, 1, false));
+    geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
+    geo.setDrawRange(0, 0);
+    var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
+                           + spec.half[2] * spec.half[2]);
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
+    var object = new THREE.Points(geo, materialFor(spec));
+    object.material.uniforms.uRefDist.value = REF_DIST;
+    object.visible = false;
+    root.add(object);
+    spec.object = object;
+    spec.loaded = 0;
+    var resolveFirst = null;
+    spec.pending = new Promise(function (resolve) { resolveFirst = resolve; });
+    var at = 0;
+    spec.stream = chunks.reduce(function (chain, chunk) {
+      return chain.then(function () {
+        return fetchBuffer(chunk.pos, 7 * chunk.count, progAdd).then(function (buffer) {
+          if (buffer.byteLength !== 7 * chunk.count) { throw new Error('битый файл ' + chunk.pos); }
+          positions.set(new Int16Array(buffer, 0, 3 * chunk.count), 3 * at);
+          indices.set(new Uint8Array(buffer, 6 * chunk.count, chunk.count), at);
+          bumpRange(geo.attributes.position, 3, at, chunk.count);
+          bumpRange(geo.attributes.aIndex, 1, at, chunk.count);
+          at += chunk.count;
+          spec.loaded = at;
+          geo.setDrawRange(0, at);
+          dirty = true;
+          if (at >= n) { spec.decode_ms = Math.round(performance.now() - started); }
+          if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
+        });
+      });
+    }, Promise.resolve());
+    spec.stream.catch(function () {
+      if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
     });
     return spec.pending;
   }
@@ -411,10 +441,12 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     });
     return spec.dist_pending;
   }
-  // One call per trace for "give me everything this cloud has": positions, then distances.
+  // One call per trace for "give me everything this cloud has": every chunk, then distances.
   function loadAll(key) {
     var spec = META.traces[key];
     return loadPositions(key).then(function () {
+      return spec.stream || null;
+    }).then(function () {
       return spec.dist ? loadDistances(key) : null;
     });
   }
@@ -555,24 +587,33 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
     return keys;
   }
   var preload = null;
+  function chainLoads(keys) {
+    return keys.reduce(function (chain, key) {
+      return chain.then(function () { return loadAll(key); });
+    }, Promise.resolve());
+  }
   function preloadAll() {
-    var keys = payloadKeys(), expected = 0, jobs = [];
+    var keys = payloadKeys(), expected = 0;
     for (var i = 0; i < keys.length; i++) {
       var spec = META.traces[keys[i]];
       if (!spec.object) { expected += 7 * spec.count; }
       if (spec.dist && !spec.dist_done) { expected += spec.count; }
-      jobs.push(loadAll(keys[i]));
     }
     var bar = expected > 0 && progStart(expected, 'загрузка облаков…');
-    // Paint the default selection as soon as its own bytes are in; the other clouds keep arriving
-    // behind the same bar, and by the time the bar clears every button is instantaneous.
-    var defaults = chosen(), ready_jobs = [];
-    for (var j = 0; j < defaults.length; j++) { ready_jobs.push(loadPositions(defaults[j])); }
-    Promise.all(ready_jobs).then(function () {
+    // The default selection comes first and paints on its first chunk; the other clouds are
+    // fetched one after another behind it, so they never compete for the same bandwidth and by
+    // the time the bar clears every button is instantaneous.
+    var defaults = chosen();
+    var others = keys.filter(function (key) { return defaults.indexOf(key) < 0; });
+    // Paint the default clouds on their first chunk; their remaining chunks arrive behind the bar.
+    Promise.all(defaults.map(function (key) {
+      return loadPositions(key).then(sync).catch(function () {});
+    }));
+    preload = chainLoads(defaults).then(function () {
       if (bar) { prog.phase = 'догружаю остальные облака…'; progPaint(); }
       sync();
-    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
-    preload = Promise.all(jobs).then(function () {
+      return chainLoads(others);
+    }).then(function () {
       if (bar) { progFinish(); }
       return sync();
     }).catch(function (error) {
@@ -595,21 +636,25 @@ html, body { margin: 0; background: #14171c; color: #e8e8e8; }
   }
   // sync() is the pure "show what state says" half: no network, no bar.
   function sync() {
-    var keys = chosen(), shown = 0;
+    var keys = chosen(), shown = 0, wanted = 0;
     for (var key in META.traces) {
       var spec = META.traces[key];
       if (!spec.object) { continue; }
       var on = keys.indexOf(key) >= 0;
-      spec.object.visible = on;
+      var have = (spec.loaded === undefined) ? spec.count : spec.loaded;
+      spec.object.visible = on && have > 0;
       spec.object.material.uniforms.uSize.value = state.size;
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
-      if (on) { shown += spec.count; }
+      if (on) { shown += have; wanted += spec.count; }
     }
     if (camGroup) { camGroup.visible = state.cams; }
     if (!state.cams) { hideCamShot(); }
     paintLegend();
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
-         + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
+         + ' · ' + shown.toLocaleString('ru-RU') + ' точек'
+         + (shown < wanted
+            ? ' — догружается ' + wanted.toLocaleString('ru-RU')
+            : ' · всё облако в памяти'));
     syncButtons();
     toHash();
     dirty = true;

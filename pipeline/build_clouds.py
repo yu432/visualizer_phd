@@ -46,6 +46,16 @@ def load_prediction(out: Path) -> dict:
 
 
 def confidence_mask(confidence, quantile):
+    """Pixels whose depth confidence is below the pooled quantile are dropped.
+
+    The protocol value is 0.2: that is what the published numbers are computed on. The display
+    clouds (figures, viewer) are built at 0.4 — the level at which the thin, sky-bordered
+    structures stop smearing. On courthouse 100 frames the rooftop statue and the flags around
+    the parapet kept their low-confidence pixels at 0.2 and the merged cloud grew a multi-metre
+    plume of them above the roof; at 0.4 the plume disappears on both methods, at the price of
+    completeness (barn 100 frames recall@1 0.881 -> 0.450), which is why the tables stay at 0.2.
+    Raising it further starts thinning real surface.
+    """
     if confidence is None or quantile <= 0:
         return None
     threshold = np.quantile(confidence, quantile)
@@ -71,7 +81,8 @@ def far_mask(depth, percentile):
 def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile: float,
           sky_threshold: float, far_percentile: float, force: bool, sky_source: str = "auto",
           output_tag: str = "", voxel_meters: float = 0.0, focus_radius: float = 0.0,
-          focus_voxel_fraction: float = 0.0) -> dict:
+          focus_voxel_fraction: float = 0.0, voxel_units: float = 0.0,
+          focus_voxel_units: float = 0.0) -> dict:
     inference = INFERENCE / dataset / scene
     out = OUTPUTS / dataset / scene / method
     target_dir = CLOUDS / dataset / scene
@@ -106,7 +117,14 @@ def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile
     )
     if len(points) < 1000:
         raise ValueError("predicted cloud too small for %s/%s" % (dataset, scene))
-    if voxel_meters:
+    if voxel_units:
+        # Absolute voxel in cloud units, taken from an existing meta. A fraction-of-diagonal voxel
+        # is relative to the cloud the confidence quantile happens to leave: a stricter quantile
+        # drops the far outliers, the diagonal shrinks and the grid silently gets finer, so a
+        # "thinned copy" comes out denser than the cloud it copies. Variants of an existing cloud
+        # therefore reuse its absolute voxel (regen_clouds.py).
+        voxel = float(voxel_units)
+    elif voxel_meters:
         # Metric voxel: on Tanks and Temples the prediction covers the whole surroundings, so a
         # fixed fraction of its diagonal would be coarser than the 2-6 cm lidar spacing and the
         # recall would measure the voxel grid instead of the reconstruction.
@@ -117,12 +135,13 @@ def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile
     focus_centre = None
     focus_voxel = 0.0
     focus_points = 0
-    if focus_radius > 0 and focus_voxel_fraction > 0:
+    if focus_radius > 0 and (focus_voxel_fraction > 0 or focus_voxel_units > 0):
         # Refine the grid around the point the rig was aimed at: on Tanks and Temples that is the
         # object the scene is about, and a fraction-of-diagonal voxel spends the whole budget on
         # the surrounding ground instead.
         focus_centre = camera_centre(prediction["extrinsics"])
-        focus_voxel = float(focus_voxel_fraction) * diagonal(points)
+        focus_voxel = (float(focus_voxel_units) if focus_voxel_units
+                       else float(focus_voxel_fraction) * diagonal(points))
         focus_points = int((np.linalg.norm(points - focus_centre, axis=1)
                             <= focus_radius).sum())
     reduced, kept = voxel_downsample_focused(
@@ -169,7 +188,9 @@ def main() -> int:
     parser.add_argument("--voxel-fraction", type=float, default=0.0015)
     parser.add_argument("--voxel-meters", type=float, default=0.0,
                         help="voxel size in GT units (overrides --voxel-fraction)")
-    parser.add_argument("--confidence-quantile", type=float, default=0.2)
+    parser.add_argument("--confidence-quantile", type=float, default=0.2,
+                        help="protocol value; the display clouds (figures, viewer) are built "
+                             "with --output-tag=-display at 0.4, see regen_clouds.py")
     parser.add_argument("--sky-threshold", type=float, default=0.3)
     parser.add_argument("--far-percentile", type=float, default=95.0)
     parser.add_argument("--sky-source", choices=["auto", "segformer", "none"], default="auto")

@@ -121,6 +121,28 @@ def test_focused_voxel_keeps_the_hero_and_the_rest():
     assert len(focused) < len(points)
 
 
+def test_variant_clouds_keep_the_metric_voxel():
+    """A display copy reuses the metric grid, so it can only be a thinning of the metric cloud.
+
+    The voxel of a cloud built from a fraction of its own diagonal moves with the confidence
+    quantile: the stricter display cut drops the far outliers, the diagonal shrinks and the same
+    fraction yields a finer grid. That is how a "thinned copy" once came out denser than the cloud
+    it copied (ignatius: 1.02M points against 0.58M). regen_clouds.py now passes the absolute
+    voxel of the metric cloud instead.
+    """
+    from common import CLOUDS, read_json
+
+    variants = sorted(CLOUDS.glob("*/*/*-display_cloud.json"))
+    if not variants:
+        pytest.skip("no display clouds built here")
+    for path in variants:
+        variant = read_json(path)
+        metric = read_json(path.with_name(path.name.replace("-display_cloud.json", "_cloud.json")))
+        assert variant["voxel"] == pytest.approx(metric["voxel"], rel=1e-9)
+        assert variant["focus_voxel"] == metric["focus_voxel"]
+        assert variant["points"] <= metric["points"], path
+
+
 def test_focused_voxel_without_a_focus_is_plain_voxel():
     rng = np.random.default_rng(6)
     points = rng.uniform(0, 1, (2000, 3))
@@ -266,3 +288,21 @@ def test_fetcher_verify_rejects_wrong_payload(tmp_path):
     transform = tmp_path / "Scene_trans.txt"
     transform.write_text("0.5 0 0 1\n0 0.5 0 2\n0 0 0.5 3\n0 0 0 1\n")
     assert "scale 0.5000" in verify("transform", transform)
+
+def test_budget_caps_only_the_gt_lidar():
+    """The GT budget belongs to the key, not to the first entry.
+
+    On a scene without a laser scan the first entry is a prediction; picking GT by position cut
+    that prediction to 300 k on tnt100/meetingroom (553 k available), which is exactly the silent
+    reduction the pages are supposed to no longer do.
+    """
+    from make_viewer import budget
+    with_gt = budget([("gt", 4_000_000), ("da3", 7_957_982), ("omega", 13_303_034)],
+                     limit=0, page_limit=0, gt_limit=300_000)
+    assert with_gt == [300_000, 7_957_982, 13_303_034]
+    without_gt = budget([("da3", 552_706), ("omega", 753_432)], limit=0, page_limit=0, gt_limit=300_000)
+    assert without_gt == [552_706, 753_432]
+    assert budget([("gt", 100), ("da3", 200)], limit=50, page_limit=0, gt_limit=10) == [10, 50]
+    # The page brake shrinks every entry, and gives the GT cloud whatever the predictions leave.
+    page = budget([("gt", 1000), ("da3", 1000)], limit=0, page_limit=1500, gt_limit=0)
+    assert page == [500, 1000]

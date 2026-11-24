@@ -419,30 +419,60 @@ SCRIPT = r"""
   }
 
   // ------------------------------------------------------------- payload load
+  // A cloud arrives in chunks, so the first one paints the scene and the rest grows the draw
+  // range behind it; a 10.9 M point cloud is 76 MB and waiting for all of it before the first
+  // frame would make the page feel broken.
+  function bumpRange(attribute, itemSize, first, count) {
+    if (attribute.updateRange) {   // three.js uploads only this slice when the driver supports it
+      attribute.updateRange.offset = first * itemSize;
+      attribute.updateRange.count = count * itemSize;
+    }
+    attribute.needsUpdate = true;
+  }
   function loadPositions(key) {
     var spec = META.traces[key];
     if (!spec) { return Promise.resolve(null); }
     if (spec.object) { return Promise.resolve(spec.object); }
     if (spec.pending) { return spec.pending; }
     var started = performance.now();
-    spec.pending = fetchBuffer(spec.pos, 7 * spec.count, progAdd).then(function (buffer) {
-      var n = spec.count;
-      if (buffer.byteLength !== 7 * n) { throw new Error('битый файл ' + spec.pos); }
-      var geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(new Int16Array(buffer, 0, 3 * n), 3, true));
-      geo.setAttribute('aIndex', new THREE.BufferAttribute(new Uint8Array(buffer, 6 * n, n), 1, false));
-      geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
-      var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
-                             + spec.half[2] * spec.half[2]);
-      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
-      var object = new THREE.Points(geo, materialFor(spec));
-      object.material.uniforms.uRefDist.value = REF_DIST;
-      object.visible = false;
-      root.add(object);
-      spec.object = object;
-      spec.decode_ms = Math.round(performance.now() - started);
-      dirty = true;
-      return object;
+    var n = spec.count, chunks = spec.chunks || [{pos: spec.pos, count: n}];
+    var positions = new Int16Array(3 * n), indices = new Uint8Array(n);
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3, true));
+    geo.setAttribute('aIndex', new THREE.BufferAttribute(indices, 1, false));
+    geo.setAttribute('aDist', new THREE.BufferAttribute(new Uint8Array(n), 1, false));
+    geo.setDrawRange(0, 0);
+    var radius = Math.sqrt(spec.half[0] * spec.half[0] + spec.half[1] * spec.half[1]
+                           + spec.half[2] * spec.half[2]);
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3().fromArray(spec.centre), radius * 1.001);
+    var object = new THREE.Points(geo, materialFor(spec));
+    object.material.uniforms.uRefDist.value = REF_DIST;
+    object.visible = false;
+    root.add(object);
+    spec.object = object;
+    spec.loaded = 0;
+    var resolveFirst = null;
+    spec.pending = new Promise(function (resolve) { resolveFirst = resolve; });
+    var at = 0;
+    spec.stream = chunks.reduce(function (chain, chunk) {
+      return chain.then(function () {
+        return fetchBuffer(chunk.pos, 7 * chunk.count, progAdd).then(function (buffer) {
+          if (buffer.byteLength !== 7 * chunk.count) { throw new Error('битый файл ' + chunk.pos); }
+          positions.set(new Int16Array(buffer, 0, 3 * chunk.count), 3 * at);
+          indices.set(new Uint8Array(buffer, 6 * chunk.count, chunk.count), at);
+          bumpRange(geo.attributes.position, 3, at, chunk.count);
+          bumpRange(geo.attributes.aIndex, 1, at, chunk.count);
+          at += chunk.count;
+          spec.loaded = at;
+          geo.setDrawRange(0, at);
+          dirty = true;
+          if (at >= n) { spec.decode_ms = Math.round(performance.now() - started); }
+          if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
+        });
+      });
+    }, Promise.resolve());
+    spec.stream.catch(function () {
+      if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
     });
     return spec.pending;
   }
@@ -459,10 +489,12 @@ SCRIPT = r"""
     });
     return spec.dist_pending;
   }
-  // One call per trace for "give me everything this cloud has": positions, then distances.
+  // One call per trace for "give me everything this cloud has": every chunk, then distances.
   function loadAll(key) {
     var spec = META.traces[key];
     return loadPositions(key).then(function () {
+      return spec.stream || null;
+    }).then(function () {
       return spec.dist ? loadDistances(key) : null;
     });
   }
@@ -603,24 +635,33 @@ SCRIPT = r"""
     return keys;
   }
   var preload = null;
+  function chainLoads(keys) {
+    return keys.reduce(function (chain, key) {
+      return chain.then(function () { return loadAll(key); });
+    }, Promise.resolve());
+  }
   function preloadAll() {
-    var keys = payloadKeys(), expected = 0, jobs = [];
+    var keys = payloadKeys(), expected = 0;
     for (var i = 0; i < keys.length; i++) {
       var spec = META.traces[keys[i]];
       if (!spec.object) { expected += 7 * spec.count; }
       if (spec.dist && !spec.dist_done) { expected += spec.count; }
-      jobs.push(loadAll(keys[i]));
     }
     var bar = expected > 0 && progStart(expected, 'загрузка облаков…');
-    // Paint the default selection as soon as its own bytes are in; the other clouds keep arriving
-    // behind the same bar, and by the time the bar clears every button is instantaneous.
-    var defaults = chosen(), ready_jobs = [];
-    for (var j = 0; j < defaults.length; j++) { ready_jobs.push(loadPositions(defaults[j])); }
-    Promise.all(ready_jobs).then(function () {
+    // The default selection comes first and paints on its first chunk; the other clouds are
+    // fetched one after another behind it, so they never compete for the same bandwidth and by
+    // the time the bar clears every button is instantaneous.
+    var defaults = chosen();
+    var others = keys.filter(function (key) { return defaults.indexOf(key) < 0; });
+    // Paint the default clouds on their first chunk; their remaining chunks arrive behind the bar.
+    Promise.all(defaults.map(function (key) {
+      return loadPositions(key).then(sync).catch(function () {});
+    }));
+    preload = chainLoads(defaults).then(function () {
       if (bar) { prog.phase = 'догружаю остальные облака…'; progPaint(); }
       sync();
-    }).catch(function (error) { hint('не загрузилось: ' + error.message); });
-    preload = Promise.all(jobs).then(function () {
+      return chainLoads(others);
+    }).then(function () {
       if (bar) { progFinish(); }
       return sync();
     }).catch(function (error) {
@@ -643,21 +684,25 @@ SCRIPT = r"""
   }
   // sync() is the pure "show what state says" half: no network, no bar.
   function sync() {
-    var keys = chosen(), shown = 0;
+    var keys = chosen(), shown = 0, wanted = 0;
     for (var key in META.traces) {
       var spec = META.traces[key];
       if (!spec.object) { continue; }
       var on = keys.indexOf(key) >= 0;
-      spec.object.visible = on;
+      var have = (spec.loaded === undefined) ? spec.count : spec.loaded;
+      spec.object.visible = on && have > 0;
       spec.object.material.uniforms.uSize.value = state.size;
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
-      if (on) { shown += spec.count; }
+      if (on) { shown += have; wanted += spec.count; }
     }
     if (camGroup) { camGroup.visible = state.cams; }
     if (!state.cams) { hideCamShot(); }
     paintLegend();
     hint((state.colour === 'dist' ? META.hint_dist : META.hint_rgb)
-         + ' · ' + shown.toLocaleString('ru-RU') + ' точек · все облака в памяти');
+         + ' · ' + shown.toLocaleString('ru-RU') + ' точек'
+         + (shown < wanted
+            ? ' — догружается ' + wanted.toLocaleString('ru-RU')
+            : ' · всё облако в памяти'));
     syncButtons();
     toHash();
     dirty = true;
@@ -792,16 +837,33 @@ def palette_index(colours, count):
     return index, palette, error
 
 
+# Points per payload file. A whole 100-frame cloud is 10.9 M points = 76 MB, which is one long
+# download before anything appears on screen; split into chunks the first one paints the scene in
+# a second and the rest streams in behind it (the page grows the draw range as chunks land).
+CHUNK_POINTS = 1000000
+
+
 def write_payloads(out, stem, key, points, colours, distances, tau):
-    """Write data/<page>-<key>.bin (7 bytes/point) and, when asked, the distance byte per point."""
+    """Write data/<page>-<key>-<n>.bin chunks (7 bytes/point) and the distance byte per point.
+
+    One int16 grid over the whole cloud is shared by every chunk, so the chunks of a cloud cannot
+    disagree about its bounding box, and the point order inside a chunk is the order of the
+    arrays, i.e. positions and colours always stay paired.
+    """
     quantised, centre, half = quantise(points)
     index, palette, error = palette_index(colours, len(points))
     folder = Path(out, "data")
     folder.mkdir(parents=True, exist_ok=True)
-    path = folder / ("%s-%s.bin" % (stem, key))
-    with path.open("wb") as handle:
-        handle.write(np.ascontiguousarray(quantised, dtype="<i2").tobytes())
-        handle.write(np.ascontiguousarray(index, dtype=np.uint8).tobytes())
+    chunks = []
+    size = 0
+    for start in range(0, len(points), CHUNK_POINTS):
+        stop = min(start + CHUNK_POINTS, len(points))
+        path = folder / ("%s-%s-%03d.bin" % (stem, key, len(chunks)))
+        with path.open("wb") as handle:
+            handle.write(np.ascontiguousarray(quantised[start:stop], dtype="<i2").tobytes())
+            handle.write(np.ascontiguousarray(index[start:stop], dtype=np.uint8).tobytes())
+        chunks.append(dict(pos="data/" + path.name, count=int(stop - start)))
+        size += path.stat().st_size
     distance_path = None
     if distances is not None:
         unit = np.clip(np.asarray(distances, dtype=np.float64) / tau, 0.0, 1.0)
@@ -813,28 +875,34 @@ def write_payloads(out, stem, key, points, colours, distances, tau):
         half=[float(value) for value in half],
         pal=base64.b64encode(palette.tobytes()).decode("ascii"),
         pal_count=int(len(palette)),
-        pos="data/" + path.name,
+        chunks=chunks,
         dist=("data/" + distance_path.name) if distance_path is not None else None,
         colour_error=round(error, 2),
     )
-    size = path.stat().st_size
     extra = distance_path.stat().st_size if distance_path is not None else 0
     return spec, size, extra
 
 
-def budget(sizes, limit, page_limit):
-    """Per-cloud budget, then the hard page cap.
+def budget(entries, limit, page_limit, gt_limit=0):
+    """How many points every entry gets. A limit of zero means no cap at all.
 
-    Entry 0 is the GT laser cloud: it only provides shape context, so when the page is over
-    budget the predictions keep their full share and the GT absorbs the overflow. Sharing the
-    cut proportionally spent a third of every page on ground truth that was already dense.
+    Entries are (key, size) pairs. Only the GT laser cloud takes the lower GT budget, because it
+    only provides shape context. The identification is by key, not by position: on a scene with no
+    laser scan (ignatius, meetingroom) the first entry is a prediction, and picking it by index
+    silently cut that prediction to the GT budget — 300 k of 553 k points on tnt100/meetingroom.
+    The page cap stays as an emergency brake for a machine that cannot hold every cloud of a
+    scene; it is off by default, because with chunked payloads a big page is no longer a stall on
+    open, only more memory.
     """
-    takes = [min(size, limit) for size in sizes]
+    takes = [(size if not gt_limit else min(size, gt_limit)) if key == "gt"
+             else (size if not limit else min(size, limit))
+             for key, size in entries]
     total = sum(takes)
+    gt_index = next((index for index, (key, _) in enumerate(entries) if key == "gt"), None)
     if page_limit and total > page_limit:
-        predictions = sum(takes[1:])
-        if len(takes) > 1 and predictions < page_limit:
-            takes[0] = max(1, page_limit - predictions)
+        predictions = total - (takes[gt_index] if gt_index is not None else 0)
+        if gt_index is not None and predictions < page_limit:
+            takes[gt_index] = max(1, page_limit - predictions)
         else:
             factor = page_limit / float(total)
             takes = [max(1, int(round(take * factor))) for take in takes]
@@ -842,7 +910,13 @@ def budget(sizes, limit, page_limit):
 
 
 def subsample(points, colours, limit, seed=0):
-    """Stratified reduction: see common.stratified_subsample for why not a random cut."""
+    """Stratified reduction: see common.stratified_subsample for why not a random cut.
+
+    A zero limit keeps the cloud whole: that is the default now, and a reduction only happens
+    when the caller asks for one.
+    """
+    if not limit or len(points) <= limit:
+        return points, colours
     return stratified_subsample(points, colours, limit, seed=seed)
 
 
@@ -1058,7 +1132,7 @@ def nearest(query, reference):
 
 
 # ----------------------------------------------------------------------- scene
-def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
+def scene_page(out, dataset, scene, methods, tag, limit, page_limit, gt_limit=0):
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
         extrinsics = np.asarray(handle["extrinsics"], dtype=np.float64)
         intrinsics = (np.asarray(handle["intrinsics"], dtype=np.float64)
@@ -1124,7 +1198,7 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit):
         entries.append((SHORTCUTS.get(method, method), clouds[method][0], clouds[method][1],
                         label, len(clouds[method][0])))
 
-    takes = budget([entry[4] for entry in entries], limit, page_limit)
+    takes = budget([(entry[0], entry[4]) for entry in entries], limit, page_limit, gt_limit)
     gt_tree = cKDTree(gt_points) if gt_points is not None and len(gt_points) else None
 
     traces, sizes = {}, {}
@@ -1302,9 +1376,10 @@ GT (зелёный — на поверхности, красный — даль�
 видно, что получается хорошо, а не самое слабое.</p>
 <p>Рендер — three.js: точки рисуются буфером WebGL, координаты упакованы в int16, цвет — один
 байт палитры, поэтому на странице сотни тысяч и миллионы точек, а не сто тысяч, как раньше в
-Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> и загружается вся
-сразу при открытии страницы под одним индикатором, поэтому переключение между GT, DA3-Giant и
-VGGT-Ω мгновенное — в памяти лежат все три облака. Страницы нужно открывать по http (GitHub Pages):
+Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> кусками по миллиону
+точек: первый кусок рисуется сразу, остальные догружаются под индикатором, и к концу загрузки в
+памяти лежат все три облака целиком (10.9 млн точек на облако у 100-кадровых сцен). Страницы нужно
+открывать по http (GitHub Pages):
 из <code>file://</code> браузер не отдаёт соседние бинарные файлы. <code>three.min.js</code> лежит
 рядом, интернет не нужен.</p>
 <ul>
@@ -1356,11 +1431,14 @@ def main() -> int:
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--scenes", nargs="+", required=True)
     parser.add_argument("--methods", nargs="+", default=["da3-giant", "vggt-omega"])
-    parser.add_argument("--points", type=int, default=750000,
-                        help="point budget per cloud; three.js handles millions, the page cap "
-                             "below keeps one page's payload sane")
-    parser.add_argument("--page-points", type=int, default=2000000,
-                        help="hard cap of points on one page, shared between the clouds")
+    parser.add_argument("--points", type=int, default=0,
+                        help="point budget per prediction cloud; 0 keeps the whole display cloud "
+                             "and the page streams it in chunks")
+    parser.add_argument("--gt-points", type=int, default=300000,
+                        help="point budget for the GT laser cloud: it is drawn for shape context, "
+                             "not for detail")
+    parser.add_argument("--page-points", type=int, default=0,
+                        help="emergency cap of points on one page; 0 means no cap")
     parser.add_argument("--cloud-tag", default="-display",
                         help="suffix of the display clouds built with build_clouds.py "
                              "--output-tag; the metric cloud is used when no display copy exists")
@@ -1378,16 +1456,18 @@ def main() -> int:
             continue
         print("%s / %s: %s" % (args.dataset, scene, ", ".join(present)), flush=True)
         built = scene_page(out, args.dataset, scene, present, args.cloud_tag,
-                           args.points, args.page_points)
+                           args.points, args.page_points, args.gt_points)
         if built is None:
             continue
         meta, sizes, payload, dist_bytes = built
         name = "%s-%s.html" % (args.dataset, scene)
         total = sum(sizes.values())
-        note = ("Облака после sim(3) по позам камер. Точек: %s (до %s на облако). "
+        budget_text = ("целиком, %s на облако" % thousands(args.points)
+                       if args.points else "целиком, без прореживания")
+        note = ("Облака после sim(3) по позам камер. Точек: %s (%s; GT-лидар — до %s). "
                 "Раскраска «расстояние»: τ = %s (%s), всё, что дальше, — одним красным."
-                % (thousands(total), thousands(args.points), metric_text(meta["tau"]),
-                   meta["tau_note"]))
+                % (thousands(total), budget_text, thousands(args.gt_points),
+                   metric_text(meta["tau"]), meta["tau_note"]))
         note += (" <span style='color:#8f98a3'>· вращение — ЛКМ, панорама — ЛКМ с Shift/⌃"
                  " (или ПКМ, СКМ), зум — колесо.</span>")
         warnings = pose_warnings(args.dataset, scene, present)

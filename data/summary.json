@@ -1,5 +1,5 @@
 {
-  "ablation_markdown": "| \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043d\u0435\u0431\u043e, % \u043a\u0430\u0434\u0440\u0430 | F@1% \u0441 \u0444\u0438\u043b\u044c\u0442\u0440\u043e\u043c | F@1% \u0431\u0435\u0437 \u0444\u0438\u043b\u044c\u0442\u0440\u0430 | \u0394F@1% | prec@1% \u0441 | prec@1% \u0431\u0435\u0437 | rec@1% \u0441 | rec@1% \u0431\u0435\u0437 |\n|---|---|---|---|---|---|---|---|---|---|\n| courtyard | da3-giant | 0.8 | 0.965 | 0.965 | +0.000 | 0.987 | 0.987 | 0.944 | 0.944 |\n| courtyard | vggt-omega | 0.8 | 0.970 | 0.970 | +0.000 | 0.992 | 0.992 | 0.948 | 0.948 |\n| delivery_area | da3-giant | 0.4 | 0.881 | 0.881 | +0.000 | 0.997 | 0.997 | 0.789 | 0.789 |\n| delivery_area | vggt-omega | 0.4 | 0.972 | 0.972 | -0.000 | 0.987 | 0.987 | 0.958 | 0.958 |\n| facade | da3-giant | 8.5 | 0.976 | 0.975 | +0.001 | 0.984 | 0.982 | 0.967 | 0.967 |\n| facade | vggt-omega | 8.5 | 0.978 | 0.975 | +0.003 | 0.987 | 0.981 | 0.969 | 0.969 |\n| office | da3-giant | 0.0 | 0.935 | 0.935 | +0.000 | 0.952 | 0.952 | 0.919 | 0.919 |\n| office | vggt-omega | 0.0 | 0.964 | 0.964 | +0.000 | 0.966 | 0.966 | 0.962 | 0.962 |\n| terrace | da3-giant | 7.2 | 0.975 | 0.975 | -0.000 | 0.974 | 0.974 | 0.976 | 0.976 |\n| terrace | vggt-omega | 7.2 | 0.976 | 0.977 | -0.000 | 0.973 | 0.973 | 0.980 | 0.980 |\n",
+  "ablation_markdown": "| \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043d\u0435\u0431\u043e, % \u043a\u0430\u0434\u0440\u0430 | F@1% \u0441 \u0444\u0438\u043b\u044c\u0442\u0440\u043e\u043c | F@1% \u0431\u0435\u0437 \u0444\u0438\u043b\u044c\u0442\u0440\u0430 | \u0394F@1% | prec@1% \u0441 | prec@1% \u0431\u0435\u0437 | rec@1% \u0441 | rec@1% \u0431\u0435\u0437 |\n|---|---|---|---|---|---|---|---|---|---|\n| courtyard | da3-giant | 0.8 | 0.965 | 0.908 | +0.057 | 0.987 | 0.994 | 0.944 | 0.837 |\n| courtyard | vggt-omega | 0.8 | 0.970 | 0.938 | +0.032 | 0.992 | 0.998 | 0.948 | 0.884 |\n| delivery_area | da3-giant | 0.4 | 0.881 | 0.815 | +0.066 | 0.997 | 1.000 | 0.789 | 0.688 |\n| delivery_area | vggt-omega | 0.4 | 0.972 | 0.923 | +0.048 | 0.987 | 0.999 | 0.958 | 0.858 |\n| facade | da3-giant | 8.5 | 0.976 | 0.952 | +0.023 | 0.984 | 1.000 | 0.967 | 0.909 |\n| facade | vggt-omega | 8.5 | 0.978 | 0.963 | +0.015 | 0.987 | 1.000 | 0.969 | 0.928 |\n| office | da3-giant | 0.0 | 0.935 | 0.903 | +0.032 | 0.952 | 0.977 | 0.919 | 0.840 |\n| office | vggt-omega | 0.0 | 0.964 | 0.906 | +0.058 | 0.966 | 0.981 | 0.962 | 0.842 |\n| terrace | da3-giant | 7.2 | 0.975 | 0.960 | +0.015 | 0.974 | 0.984 | 0.976 | 0.937 |\n| terrace | vggt-omega | 7.2 | 0.976 | 0.974 | +0.002 | 0.973 | 0.999 | 0.980 | 0.950 |\n",
   "markdown": "| \u0434\u0430\u0442\u0430\u0441\u0435\u0442 | \u0441\u0446\u0435\u043d\u0430 | \u043c\u0435\u0442\u043e\u0434 | \u043a\u0430\u0434\u0440\u043e\u0432 | F@0.5% | F@1% | prec@1% | rec@1% | AbsRel (s+t) | AbsRel raw | \u043f\u043e\u0432\u043e\u0440\u043e\u0442, \u00b0 | \u0446\u0435\u043d\u0442\u0440, %\u0434\u0438\u0430\u0433 |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| eth3d | courtyard | da3-giant | 10 | 0.931 | 0.966 | 0.989 | 0.944 | 0.0085 | 0.902 | 1.11 | 0.88 |\n| eth3d | courtyard | vggt-omega | 10 | 0.928 | 0.970 | 0.994 | 0.948 | 0.0056 | 0.907 | 0.55 | 0.78 |\n| eth3d | delivery_area | da3-giant | 10 | 0.855 | 0.881 | 0.998 | 0.789 | 0.0273 | 0.892 | 6.86 | 5.85 |\n| eth3d | delivery_area | vggt-omega | 10 | 0.928 | 0.972 | 0.987 | 0.958 | 0.0112 | 0.880 | 2.91 | 2.24 |\n| eth3d | facade | da3-giant | 10 | 0.961 | 0.976 | 0.986 | 0.967 | 0.0105 | 0.947 | 0.43 | 0.64 |\n| eth3d | facade | vggt-omega | 10 | 0.965 | 0.979 | 0.988 | 0.969 | 0.0082 | 0.946 | 1.40 | 0.66 |\n| eth3d | office | da3-giant | 10 | 0.807 | 0.937 | 0.954 | 0.919 | 0.0096 | 0.569 | 1.82 | 2.81 |\n| eth3d | office | vggt-omega | 10 | 0.898 | 0.966 | 0.969 | 0.963 | 0.0067 | 0.557 | 0.77 | 1.92 |\n| eth3d | terrace | da3-giant | 10 | 0.952 | 0.975 | 0.975 | 0.976 | 0.0268 | 0.877 | 1.30 | 1.02 |\n| eth3d | terrace | vggt-omega | 10 | 0.967 | 0.978 | 0.976 | 0.980 | 0.0059 | 0.837 | 0.44 | 0.40 |\n| tnt | barn | da3-giant | 16 | 0.462 | 0.677 | 0.925 | 0.533 | - | - | 0.48 | 0.33 |\n| tnt | barn | vggt-omega | 16 | 0.527 | 0.767 | 0.920 | 0.658 | - | - | 0.64 | 0.31 |\n| tnt | courthouse | da3-giant | 16 | 0.276 | 0.423 | 0.513 | 0.360 | - | - | 3.51 | 1.02 |\n| tnt | courthouse | vggt-omega | 16 | 0.028 | 0.055 | 0.082 | 0.042 | - | - | 47.32 | 13.83 |\n| tnt | ignatius | da3-giant | 16 | - | - | - | - | - | - | 0.54 | 0.29 |\n| tnt | ignatius | vggt-omega | 16 | - | - | - | - | - | - | 0.44 | 0.29 |\n| tnt | meetingroom | da3-giant | 16 | - | - | - | - | - | - | 0.46 | 0.26 |\n| tnt | meetingroom | vggt-omega | 16 | - | - | - | - | - | - | 0.54 | 0.31 |\n| tnt100 | barn | da3-giant | 100 | 0.622 | 0.890 | 0.820 | 0.973 | - | - | 0.39 | 0.22 |\n| tnt100 | barn | vggt-omega | 100 | 0.650 | 0.918 | 0.873 | 0.968 | - | - | 0.55 | 0.23 |\n| tnt100 | courthouse | da3-giant | 100 | 0.417 | 0.619 | 0.766 | 0.520 | - | - | 1.69 | 0.34 |\n| tnt100 | courthouse | vggt-omega | 100 | 0.428 | 0.586 | 0.824 | 0.454 | - | - | 3.68 | 2.01 |\n| tnt100 | ignatius | da3-giant | 100 | - | - | - | - | - | - | 0.81 | 0.36 |\n| tnt100 | ignatius | vggt-omega | 100 | - | - | - | - | - | - | 0.36 | 0.20 |\n| tnt100 | meetingroom | da3-giant | 100 | - | - | - | - | - | - | 0.32 | 0.19 |\n| tnt100 | meetingroom | vggt-omega | 100 | - | - | - | - | - | - | 0.23 | 0.24 |\n| eth3d20 | courtyard | da3-giant | 20 | 0.867 | 0.914 | 0.871 | 0.960 | 0.0076 | 0.900 | 0.57 | 0.33 |\n| eth3d20 | courtyard | vggt-omega | 20 | 0.862 | 0.920 | 0.866 | 0.981 | 0.0051 | 0.911 | 0.33 | 0.37 |\n| eth3d20 | delivery_area | da3-giant | 20 | 0.850 | 0.879 | 0.966 | 0.806 | 0.0207 | 0.898 | 12.60 | 2.42 |\n| eth3d20 | delivery_area | vggt-omega | 20 | 0.950 | 0.971 | 0.967 | 0.975 | 0.0101 | 0.881 | 0.87 | 0.52 |\n| eth3d20 | facade | da3-giant | 20 | 0.947 | 0.970 | 0.946 | 0.996 | 0.0106 | 0.946 | 0.39 | 0.30 |\n| eth3d20 | facade | vggt-omega | 20 | 0.937 | 0.970 | 0.943 | 0.998 | 0.0081 | 0.949 | 0.90 | 0.61 |\n| eth3d20 | office | da3-giant | 20 | 0.818 | 0.854 | 0.880 | 0.829 | 0.0061 | 0.605 | 0.86 | 0.77 |\n| eth3d20 | office | vggt-omega | 20 | 0.879 | 0.936 | 0.917 | 0.956 | 0.0049 | 0.548 | 0.51 | 0.70 |\n| eth3d20 | terrace | da3-giant | 20 | 0.936 | 0.971 | 0.967 | 0.975 | 0.0236 | 0.871 | 0.90 | 0.70 |\n| eth3d20 | terrace | vggt-omega | 20 | 0.961 | 0.976 | 0.972 | 0.981 | 0.0055 | 0.841 | 0.43 | 0.31 |\n| eth3d20dense | courtyard | da3-giant | 20 | 0.932 | 0.967 | 0.986 | 0.950 | 0.0076 | 0.900 | - | - |\n| eth3d20dense | courtyard | vggt-omega | 20 | 0.943 | 0.983 | 0.987 | 0.979 | 0.0051 | 0.911 | - | - |\n| eth3d20dense | delivery_area | da3-giant | 20 | 0.868 | 0.884 | 1.000 | 0.792 | 0.0207 | 0.898 | - | - |\n| eth3d20dense | delivery_area | vggt-omega | 20 | 0.979 | 0.984 | 1.000 | 0.969 | 0.0101 | 0.881 | - | - |\n| eth3d20dense | facade | da3-giant | 20 | 0.995 | 0.998 | 0.999 | 0.997 | 0.0106 | 0.946 | - | - |\n| eth3d20dense | facade | vggt-omega | 20 | 0.989 | 0.998 | 0.998 | 0.998 | 0.0081 | 0.949 | - | - |\n| eth3d20dense | office | da3-giant | 20 | 0.862 | 0.893 | 0.900 | 0.886 | 0.0061 | 0.605 | - | - |\n| eth3d20dense | office | vggt-omega | 20 | 0.902 | 0.951 | 0.934 | 0.968 | 0.0049 | 0.548 | - | - |\n| eth3d20dense | terrace | da3-giant | 20 | 0.938 | 0.972 | 0.969 | 0.974 | 0.0236 | 0.871 | - | - |\n| eth3d20dense | terrace | vggt-omega | 20 | 0.962 | 0.976 | 0.973 | 0.979 | 0.0055 | 0.841 | - | - |\n",
   "methods": [
     "da3-giant",
@@ -149,9 +149,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.0,
-        "delta_precision_one": 0.0,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.05666301184367106,
+        "delta_precision_one": -0.006101367956793169,
+        "delta_recall_one": 0.10699000000000003,
         "ground_diagonal": 43.3708781297787,
         "method": "da3-giant",
         "scene": "courtyard",
@@ -167,14 +167,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.09675712733642843,
-          "completeness": 0.19889417723208114,
-          "fscore_half": 0.92358010029962,
-          "fscore_one": 0.965132680695559,
-          "points": 407707,
-          "precision_one": 0.9874575,
-          "raw_points": 1331806,
-          "recall_one": 0.943795,
+          "accuracy": 0.07819457637671814,
+          "completeness": 0.4654672313798522,
+          "fscore_half": 0.8765467748084642,
+          "fscore_one": 0.908469668851888,
+          "points": 280696,
+          "precision_one": 0.9935588679567932,
+          "raw_points": 1016006,
+          "recall_one": 0.836805,
           "sky_source": "none"
         }
       },
@@ -299,9 +299,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.0,
-        "delta_precision_one": 0.0,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.031869478238323534,
+        "delta_precision_one": -0.0058139585332219745,
+        "delta_recall_one": 0.06367750000000005,
         "ground_diagonal": 43.3708781297787,
         "method": "vggt-omega",
         "scene": "courtyard",
@@ -317,14 +317,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.10221850342126719,
-          "completeness": 0.18569235348186866,
-          "fscore_half": 0.9199806658629027,
-          "fscore_one": 0.9696729763768368,
-          "points": 424920,
-          "precision_one": 0.9923875,
-          "raw_points": 2030167,
-          "recall_one": 0.947975,
+          "accuracy": 0.07479531957667018,
+          "completeness": 0.348523832491581,
+          "fscore_half": 0.9082482315864638,
+          "fscore_one": 0.9378034981385133,
+          "points": 274111,
+          "precision_one": 0.998201458533222,
+          "raw_points": 1550339,
+          "recall_one": 0.8842975,
           "sky_source": "none"
         }
       },
@@ -450,9 +450,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 1.9434769262471896e-05,
-        "delta_precision_one": 4.9804047283830144e-05,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.06615273532875876,
+        "delta_precision_one": -0.0023631652881346277,
+        "delta_recall_one": 0.10129250000000001,
         "ground_diagonal": 78.74361994852869,
         "method": "da3-giant",
         "scene": "delivery_area",
@@ -468,14 +468,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.11892446750674592,
-          "completeness": 0.7524617426191229,
-          "fscore_half": 0.8541353446694714,
-          "fscore_one": 0.8810557592678564,
-          "points": 217620,
-          "precision_one": 0.9972980424593327,
-          "raw_points": 1343371,
-          "recall_one": 0.7890825,
+          "accuracy": 0.08081167178385226,
+          "completeness": 1.2721155377327165,
+          "fscore_half": 0.7851231240640975,
+          "fscore_one": 0.8149224587083601,
+          "points": 148795,
+          "precision_one": 0.9997110117947512,
+          "raw_points": 1016051,
+          "recall_one": 0.68779,
           "sky_source": "none"
         }
       },
@@ -600,9 +600,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": -1.2664245820137587e-05,
-        "delta_precision_one": -2.609599645619909e-05,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.0484201097381578,
+        "delta_precision_one": -0.012796180038829541,
+        "delta_recall_one": 0.09936749999999994,
         "ground_diagonal": 78.74361994852869,
         "method": "vggt-omega",
         "scene": "delivery_area",
@@ -618,14 +618,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.11789019369005166,
-          "completeness": 0.2592156938129662,
-          "fscore_half": 0.9273848656575736,
-          "fscore_one": 0.9719252529310505,
-          "points": 212379,
-          "precision_one": 0.9865476341822873,
-          "raw_points": 2073271,
-          "recall_one": 0.95773,
+          "accuracy": 0.061305144699087606,
+          "completeness": 0.5933540519688801,
+          "fscore_half": 0.8919915930255551,
+          "fscore_one": 0.9234924789470725,
+          "points": 142170,
+          "precision_one": 0.9993177182246606,
+          "raw_points": 1557504,
+          "recall_one": 0.8583625,
           "sky_source": "none"
         }
       },
@@ -751,9 +751,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.0009854831522154717,
-        "delta_precision_one": 0.002037470282738374,
-        "delta_recall_one": -3.249999999999087e-05,
+        "delta_fscore_one": 0.0231836109875444,
+        "delta_precision_one": -0.01572901307339658,
+        "delta_recall_one": 0.05793000000000004,
         "ground_diagonal": 93.66876709679856,
         "method": "da3-giant",
         "scene": "facade",
@@ -769,14 +769,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.17699120479861763,
-          "completeness": 0.4107249496299277,
-          "fscore_half": 0.9498278888630146,
-          "fscore_one": 0.9746063270772103,
-          "points": 322775,
-          "precision_one": 0.9821888312291844,
-          "raw_points": 1337590,
-          "recall_one": 0.96714,
+          "accuracy": 0.11615499727628986,
+          "completeness": 0.7263486021741326,
+          "fscore_half": 0.9425564936917606,
+          "fscore_one": 0.9524081992418814,
+          "points": 268544,
+          "precision_one": 0.9999553145853194,
+          "raw_points": 1016038,
+          "recall_one": 0.9091775,
           "sky_source": "none"
         }
       },
@@ -901,9 +901,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.002875682640655408,
-        "delta_precision_one": 0.0058467352476954115,
-        "delta_recall_one": -7.500000000049134e-06,
+        "delta_fscore_one": 0.01515367825706293,
+        "delta_precision_one": -0.013214087809781727,
+        "delta_recall_one": 0.04100249999999994,
         "ground_diagonal": 93.66876709679856,
         "method": "vggt-omega",
         "scene": "facade",
@@ -919,14 +919,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.17045816885079762,
-          "completeness": 0.3947918073926751,
-          "fscore_half": 0.950691745333466,
-          "fscore_one": 0.9749828336352491,
-          "points": 271583,
-          "precision_one": 0.9809119127485888,
-          "raw_points": 2048795,
-          "recall_one": 0.969125,
+          "accuracy": 0.09632845208629784,
+          "completeness": 0.6526534344580164,
+          "fscore_half": 0.9534413838318352,
+          "fscore_one": 0.9627048380188415,
+          "points": 256747,
+          "precision_one": 0.9999727358060659,
+          "raw_points": 1553804,
+          "recall_one": 0.928115,
           "sky_source": "none"
         }
       },
@@ -1052,9 +1052,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.0,
-        "delta_precision_one": 0.0,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.031705914420222525,
+        "delta_precision_one": -0.02561000000000002,
+        "delta_recall_one": 0.07919749999999992,
         "ground_diagonal": 7.382401104836371,
         "method": "da3-giant",
         "scene": "office",
@@ -1070,14 +1070,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.032122146212020815,
-          "completeness": 0.04449311872538624,
-          "fscore_half": 0.7946567531680364,
-          "fscore_one": 0.9350269662505395,
-          "points": 571758,
-          "precision_one": 0.9516175,
-          "raw_points": 1312015,
-          "recall_one": 0.919005,
+          "accuracy": 0.026759553235517156,
+          "completeness": 0.07845850840289144,
+          "fscore_half": 0.7883191774893146,
+          "fscore_one": 0.903321051830317,
+          "points": 428829,
+          "precision_one": 0.9772275,
+          "raw_points": 1011892,
+          "recall_one": 0.8398075,
           "sky_source": "none"
         }
       },
@@ -1202,9 +1202,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": 0.0,
-        "delta_precision_one": 0.0,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.05811392900866297,
+        "delta_precision_one": -0.014693133786020884,
+        "delta_recall_one": 0.12029250000000002,
         "ground_diagonal": 7.382401104836371,
         "method": "vggt-omega",
         "scene": "office",
@@ -1220,14 +1220,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.024045240967575213,
-          "completeness": 0.01887991277974929,
-          "fscore_half": 0.8875365397365197,
-          "fscore_one": 0.9642552728257938,
-          "points": 491419,
-          "precision_one": 0.966395,
-          "raw_points": 1994635,
-          "recall_one": 0.962125,
+          "accuracy": 0.01984213246607504,
+          "completeness": 0.0708921955828858,
+          "fscore_half": 0.858899999806549,
+          "fscore_one": 0.9061413438171309,
+          "points": 356390,
+          "precision_one": 0.9810881337860209,
+          "raw_points": 1533311,
+          "recall_one": 0.8418325,
           "sky_source": "none"
         }
       },
@@ -1353,9 +1353,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": -1.1191769517693295e-05,
-        "delta_precision_one": -2.2342350232795738e-05,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.01486323376221177,
+        "delta_precision_one": -0.009687306216517255,
+        "delta_recall_one": 0.03830499999999992,
         "ground_diagonal": 58.76502668173305,
         "method": "da3-giant",
         "scene": "terrace",
@@ -1371,14 +1371,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.1365845388538446,
-          "completeness": 0.45808373365774596,
-          "fscore_half": 0.9476954493602223,
-          "fscore_one": 0.97476418282227,
-          "points": 400054,
-          "precision_one": 0.9738725,
-          "raw_points": 1354752,
-          "recall_one": 0.9756575,
+          "accuracy": 0.10115590094509352,
+          "completeness": 0.6356565082463034,
+          "fscore_half": 0.9452072388326246,
+          "fscore_one": 0.9598897572905405,
+          "points": 325527,
+          "precision_one": 0.9835374638662845,
+          "raw_points": 1016064,
+          "recall_one": 0.9373525,
           "sky_source": "none"
         }
       },
@@ -1503,9 +1503,9 @@
       "sky_ablation": {
         "alignment_source": "pose sim(3) reused from evaluation.json (identical for both variants)",
         "dataset": "eth3d",
-        "delta_fscore_one": -0.0001374305545093213,
-        "delta_precision_one": -0.000272826233644885,
-        "delta_recall_one": 0.0,
+        "delta_fscore_one": 0.002409766082286824,
+        "delta_precision_one": -0.02672055047577704,
+        "delta_recall_one": 0.030304999999999915,
         "ground_diagonal": 58.76502668173305,
         "method": "vggt-omega",
         "scene": "terrace",
@@ -1521,14 +1521,14 @@
           "sky_source": "segformer"
         },
         "without_sky": {
-          "accuracy": 0.1057908513771251,
-          "completeness": 0.31982384354342097,
-          "fscore_half": 0.9611109161700299,
-          "fscore_one": 0.9765005377472398,
-          "points": 232138,
-          "precision_one": 0.9729471262783345,
-          "raw_points": 2076672,
-          "recall_one": 0.98008,
+          "accuracy": 0.041379019585578325,
+          "completeness": 0.5749515605172547,
+          "fscore_half": 0.96822862161617,
+          "fscore_one": 0.9739533411104436,
+          "points": 262745,
+          "precision_one": 0.9993948505204666,
+          "raw_points": 1557504,
+          "recall_one": 0.949775,
           "sky_source": "none"
         }
       },
@@ -1658,15 +1658,15 @@
         "primary": "pose",
         "variants": {
           "icp": {
-            "accuracy_median_cm": 4.8251816151025455,
-            "accuracy_p90_cm": 15.05020853601764,
-            "auc_precision": 0.7707038325946637,
-            "auc_recall": 0.482886018581244,
-            "completeness_median_cm": 11.323672585950279,
-            "cover90_cm": 169.26484842424205,
+            "accuracy_median_cm": 10.628407504963015,
+            "accuracy_p90_cm": 23.129258918489022,
+            "auc_precision": 0.6027988049134115,
+            "auc_recall": 0.3509596062256014,
+            "completeness_median_cm": 22.27104829962718,
+            "cover90_cm": 175.10539795092114,
             "fscore_at_5": null,
-            "precision@5": 0.5159762112617096,
-            "recall@5": 0.3302405560482922
+            "precision@5": 0.20679794363943874,
+            "recall@5": 0.12295762665846109
           },
           "pose": {
             "accuracy_median_cm": 10.628407504963015,
@@ -1778,15 +1778,15 @@
         "primary": "pose",
         "variants": {
           "icp": {
-            "accuracy_median_cm": 4.146748046016383,
-            "accuracy_p90_cm": 12.959350806921488,
-            "auc_precision": 0.8034035823743252,
-            "auc_recall": 0.5610587334590933,
-            "completeness_median_cm": 7.098665752308546,
-            "cover90_cm": 171.42870875277984,
+            "accuracy_median_cm": 10.712638422221744,
+            "accuracy_p90_cm": 24.48536505805029,
+            "auc_precision": 0.5962074056271428,
+            "auc_recall": 0.4477914514367587,
+            "completeness_median_cm": 14.393145115952176,
+            "cover90_cm": 173.84166825149933,
             "fscore_at_5": null,
-            "precision@5": 0.5721409462786725,
-            "recall@5": 0.41887595706554204
+            "precision@5": 0.22742464825796763,
+            "recall@5": 0.19747316596376274
           },
           "pose": {
             "accuracy_median_cm": 10.712638422221744,
@@ -1899,15 +1899,15 @@
         "primary": "pose",
         "variants": {
           "icp": {
-            "accuracy_median_cm": 48.94301047132781,
-            "accuracy_p90_cm": 115.42099782425937,
-            "auc_precision": 0.15123051782221175,
-            "auc_recall": 0.15639656525210432,
-            "completeness_median_cm": 64.41667160941488,
-            "cover90_cm": 1202.7191089116911,
+            "accuracy_median_cm": 86.74933138378566,
+            "accuracy_p90_cm": 322.1662273874635,
+            "auc_precision": 0.10632835381079049,
+            "auc_recall": 0.10440139286736587,
+            "completeness_median_cm": 204.113695034054,
+            "cover90_cm": 1193.6973448735548,
             "fscore_at_5": null,
-            "precision@5": 0.04404542090587646,
-            "recall@5": 0.03933672121947395
+            "precision@5": 0.030143873916302393,
+            "recall@5": 0.023593470169270513
           },
           "pose": {
             "accuracy_median_cm": 86.74933138378566,
@@ -2019,15 +2019,15 @@
         "primary": "pose",
         "variants": {
           "icp": {
-            "accuracy_median_cm": 46.16264723414957,
-            "accuracy_p90_cm": 117.00089591801895,
-            "auc_precision": 0.19278059981096968,
-            "auc_recall": 0.027071097230713086,
-            "completeness_median_cm": 1093.9870626848813,
-            "cover90_cm": 3326.503201086694,
+            "accuracy_median_cm": 384.3251345772832,
+            "accuracy_p90_cm": 838.6585543069245,
+            "auc_precision": 0.009618906342886147,
+            "auc_recall": 0.008034975261291905,
+            "completeness_median_cm": 1258.519043264172,
+            "cover90_cm": 2499.649722647546,
             "fscore_at_5": null,
-            "precision@5": 0.05808873248735857,
-            "recall@5": 0.011884939793838256
+            "precision@5": 0.002640099798536887,
+            "recall@5": 0.0016846583640760273
           },
           "pose": {
             "accuracy_median_cm": 384.3251345772832,

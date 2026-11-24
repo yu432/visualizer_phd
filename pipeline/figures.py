@@ -313,7 +313,7 @@ def scene_reference(scene, elevation=22.0):
     samples = []
     for scheme in schemes:
         for method in ("da3-giant", "vggt-omega"):
-            cloud_path = CLOUDS / scheme / scene / (method + ".ply")
+            cloud_path = display_cloud(scheme, scene, method)
             if not cloud_path.exists():
                 continue
             points, _ = read_ply(cloud_path)
@@ -421,10 +421,22 @@ def crop_to_region(dataset, scene, points, colours):
     return points[mask], None if colours is None else colours[mask]
 
 
+def display_cloud(dataset, scene, method):
+    """The cloud a picture is drawn from: the display copy when it exists, else the metric one.
+
+    Numbers come from the metric cloud, which keeps every pixel above the protocol confidence
+    quantile. The display copy is the same reconstruction with a stricter quantile, so the
+    low-confidence tail that smears thin structures against the sky is gone (regen_clouds.py).
+    A figure drawn from the metric cloud would show artefacts the metrics do not reward.
+    """
+    display = CLOUDS / dataset / scene / (method + "-display.ply")
+    return display if display.exists() else CLOUDS / dataset / scene / (method + ".ply")
+
+
 def clouds_figure(dataset, scene, method, out_path):
     evaluation = read_json(OUTPUTS / dataset / scene / method / "evaluation.json")
     gt_points, gt_colours = read_ply(GT / dataset / scene / "gt_cloud.ply")
-    pred_points, pred_colours = read_ply(CLOUDS / dataset / scene / (method + ".ply"))
+    pred_points, pred_colours = read_ply(display_cloud(dataset, scene, method))
     params = dict(s=evaluation["alignment"]["s"], R=np.asarray(evaluation["alignment_rotation"]),
                   t=np.asarray(evaluation["alignment_translation"]))
     aligned = apply_sim3(pred_points, params)
@@ -475,7 +487,7 @@ def pred_cloud_figure(dataset, scene, method, out_path):
     """Prediction-only cloud, placed in the GT camera frame with the pose sim(3)."""
     from pose_align import sim3 as pose_sim3
 
-    pred_points, pred_colours = read_ply(CLOUDS / dataset / scene / (method + ".ply"))
+    pred_points, pred_colours = read_ply(display_cloud(dataset, scene, method))
     params = pose_sim3(dataset, scene, method)
     aligned = apply_sim3(pred_points, params)
     # Percentile box, not a ball around the camera centres: see common.percentile_box.
@@ -636,7 +648,7 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
                                             np.asarray(handle["extrinsics"], dtype=np.float64))
     aligned = {}
     for method in methods:
-        cloud_path = CLOUDS / dataset / scene / (method + ".ply")
+        cloud_path = display_cloud(dataset, scene, method)
         if not cloud_path.exists():
             continue
         points, colours = read_ply(cloud_path)
@@ -726,7 +738,7 @@ def gt_overlay_figure(dataset, scene, methods, out_path):
     from pose_align import sim3 as pose_sim3
 
     for method in methods:
-        cloud_path = CLOUDS / dataset / scene / (method + ".ply")
+        cloud_path = display_cloud(dataset, scene, method)
         evaluation_path = OUTPUTS / dataset / scene / method / "evaluation.json"
         if not cloud_path.exists():
             continue

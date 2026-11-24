@@ -87,7 +87,8 @@ def run_scene(dataset, scene, method):
     meta = read_json(CLOUDS / dataset / scene / (method + "_cloud.json"))
     names = [frame["name"] for frame in read_json(inference / "manifest.json")["frames"]]
     prediction = load_prediction(out)
-    masks = confidence_mask(prediction["confidence"], 0.2)
+    # Same mask as the cloud this row is compared with, so the voxel ladder changes only the grid.
+    masks = confidence_mask(prediction["confidence"], float(meta["confidence_quantile"]))
     segmentation = None
     if prediction["sky_masks"] is not None:
         segmentation = ~prediction["sky_masks"].astype(bool)
