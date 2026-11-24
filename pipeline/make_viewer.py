@@ -394,6 +394,7 @@ SCRIPT = r"""
 
   // fetch() into an ArrayBuffer while reporting bytes as they arrive. Without a readable body the
   // download still happens, the bar just jumps to the end in one step.
+  function noBytes() {}
   function fetchBuffer(url, expected, onBytes) {
     return fetch(url).then(function (response) {
       if (!response.ok) { throw new Error(response.status + ' на ' + url); }
@@ -419,15 +420,46 @@ SCRIPT = r"""
   }
 
   // ------------------------------------------------------------- payload load
-  // A cloud arrives in chunks, so the first one paints the scene and the rest grows the draw
+  // A cloud arrives in chunks, so the first one paints the scene and the rest grow the draw
   // range behind it; a 10.9 M point cloud is 76 MB and waiting for all of it before the first
-  // frame would make the page feel broken.
+  // frame would make the page feel broken. GitHub Pages hands one connection roughly 130 kB/s but
+  // scales with the number of connections, so four files are in flight at any moment; every chunk
+  // has its own fixed slot in the vertex arrays, so arrival order does not matter and the draw
+  // range just follows the unbroken prefix.
   function bumpRange(attribute, itemSize, first, count) {
     if (attribute.updateRange) {   // three.js uploads only this slice when the driver supports it
       attribute.updateRange.offset = first * itemSize;
       attribute.updateRange.count = count * itemSize;
     }
     attribute.needsUpdate = true;
+  }
+  var FETCH_SLOTS = 4, urgentTasks = [], fetchTasks = [], fetchActive = 0, fetchSeq = 0;
+  // Two lanes. Chunk zero of every cloud comes first, in the order the page asked for the clouds, so
+  // "оба предсказания" paints both on two parallel requests instead of one cloud whole. The rest is
+  // ordered by depth: chunk 1 of every cloud, then chunk 2 of every cloud, and so on, so two clouds
+  // on screen grow together instead of the second one sitting at 1 M points.
+  function queued(task, rank) {
+    return new Promise(function (resolve, reject) {
+      var job = {task: task, rank: rank, resolve: resolve, reject: reject, seq: fetchSeq++};
+      if (rank === 0) {
+        urgentTasks.push(job);
+      } else {
+        var at = fetchTasks.length;
+        while (at > 0 && fetchTasks[at - 1].rank > rank) { at--; }
+        fetchTasks.splice(at, 0, job);
+      }
+      pumpQueue();
+    });
+  }
+  function pumpQueue() {
+    while (fetchActive < FETCH_SLOTS && (urgentTasks.length > 0 || fetchTasks.length > 0)) {
+      var job = urgentTasks.length > 0 ? urgentTasks.shift() : fetchTasks.shift();
+      fetchActive++;
+      job.task().then(job.resolve, job.reject).then(function () {
+        fetchActive--;
+        pumpQueue();
+      });
+    }
   }
   function loadPositions(key) {
     var spec = META.traces[key];
@@ -453,49 +485,66 @@ SCRIPT = r"""
     spec.loaded = 0;
     var resolveFirst = null;
     spec.pending = new Promise(function (resolve) { resolveFirst = resolve; });
-    var at = 0;
-    spec.stream = chunks.reduce(function (chain, chunk) {
-      return chain.then(function () {
+    var offsets = [], at = 0;
+    for (var s = 0; s < chunks.length; s++) { offsets.push(at); at += chunks[s].count; }
+    var landed = new Array(chunks.length), prefix = 0, prefixPoints = 0;
+    for (var d = 0; d < chunks.length; d++) { landed[d] = false; }
+    spec.prefix = 0;
+    spec.stream = Promise.all(chunks.map(function (chunk, index) {
+      return queued(function () {
         return fetchBuffer(chunk.pos, 7 * chunk.count, progAdd).then(function (buffer) {
           if (buffer.byteLength !== 7 * chunk.count) { throw new Error('битый файл ' + chunk.pos); }
-          positions.set(new Int16Array(buffer, 0, 3 * chunk.count), 3 * at);
-          indices.set(new Uint8Array(buffer, 6 * chunk.count, chunk.count), at);
-          bumpRange(geo.attributes.position, 3, at, chunk.count);
-          bumpRange(geo.attributes.aIndex, 1, at, chunk.count);
-          at += chunk.count;
-          spec.loaded = at;
-          geo.setDrawRange(0, at);
+          var slot = offsets[index];
+          positions.set(new Int16Array(buffer, 0, 3 * chunk.count), 3 * slot);
+          indices.set(new Uint8Array(buffer, 6 * chunk.count, chunk.count), slot);
+          bumpRange(geo.attributes.position, 3, slot, chunk.count);
+          bumpRange(geo.attributes.aIndex, 1, slot, chunk.count);
+          landed[index] = true;
+          // Only the unbroken run from chunk zero may be drawn: growing the range over a hole would
+          // put a block of uninitialised vertices on screen.
+          while (prefix < landed.length && landed[prefix]) {
+            prefixPoints += chunks[prefix].count;
+            prefix++;
+          }
+          spec.prefix = prefix;
+          spec.loaded = prefixPoints;
+          geo.setDrawRange(0, prefixPoints);
           dirty = true;
-          if (at >= n) { spec.decode_ms = Math.round(performance.now() - started); }
-          if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
+          if (prefix === landed.length) { spec.decode_ms = Math.round(performance.now() - started); }
+          if (resolveFirst && prefixPoints > 0) { resolveFirst(object); resolveFirst = null; }
         });
-      });
-    }, Promise.resolve());
+      }, index);
+    }));
     spec.stream.catch(function () {
       if (resolveFirst) { resolveFirst(object); resolveFirst = null; }
     });
     return spec.pending;
   }
+  // The distance buffers are a third of the payload and are only meaningful with the
+  // "расстояние до GT" colouring on, so they are fetched on the first click that needs them.
   function loadDistances(key) {
     var spec = META.traces[key];
-    if (!spec || !spec.dist || spec.dist_done) { return Promise.resolve(); }
+    if (!spec || !spec.dist || spec.dist_done || spec.dist_failed) { return Promise.resolve(); }
     if (spec.dist_pending) { return spec.dist_pending; }
-    spec.dist_pending = fetchBuffer(spec.dist, spec.count, progAdd).then(function (buffer) {
+    spec.dist_pending = queued(function () {
+      return fetchBuffer(spec.dist, spec.count, noBytes);   // the bar is gone by the time these land
+    }, 9999).then(function (buffer) {
       var values = new Uint8Array(buffer);
       if (values.length !== spec.count) { throw new Error('битый файл ' + spec.dist); }
       spec.object.geometry.setAttribute('aDist', new THREE.BufferAttribute(values, 1, false));
       spec.dist_done = true;
       dirty = true;
+    }).catch(function (error) {
+      spec.dist_failed = true;
+      throw error;
     });
     return spec.dist_pending;
   }
-  // One call per trace for "give me everything this cloud has": every chunk, then distances.
+  // One call per trace for "give me the geometry of this cloud".
   function loadAll(key) {
     var spec = META.traces[key];
     return loadPositions(key).then(function () {
       return spec.stream || null;
-    }).then(function () {
-      return spec.dist ? loadDistances(key) : null;
     });
   }
 
@@ -635,34 +684,45 @@ SCRIPT = r"""
     return keys;
   }
   var preload = null;
-  function chainLoads(keys) {
-    return keys.reduce(function (chain, key) {
-      return chain.then(function () { return loadAll(key); });
-    }, Promise.resolve());
-  }
   function preloadAll() {
     var keys = payloadKeys(), expected = 0;
     for (var i = 0; i < keys.length; i++) {
       var spec = META.traces[keys[i]];
       if (!spec.object) { expected += 7 * spec.count; }
-      if (spec.dist && !spec.dist_done) { expected += spec.count; }
     }
     var bar = expected > 0 && progStart(expected, 'загрузка облаков…');
-    // The default selection comes first and paints on its first chunk; the other clouds are
-    // fetched one after another behind it, so they never compete for the same bandwidth and by
-    // the time the bar clears every button is instantaneous.
+    // Order of business: the clouds the page opens with, the GT the colours are measured against,
+    // then the rest. Everything is started at once because the scheduler keeps four requests in
+    // flight and serves the first chunk of each cloud in exactly this order, so a page with three
+    // clouds paints after three parallel requests instead of three serial ones.
     var defaults = chosen();
-    var others = keys.filter(function (key) { return defaults.indexOf(key) < 0; });
-    // Paint the default clouds on their first chunk; their remaining chunks arrive behind the bar.
-    Promise.all(defaults.map(function (key) {
-      return loadPositions(key).then(sync).catch(function () {});
-    }));
-    preload = chainLoads(defaults).then(function () {
-      if (bar) { prog.phase = 'догружаю остальные облака…'; progPaint(); }
-      sync();
-      return chainLoads(others);
-    }).then(function () {
+    var gt = (defaults.indexOf('gt') < 0 && META.traces.gt) ? ['gt'] : [];
+    var others = keys.filter(function (key) {
+      return defaults.indexOf(key) < 0 && gt.indexOf(key) < 0;
+    });
+    var order = defaults.concat(gt, others), streams = [];
+    for (var k = 0; k < order.length; k++) {
+      var key = order[k], trace = META.traces[key];
+      if (!trace) { continue; }
+      loadPositions(key).then(sync).catch(function () {});
+      // loadPositions() has created spec.stream synchronously, so the handles are all here.
+      if (trace.stream) { streams.push(trace.stream); }
+    }
+    // Distance bytes ride at the very back of the queue: the colouring is one click away and nobody
+    // should wait for it to click it, but a click should not start a fresh download either.
+    for (var m = 0; m < order.length; m++) {
+      if (META.traces[order[m]]) { loadDistances(order[m]).catch(function () {}); }
+    }
+    // The bar belongs to the selected clouds plus the GT: with those on screen the page is usable
+    // and the remaining clouds are one click away, so they finish behind a hidden bar instead of
+    // holding the user in front of a progress counter.
+    var gate = streams.slice(0, defaults.length + gt.length);
+    preload = Promise.all(gate).then(function () {
       if (bar) { progFinish(); }
+      return sync();
+    }).then(function () {
+      return Promise.all(streams);
+    }).then(function () {
       return sync();
     }).catch(function (error) {
       if (bar) { prog.el.style.display = 'none'; }
@@ -684,7 +744,7 @@ SCRIPT = r"""
   }
   // sync() is the pure "show what state says" half: no network, no bar.
   function sync() {
-    var keys = chosen(), shown = 0, wanted = 0;
+    var keys = chosen(), shown = 0, wanted = 0, waiting = false;
     for (var key in META.traces) {
       var spec = META.traces[key];
       if (!spec.object) { continue; }
@@ -693,7 +753,13 @@ SCRIPT = r"""
       spec.object.visible = on && have > 0;
       spec.object.material.uniforms.uSize.value = state.size;
       spec.object.material.uniforms.uMode.value = (state.colour === 'dist' && spec.dist_done) ? 1 : 0;
-      if (on) { shown += have; wanted += spec.count; }
+      if (on) {
+        shown += have; wanted += spec.count;
+        if (state.colour === 'dist' && spec.dist && !spec.dist_done && !spec.dist_failed && have > 0) {
+          waiting = true;
+          loadDistances(key).then(function () { dirty = true; sync(); }).catch(function () {});
+        }
+      }
     }
     if (camGroup) { camGroup.visible = state.cams; }
     if (!state.cams) { hideCamShot(); }
@@ -702,7 +768,8 @@ SCRIPT = r"""
          + ' · ' + shown.toLocaleString('ru-RU') + ' точек'
          + (shown < wanted
             ? ' — догружается ' + wanted.toLocaleString('ru-RU')
-            : ' · всё облако в памяти'));
+            : ' · всё облако в памяти')
+         + (waiting ? ' · гружу расстояния' : ''));
     syncButtons();
     toHash();
     dirty = true;
@@ -840,7 +907,23 @@ def palette_index(colours, count):
 # Points per payload file. A whole 100-frame cloud is 10.9 M points = 76 MB, which is one long
 # download before anything appears on screen; split into chunks the first one paints the scene in
 # a second and the rest streams in behind it (the page grows the draw range as chunks land).
+# The first chunk is deliberately small: GitHub Pages hands one connection about 130 kB/s, so a
+# 1 M point chunk is 7 MB of nothing on screen for a minute. A staircase that doubles up to
+# CHUNK_POINTS puts the first frame about two seconds in and keeps the request count for a
+# 10.9 M point cloud at a dozen or so.
 CHUNK_POINTS = 1000000
+FIRST_CHUNK_POINTS = 40000
+
+
+def chunk_sizes(total):
+    """Point counts per payload file: 40 k, 40 k, 80 k, 160 k … capped at CHUNK_POINTS."""
+    sizes, done, step = [], 0, FIRST_CHUNK_POINTS
+    while done < total:
+        take = min(step, total - done)
+        sizes.append(take)
+        done += take
+        step = min(step * 2, CHUNK_POINTS)
+    return sizes
 
 
 def write_payloads(out, stem, key, points, colours, distances, tau):
@@ -856,14 +939,16 @@ def write_payloads(out, stem, key, points, colours, distances, tau):
     folder.mkdir(parents=True, exist_ok=True)
     chunks = []
     size = 0
-    for start in range(0, len(points), CHUNK_POINTS):
-        stop = min(start + CHUNK_POINTS, len(points))
+    start = 0
+    for take in chunk_sizes(len(points)):
+        stop = start + take
         path = folder / ("%s-%s-%03d.bin" % (stem, key, len(chunks)))
         with path.open("wb") as handle:
             handle.write(np.ascontiguousarray(quantised[start:stop], dtype="<i2").tobytes())
             handle.write(np.ascontiguousarray(index[start:stop], dtype=np.uint8).tobytes())
-        chunks.append(dict(pos="data/" + path.name, count=int(stop - start)))
+        chunks.append(dict(pos="data/" + path.name, count=int(take)))
         size += path.stat().st_size
+        start = stop
     distance_path = None
     if distances is not None:
         unit = np.clip(np.asarray(distances, dtype=np.float64) / tau, 0.0, 1.0)
