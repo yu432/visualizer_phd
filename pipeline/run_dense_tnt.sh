@@ -16,7 +16,12 @@ GT_SCENES="barn courthouse"
 
 for method in $METHODS; do
   $PY method/geometry/sky_segment.py --dataset tnt100 --scenes $SCENES --method $method
-  $PY method/geometry/build_clouds.py --dataset tnt100 --scenes $SCENES --method $method --force
+  # The dense scheme uses the same metric voxel as the 16-frame one: a fraction of the prediction
+  # diagonal would be 17-18 cm in GT units here (the 100-frame prediction covers more ground), i.e.
+  # twelve times coarser than the 1.5 cm grid of the 16-frame clouds, and the two schemes would no
+  # longer be comparable.
+  $PY method/geometry/build_clouds.py --dataset tnt100 --scenes $SCENES --method $method \
+      --voxel-meters 0.015 --force
   $PY method/geometry/evaluate_poses.py --dataset tnt100 --scenes $SCENES --method $method
 done
 for method in $METHODS; do

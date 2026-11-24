@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from align import apply_sim3  # noqa: E402
 from pose_align import centres  # noqa: E402
 from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, load_crop,  # noqa: E402
-                    metric_text, percentile_box, read_json, read_ply, view_basis)
+                    metric_text, percentile_box, read_json, read_ply, view_basis,
+                    voxel_downsample_attributed)
 
 RENDER_POINTS = 320000
 VIEW_FRAMES = 8
@@ -53,6 +54,28 @@ def subsample(points, colours, limit, seed=0):
     index = rng.choice(len(points), size=limit, replace=False)
     index.sort()
     return points[index], None if colours is None else colours[index]
+
+
+def render_sample(points, colours, extent, limit=RENDER_POINTS, columns=760, seed=0):
+    """Sample a cloud at a constant density per pixel instead of a constant point count.
+
+    A 100-frame cloud of the same scene holds three to twelve times more points than the
+    16-frame one, and it covers more of the building. Drawing both from one fixed budget of
+    320 000 points would therefore paint the same facade with fewer dots on the dense scheme
+    simply because the panel shows more of the scene — the two schemes would look like different
+    reconstructions even when they agree. Tying the sampling grid to the panel width (one voxel
+    per this many columns) makes points per pixel the same everywhere, and the point budget only
+    remains as a cap that a pathological cloud cannot exceed.
+    """
+    points = np.asarray(points)
+    if len(points) <= limit:
+        return points, colours
+    voxel = float(extent) / float(columns) if extent else 0.0
+    if voxel > 0:
+        kept, averaged = voxel_downsample_attributed(points, voxel, colours)
+        if len(kept) >= 64:
+            points, colours = kept, averaged
+    return subsample(points, colours, limit, seed)
 
 
 def robust_limits(clouds, basis, pad=0.05):
@@ -313,8 +336,11 @@ def clouds_figure(dataset, scene, method, out_path):
     inside = np.all((gt_points > low - box) & (gt_points < high + box), axis=1)
     gt_points = gt_points[inside]
     gt_colours = None if gt_colours is None else gt_colours[inside]
-    gt_points, gt_colours = subsample(gt_points, gt_colours, RENDER_POINTS)
-    aligned, pred_colours = subsample(aligned, pred_colours, RENDER_POINTS, seed=1)
+    # One sampling grid for all three panels, tied to the box the panels are framed on: the
+    # prediction, the lidar and the distance colouring then show the same density per pixel.
+    extent = float(np.linalg.norm(high - low))
+    gt_points, gt_colours = render_sample(gt_points, gt_colours, extent)
+    aligned, pred_colours = render_sample(aligned, pred_colours, extent, seed=1)
     xlim, ylim = robust_limits([gt_points, aligned], basis)
     cloud = evaluation["cloud"]
     tau = 0.01 * evaluation["ground_diagonal"]
@@ -340,9 +366,10 @@ def pred_cloud_figure(dataset, scene, method, out_path):
     pred_points, pred_colours = read_ply(CLOUDS / dataset / scene / (method + ".ply"))
     params = pose_sim3(dataset, scene, method)
     aligned = apply_sim3(pred_points, params)
-    aligned, pred_colours = subsample(aligned, pred_colours, RENDER_POINTS, seed=3)
     # Percentile box, not a ball around the camera centres: see common.percentile_box.
     low, high = percentile_box(aligned)
+    aligned, pred_colours = render_sample(aligned, pred_colours,
+                                          float(np.linalg.norm(high - low)), seed=3)
     keep = np.all((aligned > low) & (aligned < high), axis=1)
     aligned, pred_colours = aligned[keep], pred_colours[keep]
     with np.load(GT / dataset / scene / "cameras.npz") as handle:

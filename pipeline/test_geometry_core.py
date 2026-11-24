@@ -132,6 +132,26 @@ def test_focused_voxel_without_a_focus_is_plain_voxel():
 def test_align_rejects_degenerate_input():
     assert align_clouds(np.zeros((10, 3)), np.zeros((10, 3)))["status"] == "failed"
 
+def test_render_sample_keeps_density_not_the_point_count():
+    """Tiles of the 16- and 100-frame schemes must be drawn at the same density.
+
+    Sampling to a fixed 320 000 points paints the same facade with fewer dots on the denser cloud,
+    so a four times denser cloud of the same object has to come out with about the same number of
+    drawn points, not four times more.
+    """
+    from figures import render_sample
+    fine = np.stack([np.arange(4000) * 0.00025, np.zeros(4000), np.zeros(4000)], axis=1)
+    coarse = np.stack([np.arange(1000) * 0.001, np.zeros(1000), np.zeros(1000)], axis=1)
+    # Below the cap the cloud is drawn as it is: a sparse cloud must not be thinned further.
+    untouched, _ = render_sample(coarse, None, 1.0, limit=5000, columns=100)
+    assert len(untouched) == 1000
+    # Above it the grid decides, and both clouds land on the same density: 100 cells of 0.01.
+    drawn_fine, _ = render_sample(fine, None, 1.0, limit=300, columns=100)
+    drawn_coarse, _ = render_sample(coarse, None, 1.0, limit=300, columns=100)
+    assert 90 <= len(drawn_fine) <= 110
+    assert 90 <= len(drawn_coarse) <= 110
+
+
 def test_translation_error_in_centimetres():
     """The pose error is stored as a fraction of the GT camera diagonal; the site prints it in cm.
 
