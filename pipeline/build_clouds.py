@@ -15,9 +15,17 @@ from common import (  # noqa: E402
     read_json,
     sha256,
     voxel_downsample_attributed,
+    voxel_downsample_focused,
     write_json,
     write_ply,
 )
+
+
+def camera_centre(extrinsics):
+    """Mean camera position of a prediction, i.e. the point the rig was pointed at."""
+    rotation = np.asarray(extrinsics)[:, :3, :3]
+    translation = np.asarray(extrinsics)[:, :3, 3]
+    return -np.einsum("nij,nj->ni", np.transpose(rotation, (0, 2, 1)), translation).mean(axis=0)
 
 
 def load_prediction(out: Path) -> dict:
@@ -62,7 +70,8 @@ def far_mask(depth, percentile):
 
 def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile: float,
           sky_threshold: float, far_percentile: float, force: bool, sky_source: str = "auto",
-          output_tag: str = "", voxel_meters: float = 0.0) -> dict:
+          output_tag: str = "", voxel_meters: float = 0.0, focus_radius: float = 0.0,
+          focus_voxel_fraction: float = 0.0) -> dict:
     inference = INFERENCE / dataset / scene
     out = OUTPUTS / dataset / scene / method
     target_dir = CLOUDS / dataset / scene
@@ -105,7 +114,19 @@ def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile
         voxel = float(voxel_meters) / float(pose_sim3(dataset, scene, method)["s"])
     else:
         voxel = voxel_fraction * diagonal(points)
-    reduced, kept = voxel_downsample_attributed(points, voxel, colours)
+    focus_centre = None
+    focus_voxel = 0.0
+    focus_points = 0
+    if focus_radius > 0 and focus_voxel_fraction > 0:
+        # Refine the grid around the point the rig was aimed at: on Tanks and Temples that is the
+        # object the scene is about, and a fraction-of-diagonal voxel spends the whole budget on
+        # the surrounding ground instead.
+        focus_centre = camera_centre(prediction["extrinsics"])
+        focus_voxel = float(focus_voxel_fraction) * diagonal(points)
+        focus_points = int((np.linalg.norm(points - focus_centre, axis=1)
+                            <= focus_radius).sum())
+    reduced, kept = voxel_downsample_focused(
+        points, voxel, colours, focus_centre, focus_radius, focus_voxel)
     cloud_path = target_dir / (name_tag + ".ply")
     write_ply(cloud_path, reduced, kept)
     meta = dict(
@@ -126,6 +147,11 @@ def build(dataset: str, scene: str, method: str, voxel_fraction: float, quantile
         voxel_meters=float(voxel_meters) or None,
         raw_points=int(len(points)),
         points=int(len(reduced)),
+        focus_radius=float(focus_radius) or None,
+        focus_voxel=float(focus_voxel) or None,
+        focus_voxel_fraction=float(focus_voxel_fraction) or None,
+        focus_centre=None if focus_centre is None else [float(value) for value in focus_centre],
+        focus_raw_points=focus_points,
         diagonal=diagonal(reduced),
         cloud_sha256=sha256(cloud_path),
         inference_sha256=sha256(out / "inference.json"),
@@ -148,12 +174,18 @@ def main() -> int:
     parser.add_argument("--far-percentile", type=float, default=95.0)
     parser.add_argument("--sky-source", choices=["auto", "segformer", "none"], default="auto")
     parser.add_argument("--output-tag", default="")
+    parser.add_argument("--focus-radius", type=float, default=0.0,
+                        help="refine the voxel grid inside this radius around the mean camera "
+                             "centre, in cloud units")
+    parser.add_argument("--focus-voxel-fraction", type=float, default=0.0,
+                        help="voxel fraction used inside the focus radius")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     for scene in args.scenes:
         meta = build(args.dataset, scene, args.method, args.voxel_fraction,
                      args.confidence_quantile, args.sky_threshold, args.far_percentile, args.force,
-                     args.sky_source, args.output_tag, args.voxel_meters)
+                     args.sky_source, args.output_tag, args.voxel_meters, args.focus_radius,
+                     args.focus_voxel_fraction)
         print(scene, args.method, "points", meta["points"], "diagonal %.4f" % meta["diagonal"], flush=True)
     return 0
 

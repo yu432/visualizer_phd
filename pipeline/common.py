@@ -135,6 +135,36 @@ def voxel_downsample_attributed(points, voxel, attrs=None):
     return means, average.astype(attrs.dtype)
 
 
+def voxel_downsample_focused(points, voxel, attrs=None, focus_centre=None, focus_radius=0.0,
+                            focus_voxel=0.0):
+    """Voxel grid, refined inside a sphere around the object of interest.
+
+    One grid for the whole scene forces a single tradeoff: fine enough for the hero object and the
+    cloud is too heavy for a page, coarse enough for the page and the hero dissolves into dust.
+    On Tanks and Temples the hero is a few percent of the diagonal and the rest is ground, so the
+    fine grid is only paid for inside the sphere.
+    """
+    points = np.asarray(points, dtype=np.float64)
+    if (focus_centre is None or focus_radius <= 0 or focus_voxel <= 0 or focus_voxel >= voxel
+            or len(points) == 0):
+        return voxel_downsample_attributed(points, voxel, attrs)
+    distance = np.linalg.norm(points - np.asarray(focus_centre, dtype=np.float64), axis=1)
+    inside = distance <= focus_radius
+    if inside.all():
+        return voxel_downsample_attributed(points, focus_voxel, attrs)
+    if not inside.any():
+        return voxel_downsample_attributed(points, voxel, attrs)
+    attrs = None if attrs is None else np.asarray(attrs)
+    inside_points, inside_attrs = voxel_downsample_attributed(
+        points[inside], focus_voxel, None if attrs is None else attrs[inside])
+    outside_points, outside_attrs = voxel_downsample_attributed(
+        points[~inside], voxel, None if attrs is None else attrs[~inside])
+    merged = np.concatenate([outside_points, inside_points])
+    if attrs is None:
+        return merged, None
+    return merged, np.concatenate([outside_attrs, inside_attrs])
+
+
 def voxel_downsample(points, voxel):
     """Average points inside a voxel grid, deterministically."""
     return voxel_downsample_attributed(points, voxel, None)[0]

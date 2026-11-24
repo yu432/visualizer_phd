@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from align import align_clouds, apply_sim3, umeyama
-from common import backproject, diagonal, voxel_downsample
+from common import backproject, diagonal, voxel_downsample, voxel_downsample_focused
 from metrics import cloud_metrics, depth_metrics
 
 
@@ -101,6 +101,32 @@ def test_voxel_downsample_is_deterministic_and_reduces():
     second = voxel_downsample(points, 0.1)
     assert np.allclose(first, second)
     assert 100 < len(first) < len(points)
+
+
+def test_focused_voxel_keeps_the_hero_and_the_rest():
+    """A fine grid inside the focus sphere, the coarse one outside, and nothing duplicated."""
+    rng = np.random.default_rng(5)
+    hero = rng.uniform(-0.05, 0.05, (6000, 3))
+    ground = rng.uniform(-1.0, 1.0, (6000, 3))
+    ground[:, 1] = 0.0
+    points = np.concatenate([hero, ground])
+    plain = voxel_downsample(points, 0.05)
+    focused, _ = voxel_downsample_focused(points, 0.05, None, np.zeros(3), 0.2, 0.01)
+    near = lambda cloud: int((np.linalg.norm(cloud, axis=1) <= 0.2).sum())  # noqa: E731
+    far = lambda cloud: int((np.linalg.norm(cloud, axis=1) > 0.2).sum())  # noqa: E731
+    assert near(focused) > 4 * near(plain)
+    # Cells straddling the sphere average to slightly different positions, so a handful of points
+    # move across the radius; the coarse part stays the same to within that boundary effect.
+    assert abs(far(focused) - far(plain)) < 0.05 * far(plain)
+    assert len(focused) < len(points)
+
+
+def test_focused_voxel_without_a_focus_is_plain_voxel():
+    rng = np.random.default_rng(6)
+    points = rng.uniform(0, 1, (2000, 3))
+    plain = voxel_downsample(points, 0.1)
+    focused = voxel_downsample_focused(points, 0.1, None, None, 0.0, 0.0)[0]
+    assert np.allclose(plain, focused)
 
 
 def test_align_rejects_degenerate_input():
