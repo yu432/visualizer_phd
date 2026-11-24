@@ -532,25 +532,30 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
             score = None
         point_cloud = apply_sim3(points, params)
         point_cloud, colours = crop_to_region(dataset, scene, point_cloud, colours)
-        # Keep the pixel colours: a grey cloud next to a coloured GT panel reads as a bug.
-        sampled, sampled_colours = subsample(point_cloud, colours, RENDER_POINTS, seed=1)
-        aligned[method] = (sampled, sampled_colours, score)
+        aligned[method] = (point_cloud, colours, score)
     if not aligned:
         return
     union = np.concatenate([value[0] for value in aligned.values()])
+    # One sampling grid for every panel, taken from the box the panels are framed on: without it
+    # a cloud that covers more ground (a hundred frames instead of sixteen) would be thinned to
+    # the same point count over a larger area and read as sparse, which is a sampling artefact
+    # and not a property of the reconstruction.
+    low, high = percentile_box(union)
+    extent = float(np.linalg.norm(high - low))
     panels = []
     if gt_points is not None:
-        low, high = union.min(axis=0), union.max(axis=0)
-        box = 0.06 * float(np.linalg.norm(high - low))
+        box = 0.06 * extent
         inside = np.all((gt_points > low - box) & (gt_points < high + box), axis=1)
         gt_points = gt_points[inside]
         gt_colours = None if gt_colours is None else gt_colours[inside]
-        gt_points, gt_colours = subsample(gt_points, gt_colours, RENDER_POINTS)
+        gt_points, gt_colours = render_sample(gt_points, gt_colours, extent, seed=2)
         panels.append((gt_label(dataset), gt_points, gt_colours))
     for method, (points, colours, score) in aligned.items():
         label = LABEL.get(method, method)
         if score is not None:
             label = "%s (F@1%% = %.3f)" % (label, score)
+        # Keep the pixel colours: a grey cloud next to a coloured GT panel reads as a bug.
+        points, colours = render_sample(points, colours, extent, seed=1)
         panels.append((label, points, colours))
     basis = scene_basis(union, extrinsics, elevation=elevation)
     up = -basis[1]
