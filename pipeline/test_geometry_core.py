@@ -182,6 +182,27 @@ def test_stratified_subsample_keeps_every_patch():
     assert np.count_nonzero(kept[:, 0] > 1.0) > 5 * np.count_nonzero(random_cut[:, 0] > 1.0)
 
 
+def test_stratified_subsample_does_not_keep_the_early_points():
+    """A capped patch must lose points from every frame that saw it, not just from the later ones.
+
+    Points arrive in frame order, so a dense patch is a run of its own frames' samples. Cutting the
+    run by taking its first k points keeps the oldest frames only, and the render then shows one
+    view's sampling pattern as stripes across the wall. Two frames' worth of points painted red and
+    blue at the same place stand in for that run: a fair cut keeps both colours, a prefix keeps the
+    red one.
+    """
+    from common import stratified_subsample
+    rng = np.random.default_rng(3)
+    early = rng.normal(size=(120000, 3)) * 0.02
+    late = rng.normal(size=(120000, 3)) * 0.02
+    points = np.concatenate([early, late])
+    colours = np.concatenate([np.tile([255, 0, 0], (120000, 1)), np.tile([0, 0, 255], (120000, 1))])
+    kept, kept_colours = stratified_subsample(points, colours, 40000, seed=0)
+    red = np.count_nonzero(kept_colours[:, 0] == 255)
+    blue = np.count_nonzero(kept_colours[:, 2] == 255)
+    assert abs(red - blue) < 0.15 * (red + blue)
+
+
 def test_stratified_subsample_is_a_no_op_below_the_budget():
     from common import stratified_subsample
     points = np.zeros((100, 3))

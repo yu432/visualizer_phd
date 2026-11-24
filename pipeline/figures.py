@@ -253,6 +253,24 @@ def fit_aspect(box, aspect):
     return (u_low, u_high), (v_low, v_high)
 
 
+def alignment_params(dataset, scene, method):
+    """How a method's cloud is placed on the GT cameras: the stored metric fit, or a pose fit.
+
+    A scene without a laser scan has no evaluation.json, and its clouds are still compared between
+    frame schemes, so the placement has to come from the poses there — otherwise the shared
+    viewpoint of the scene cannot be built at all and the 16- and 100-frame panels of that scene
+    keep their own private framing.
+    """
+    path = OUTPUTS / dataset / scene / method / "evaluation.json"
+    if path.exists():
+        evaluation = read_json(path)
+        return dict(s=evaluation["alignment"]["s"],
+                    R=np.asarray(evaluation["alignment_rotation"]),
+                    t=np.asarray(evaluation["alignment_translation"]))
+    from pose_align import sim3 as pose_sim3
+    return pose_sim3(dataset, scene, method)
+
+
 def scene_schemes(scene):
     """Every frame scheme present on disk for a scene, shortest name first (the sparse one)."""
     found = []
@@ -296,15 +314,11 @@ def scene_reference(scene, elevation=22.0):
     for scheme in schemes:
         for method in ("da3-giant", "vggt-omega"):
             cloud_path = CLOUDS / scheme / scene / (method + ".ply")
-            evaluation_path = OUTPUTS / scheme / scene / method / "evaluation.json"
-            if not cloud_path.exists() or not evaluation_path.exists():
+            if not cloud_path.exists():
                 continue
             points, _ = read_ply(cloud_path)
             points, _ = subsample(points, None, 200000, seed=7)
-            evaluation = read_json(evaluation_path)
-            params = dict(s=evaluation["alignment"]["s"],
-                          R=np.asarray(evaluation["alignment_rotation"]),
-                          t=np.asarray(evaluation["alignment_translation"]))
+            params = alignment_params(scheme, scene, method)
             aligned, _ = crop_to_region(scheme, scene, apply_sim3(points, params), None)
             if len(aligned):
                 samples.append(np.asarray(aligned, dtype=np.float64))
@@ -611,23 +625,15 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     with np.load(GT / dataset / scene / "cameras.npz") as handle:
         extrinsics = cloud_frame_extrinsics(dataset, scene,
                                             np.asarray(handle["extrinsics"], dtype=np.float64))
-    from pose_align import sim3 as pose_sim3
-
     aligned = {}
     for method in methods:
-        path = OUTPUTS / dataset / scene / method / "evaluation.json"
         cloud_path = CLOUDS / dataset / scene / (method + ".ply")
         if not cloud_path.exists():
             continue
         points, colours = read_ply(cloud_path)
-        if path.exists():
-            evaluation = read_json(path)
-            params = dict(s=evaluation["alignment"]["s"], R=np.asarray(evaluation["alignment_rotation"]),
-                          t=np.asarray(evaluation["alignment_translation"]))
-            score = evaluation["cloud"]["fscore@1"]
-        else:
-            params = pose_sim3(dataset, scene, method)
-            score = None
+        params = alignment_params(dataset, scene, method)
+        evaluation_path = OUTPUTS / dataset / scene / method / "evaluation.json"
+        score = read_json(evaluation_path)["cloud"]["fscore@1"] if evaluation_path.exists() else None
         point_cloud = apply_sim3(points, params)
         point_cloud, colours = crop_to_region(dataset, scene, point_cloud, colours)
         aligned[method] = (point_cloud, colours, score)

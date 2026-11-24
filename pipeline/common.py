@@ -333,7 +333,7 @@ def stratified_subsample(points, colours, limit, seed=0):
     its 750 k budget kept 89 %: the same barn read as a different reconstruction.
 
     So cap the *density* instead of the point count: voxelise, keep every point of a sparse voxel
-    and only the first k of a dense one, with k as tall as the budget allows. Sparse surface keeps
+    and only k of a dense one, drawn at random, with k as tall as the budget allows. Sparse surface keeps
     its detail, dense surface gives up points it did not need, and the budget lands where nobody
     else looks. Any leftover budget — sparse voxels rarely fill it alone — is drawn at random from
     what the cap removed.
@@ -367,7 +367,15 @@ def stratified_subsample(points, colours, limit, seed=0):
         picked = rng.choice(len(starts), size=limit, replace=False)
         index = np.sort(order[starts[picked]])
         return points[index], None if colours is None else colours[index]
-    keep = np.arange(len(order)) - np.repeat(starts, counts) < cap
+    # Which points of a dense voxel survive has to be random: the point order follows the frame
+    # order, so keeping a prefix would keep the first frames of every dense patch and drop the
+    # rest, and the render then shows the sampling pattern of one view as stripes across a
+    # surface that is in fact covered by a hundred of them.
+    take = np.minimum(counts, cap)
+    rank = np.empty(len(order), dtype=np.int64)
+    shuffled = np.lexsort((rng.random(len(order)), sorted_keys))
+    rank[shuffled] = np.arange(len(order)) - np.repeat(starts, counts)
+    keep = rank < np.repeat(take, counts)
     index = order[keep]
     rest = limit - len(index)
     if rest > 0:
