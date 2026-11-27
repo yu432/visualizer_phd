@@ -312,7 +312,7 @@ def scene_reference(scene, elevation=22.0):
                                             np.asarray(handle["extrinsics"], dtype=np.float64))
     samples = []
     for scheme in schemes:
-        for method in ("da3-giant", "vggt-omega"):
+        for method in METHOD_NAMES:
             cloud_path = display_cloud(scheme, scene, method)
             if not cloud_path.exists():
                 continue
@@ -404,7 +404,10 @@ def inputs_figure(dataset, scene, out_path):
     save(figure, out_path, tight=False, hspace=0.22, wspace=0.05, top=0.86, bottom=0.02, left=0.01, right=0.99)
 
 
-LABEL = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω"}
+LABEL = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω", "dust3r": "DUSt3R"}
+# The methods the shared framing of a scene is computed over: a cloud that is not in this list is
+# cropped by a box it did not help to choose, so every method on the site belongs here.
+METHOD_NAMES = ("da3-giant", "vggt-omega", "dust3r")
 
 
 def gt_label(dataset):
@@ -441,6 +444,11 @@ def clouds_figure(dataset, scene, method, out_path):
                   t=np.asarray(evaluation["alignment_translation"]))
     aligned = apply_sim3(pred_points, params)
     aligned, pred_colours = crop_to_region(dataset, scene, aligned, pred_colours)
+    # A model whose global alignment fails can return a cloud that has collapsed to a couple of
+    # metres while the scene is tens of metres across; on the shared framing it is then a speck in
+    # the middle of nothing and reads as a missing panel. The size goes into the title instead.
+    predicted_extent = (float(np.linalg.norm(aligned.max(axis=0) - aligned.min(axis=0)))
+                        if len(aligned) else 0.0)
     from scipy.spatial import cKDTree
 
     # Shared with the other frame scheme of the same scene: same viewpoint, same points per pixel.
@@ -478,8 +486,12 @@ def clouds_figure(dataset, scene, method, out_path):
                "%s: %d точек" % (method, cloud["pred"]), limits=(xlim, ylim), point_size=1.1)
     draw_cloud(axes[2], aligned, error_colours, basis,
                "расстояние до GT (τ = %s)" % metric_text(tau), limits=(xlim, ylim), point_size=1.1)
-    figure.suptitle("%s / %s: облако против GT после sim(3) по позам, F@1%% = %.3f (диагональ GT %.2f)" % (
-        dataset, scene, cloud["fscore@1"], evaluation["ground_diagonal"]), fontsize=13)
+    title = "%s / %s: облако против GT после sim(3) по позам, F@1%% = %.3f (диагональ GT %.2f)" % (
+        dataset, scene, cloud["fscore@1"], evaluation["ground_diagonal"])
+    if reference is not None and predicted_extent < 0.2 * reference["extent"]:
+        title += "\nоблако сжалось до %.1f м при размере сцены %.1f м — срыв глобального выравнивания" % (
+            predicted_extent, reference["extent"])
+    figure.suptitle(title, fontsize=13)
     save(figure, out_path, tight=False, top=0.80, bottom=0.02, left=0.01, right=0.99, wspace=0.04)
 
 
@@ -668,7 +680,7 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     low, high = percentile_box(union)
     reference = scene_reference(scene, elevation=elevation)
     extent = reference["extent"] if reference is not None else float(np.linalg.norm(high - low))
-    panels = []
+    panels, notes = [], []
     if gt_points is not None:
         box = 0.06 * extent
         inside = np.all((gt_points > low - box) & (gt_points < high + box), axis=1)
@@ -676,10 +688,17 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
         gt_colours = None if gt_colours is None else gt_colours[inside]
         gt_points, gt_colours = render_sample(gt_points, gt_colours, extent, seed=2)
         panels.append((gt_label(dataset), gt_points, gt_colours))
+        notes.append("")
     for method, (points, colours, score) in aligned.items():
         label = LABEL.get(method, method)
         if score is not None:
             label = "%s (F@1%% = %.3f)" % (label, score)
+        # Same story as in clouds_figure: a model whose global alignment fails returns a cloud that
+        # has collapsed to a couple of metres, which the shared frame renders as one speck. The note
+        # is drawn inside the panel because a longer panel title wraps over the figure title.
+        size = float(np.linalg.norm(points.max(axis=0) - points.min(axis=0))) if len(points) else 0.0
+        notes.append("" if size >= 0.2 * extent or extent <= 0.0 else
+                     "облако сжалось\nдо %.1f м при сцене %.1f м" % (size, extent))
         # Keep the pixel colours: a grey cloud next to a coloured GT panel reads as a bug.
         points, colours = render_sample(points, colours, extent, seed=1)
         panels.append((label, points, colours))
@@ -711,9 +730,12 @@ def compare_clouds_figure(dataset, scene, methods, out_path, elevation=22.0):
     top = 1.0 - header / height
     figure, axes = plt.subplots(1, len(panels), figsize=(width, height))
     axes = np.atleast_1d(axes)
-    for axis, (title, points, colours) in zip(axes, panels):
+    for axis, (title, points, colours), note in zip(axes, panels, notes):
         draw_cloud(axis, points, colours, basis, title, limits=limits, point_size=1.4,
                    equal_aspect=True, wrap=34)
+        if note:
+            axis.text(0.5, 0.04, note, transform=axis.transAxes, ha="center", va="bottom",
+                      color="#c8c8c8", fontsize=9.5)
     figure.suptitle("%s / %s: облака с одного ракурса после sim(3) по позам камер" % (dataset, scene),
                     fontsize=13, y=1.0 - 0.30 / height)
     save(figure, out_path, tight=False, top=top, bottom=bottom, left=left, right=right, wspace=wspace)
@@ -733,7 +755,7 @@ def gt_overlay_figure(dataset, scene, methods, out_path):
     gt_points, _ = read_ply(gt_path)
     gt_sample, _ = subsample(gt_points, None, 120000, seed=0)
     panels = [("вид сверху (XY)", 0, 1), ("вид сбоку (XZ)", 0, 2)]
-    colours = {"da3-giant": "#1f6fd0", "vggt-omega": "#d97706"}
+    colours = {"da3-giant": "#1f6fd0", "vggt-omega": "#d97706", "dust3r": "#2ca02c"}
     drawn = []
     from pose_align import sim3 as pose_sim3
 

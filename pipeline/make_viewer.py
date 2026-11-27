@@ -1,6 +1,6 @@
 """Build interactive point-cloud pages (WebGL / three.js) so the clouds can be rotated by hand.
 
-Each scene page shows one cloud at a time (GT lidar, DA3-Giant, VGGT-Omega or both predictions)
+Each scene page shows one cloud at a time (GT lidar, one prediction or all predictions at once)
 and can recolour the points either with their pixel colours or with the distance to the GT cloud
 (green = on the surface, red = far / off).
 
@@ -32,8 +32,20 @@ from common import (CLOUDS, GT, INFERENCE, OUTPUTS, crop_mask, diagonal,  # noqa
                     stratified_subsample, view_basis)
 
 VENDOR = Path(__file__).resolve().parent / "vendor"
-LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9"}
-SHORTCUTS = {"da3-giant": "da3", "vggt-omega": "omega"}
+# The prediction methods a page can show, in the order the buttons, the payload keys and the
+# union view follow. Adding a method here (plus its label) is all it takes to widen the pages.
+METHODS = ("da3-giant", "vggt-omega", "dust3r")
+LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-\u03a9", "dust3r": "DUSt3R"}
+SHORTCUTS = {"da3-giant": "da3", "vggt-omega": "omega", "dust3r": "dust3r"}
+# Page cloud keys of the predictions, in METHODS order; 'gt' is not a prediction.
+PREDICTION_KEYS = tuple(SHORTCUTS.get(method, method) for method in METHODS)
+
+
+def union_label(count):
+    """Button text of the all-predictions view: 'оба' for two, 'все' from three on."""
+    return "оба предсказания" if count == 2 else "все предсказания"
+
+
 # Green to red, the same convention as the distance figures in the PDF.
 DIST_SCALE = [
     [0.0, "#1a9850"], [0.25, "#91cf60"], [0.5, "#d9ef8b"],
@@ -435,9 +447,9 @@ SCRIPT = r"""
   }
   var FETCH_SLOTS = 4, urgentTasks = [], fetchTasks = [], fetchActive = 0, fetchSeq = 0;
   // Two lanes. Chunk zero of every cloud comes first, in the order the page asked for the clouds, so
-  // "оба предсказания" paints both on two parallel requests instead of one cloud whole. The rest is
-  // ordered by depth: chunk 1 of every cloud, then chunk 2 of every cloud, and so on, so two clouds
-  // on screen grow together instead of the second one sitting at 1 M points.
+  // the all-predictions view paints every cloud on parallel requests instead of one cloud whole. The
+  // rest is ordered by depth: chunk 1 of every cloud, then chunk 2 of every cloud, and so on, so the
+  // clouds on screen grow together instead of the last one sitting at 1 M points.
   function queued(task, rank) {
     return new Promise(function (resolve, reject) {
       var job = {task: task, rank: rank, resolve: resolve, reject: reject, seq: fetchSeq++};
@@ -673,8 +685,8 @@ SCRIPT = r"""
     document.getElementById('cams').checked = state.cams;
     document.getElementById('size').value = state.size;
   }
-  // Everything the page has is fetched once, up front, so switching GT / DA3-Giant / VGGT-Omega or
-  // turning the distance colour on is a visibility toggle: the whole payload of a scene is only a
+  // Everything the page has is fetched once, up front, so switching GT / a prediction / all
+  // predictions or turning the distance colour on is a visibility toggle: the whole payload is only a
   // few megabytes, which is a far better trade than a network round trip per click.
   function payloadKeys() {
     var keys = [];
@@ -1355,14 +1367,14 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit, gt_limit=0)
         frustums = dict(b64=base64.b64encode(wire.tobytes()).decode("ascii"),
                         size=int(len(extrinsics)), per=int(wire.shape[1]), edge=0.035 * span)
     camshots = camera_sheet(out / "data", dataset, scene, len(extrinsics))
-    predictions = [key for key in ("da3", "omega") if key in traces]
+    predictions = [key for key in PREDICTION_KEYS if key in traces]
     has_gt = "gt" in traces
     meta = dict(
         traces=traces,
         predictions=predictions,
-        # VGGT-Omega opens first: it is the stronger of the two methods, and "both predictions"
+        # VGGT-Omega opens first: it is the strongest of the methods, and "all predictions"
         # is a comparison, not a starting point.
-        default_cloud=("omega" if "omega" in predictions
+        default_cloud=(SHORTCUTS["vggt-omega"] if SHORTCUTS["vggt-omega"] in predictions
                        else (predictions[0] if predictions else "gt")),
         cams=True,
         camshots=camshots,
@@ -1390,14 +1402,17 @@ def scene_page(out, dataset, scene, methods, tag, limit, page_limit, gt_limit=0)
     return meta, sizes, payload, dist_bytes
 
 
-def write_page(path, meta, heading, note):
+def write_page(path, meta, heading, note, methods=None):
     buttons = []
-    for key, title in (("gt", "GT (лидар)"), ("da3", LABELS["da3-giant"]),
-                       ("omega", LABELS["vggt-omega"])):
+    for key, title in [("gt", "GT (лидар)")] + [(SHORTCUTS.get(method, method),
+                                                LABELS.get(method, method))
+                                               for method in (methods or PREDICTION_KEYS)]:
         disabled = "" if key in meta["traces"] else " disabled"
         buttons.append('<button class="pick" data-cloud="%s"%s>%s</button>' % (key, disabled, title))
-    if len(meta["predictions"]) == 2:
-        buttons.append('<button class="pick" data-cloud="both">оба предсказания</button>')
+    if len(meta["predictions"]) >= 2:
+        # The hash key stays 'both' whatever the number of methods, so old links keep working.
+        buttons.append('<button class="pick" data-cloud="both">%s</button>'
+                       % union_label(len(meta["predictions"])))
     controls = CONTROLS.replace("__CLOUD_BUTTONS__", "\n  ".join(buttons))
     controls = controls.replace("__DIST_LABEL__",
                                 "расстояние до GT" if "gt" in meta["traces"]
@@ -1430,7 +1445,7 @@ def pose_warnings(dataset, scene, methods):
         rotation = read_json(path)["rotation"]["mean_deg"]
         if rotation > 10.0:
             warnings.append("%s: позы не сходятся (средняя ошибка поворота %.1f°), "
-                            "облако смещено относительно GT" % (method, rotation))
+                            "облако смещено относительно GT" % (LABELS.get(method, method), rotation))
     return warnings
 
 
@@ -1452,19 +1467,19 @@ INDEX_HEAD = """<!doctype html>
 <h1>Облака точек: интерактивный просмотр</h1>
 <p>По одному файлу на сцену. Облака приведены в систему координат GT через sim(3) по центрам
 камер и раскрашены цветом пикселей. Кнопки сверху переключают, какое облако смотреть (GT,
-DA3-Giant, VGGT-Ω или оба предсказания), как его красить — цветом пикселей или расстоянием до
+{methods} или {union}), как его красить — цветом пикселей или расстоянием до
 GT (зелёный — на поверхности, красный — дальше τ) — и задают размер точки. Мышь вращает, колесо
 зумит, панорама — Ctrl, Shift, Alt или Cmd с левой кнопкой, а также правая и средняя кнопки.
 По умолчанию открывается VGGT-Ω, а центры камер GT включены: наведите курсор на пирамидку
 камеры — всплывёт кадр, снятый с этой точки.</p>
-<p>Сцены идут от лучших к худшим по среднему F@1 двух методов, а не по алфавиту: так первым делом
+<p>Сцены идут от лучших к худшим по среднему F@1 {count} методов, а не по алфавиту: так первым делом
 видно, что получается хорошо, а не самое слабое.</p>
 <p>Рендер — three.js: точки рисуются буфером WebGL, координаты упакованы в int16, цвет — один
 байт палитры, поэтому на странице сотни тысяч и миллионы точек, а не сто тысяч, как раньше в
 Plotly. Полезная нагрузка каждой сцены лежит рядом в <code>data/*.bin</code> кусками-ступенькой
 (40 тыс., 40 тыс., 80 тыс. точек, дальше по миллиону): мелкий первый кусок рисуется через секунду,
 дальше в полёте держится до четырёх кусков сразу, индикатор относится к открытым облакам и GT, а к
-концу загрузки в памяти лежат все три облака целиком (10.9 млн точек на облако у 100-кадровых сцен). Страницы нужно
+концу загрузки в памяти лежат все облака целиком (10.9 млн точек на облако у 100-кадровых сцен). Страницы нужно
 открывать по http (GitHub Pages):
 из <code>file://</code> браузер не отдаёт соседние бинарные файлы. <code>three.min.js</code> лежит
 рядом, интернет не нужен.</p>
@@ -1472,7 +1487,7 @@ Plotly. Полезная нагрузка каждой сцены лежит р�
 """
 
 
-LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω"}
+# LABELS / METHODS live at the top of the file; they are shared by the pages and the index.
 # The same building appears under two schemes, so the link text has to say which one it is.
 SCHEMES = {"eth3d": "ETH3D-10", "eth3d20": "ETH3D-20", "tnt": "T&T-10", "tnt100": "T&T-100"}
 
@@ -1485,15 +1500,16 @@ def index_metrics(stem):
     """
     dataset, _, scene = stem.replace("-", " ", 1).partition(" ")
     scene = scene.replace(" ", "-")
-    labels, scores = [], []
-    for method in ("da3-giant", "vggt-omega"):
+    labels, scores, present = [], [], []
+    for method in METHODS:
         evaluation = OUTPUTS / dataset / scene / method / "evaluation.json"
         if evaluation.exists():
             score = float(read_json(evaluation)["cloud"]["fscore@1"])
-            labels.append("%s %.3f" % (LABELS[method], score))
+            labels.append("%s %.3f" % (LABELS.get(method, method), score))
             scores.append(score)
+            present.append(method)
     hint = " · F@1: " + ", ".join(labels) if labels else ""
-    return (sum(scores) / len(scores) if scores else -1.0), hint
+    return (sum(scores) / len(scores) if scores else -1.0), hint, present
 
 
 def index_title(stem):
@@ -1507,8 +1523,14 @@ def write_index(out):
     scored = [(index_metrics(name[:-5]), name) for name in pages]
     scored.sort(key=lambda item: (-item[0][0], item[1]))
     items = "\n".join('<li><a href="%s">%s</a><span class="hint">%s</span></li>'
-                      % (name, index_title(name[:-5]), hint) for (_, hint), name in scored)
-    Path(out, "index.html").write_text(INDEX_HEAD.format() + items + "\n</ul>\n", encoding="utf-8")
+                      % (name, index_title(name[:-5]), hint) for (_, hint, _), name in scored)
+    # The preamble names the methods this build actually found, not every known method.
+    found = [method for method in METHODS if any(method in item[0][2] for item in scored)]
+    prose = dict(methods=", ".join(LABELS.get(method, method) for method in found),
+                 union=union_label(len(found)),
+                 count={2: "двух", 3: "трёх"}.get(len(found), "всех"))
+    Path(out, "index.html").write_text(INDEX_HEAD.format(**prose) + items + "\n</ul>\n",
+                                       encoding="utf-8")
     print("index.html written (%d scenes, best first)" % len(pages), flush=True)
 
 
@@ -1516,7 +1538,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--scenes", nargs="+", required=True)
-    parser.add_argument("--methods", nargs="+", default=["da3-giant", "vggt-omega"])
+    parser.add_argument("--methods", nargs="+", default=list(METHODS))
     parser.add_argument("--points", type=int, default=0,
                         help="point budget per prediction cloud; 0 keeps the whole display cloud "
                              "and the page streams it in chunks")
@@ -1536,9 +1558,18 @@ def main() -> int:
     shutil.copyfile(VENDOR / "three.min.js", out / "three.min.js")
     rows = []
     for scene in args.scenes:
-        present = [method for method in args.methods
-                   if cloud_path(args.dataset, scene, method, args.cloud_tag).exists()]
+        present = []
+        for method in args.methods:
+            if cloud_path(args.dataset, scene, method, args.cloud_tag).exists():
+                present.append(method)
+            else:
+                # A missing method is skipped, not fatal: the benchmark pages are rebuilt scene
+                # by scene as the methods land, and one absent cloud must not stop the rest.
+                print("  warning: %s / %s: no %s cloud, skipping that method"
+                      % (args.dataset, scene, method), file=sys.stderr, flush=True)
         if not present:
+            print("  warning: %s / %s: none of the methods has a cloud, no page written"
+                  % (args.dataset, scene), file=sys.stderr, flush=True)
             continue
         print("%s / %s: %s" % (args.dataset, scene, ", ".join(present)), flush=True)
         built = scene_page(out, args.dataset, scene, present, args.cloud_tag,
@@ -1563,7 +1594,8 @@ def main() -> int:
         warnings = pose_warnings(args.dataset, scene, present)
         if warnings:
             note += " <span style='color:#ffb020'>Внимание: " + "; ".join(warnings) + ".</span>"
-        page_bytes = write_page(out / name, meta, "%s / %s" % (args.dataset, scene), note)
+        page_bytes = write_page(out / name, meta, "%s / %s" % (args.dataset, scene), note,
+                                present)
         rows.append((name, sizes, page_bytes, payload, dist_bytes))
         print("%s written: %d points, %.1f MB payload, %.0f kB html" % (
             name, total, payload / 1e6, page_bytes / 1e3), flush=True)

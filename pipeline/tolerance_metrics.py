@@ -152,8 +152,8 @@ def evaluate_scene(dataset, scene, method):
     return result
 
 
-COLOURS = {"da3-giant": "#1f6fd0", "vggt-omega": "#d97706"}
-LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω"}
+COLOURS = {"da3-giant": "#1f6fd0", "vggt-omega": "#d97706", "dust3r": "#2ca02c"}
+LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Ω", "dust3r": "DUSt3R"}
 
 
 def plot(summary_path, out_path):
@@ -171,16 +171,18 @@ def plot(summary_path, out_path):
     summary = read_json(Path(summary_path))
     tols = np.asarray(summary["tolerances_cm"], dtype=np.float64)
     rows = summary["rows"]
-    scenes = []
+    scenes, order = [], []
     for row in rows:
         if row["scene"] not in scenes:
             scenes.append(row["scene"])
+        if row["method"] not in order:
+            order.append(row["method"])
     lookup = {(row["scene"], row["method"]): row for row in rows}
 
     figure, axes = plt.subplots(1, len(scenes), figsize=(2.7 * len(scenes), 4.5), sharey=True)
     axes = np.atleast_1d(axes)
     for axis, scene in zip(axes, scenes):
-        for method in ("da3-giant", "vggt-omega"):
+        for method in order:
             row = lookup.get((scene, method))
             if row is None:
                 continue
@@ -212,9 +214,9 @@ def plot(summary_path, out_path):
         "сплошная — доля GT-лидара в пределах допуска (полнота), штрих — доля предсказания (точность); "
         "точка — допуск, где покрыто 90 % лидара",
         fontsize=11.5)
-    handles = [plt.Line2D([], [], color=COLOURS[m], lw=1.9, label=LABELS[m])
-               for m in ("da3-giant", "vggt-omega")]
-    figure.legend(handles=handles, loc="lower center", ncol=2, frameon=False, fontsize=10.5,
+    handles = [plt.Line2D([], [], color=COLOURS[m], lw=1.9, label=LABELS.get(m, m))
+               for m in order]
+    figure.legend(handles=handles, loc="lower center", ncol=len(handles), frameon=False, fontsize=10.5,
                   bbox_to_anchor=(0.5, 0.005))
     figure.tight_layout(rect=(0, 0.105, 1, 0.855))
     save(figure, Path(out_path), tight=False)

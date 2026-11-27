@@ -92,6 +92,16 @@ class ImagePdfPages(PdfPages):
 # "abs" — меньше по модулю лучше, None — колонка не красится (счётчики, текст, «—»).
 HIGH, LOW, ABS = "high", "low", "abs"
 
+# Имена методов живут только здесь: колонки титульной страницы, подписи страниц сцен и подписи
+# рисунков берут их отсюда, поэтому третий метод не требует правок в каждом месте по отдельности.
+# Порядок методов задаёт summary.json (его пишет summarize.py из --methods).
+METHOD_LABELS = {"da3-giant": "DA3-Giant", "vggt-omega": "VGGT-Omega", "dust3r": "DUSt3R"}
+METHOD_SHORT = {"da3-giant": "da3", "vggt-omega": "Ω", "dust3r": "d3r"}
+
+
+def method_label(name, short=False):
+    return (METHOD_SHORT if short else METHOD_LABELS).get(name, name)
+
 GOOD_RGB = np.array([255.0, 255.0, 255.0])
 BAD_RGB = np.array([197.0, 27.0, 27.0])
 
@@ -250,8 +260,15 @@ def table_page(pdf, heading, header, rows, kinds, note=None, size=9.0, top=0.30,
     widths = [0.97 * length / total for length in lengths]
     table = axis.table(cellText=rows, colLabels=header, loc="center", cellLoc="center", colWidths=widths)
     table.auto_set_font_size(False)
+    # Each method adds a row per scene, so a table can outgrow the axis and overlap the note below
+    # it. Cell height is set by the row scale, not by the font size, so a long table gets flatter
+    # rows: fifteen rows (five ETH3D scenes x three methods) sit at the nominal 1.45.
+    fit, row_scale = 16.0, 1.45
+    if len(rows) + 1 > fit:
+        row_scale = 1.45 * fit / (len(rows) + 1)
+        size = size * max(0.8, fit / (len(rows) + 1))
     table.set_fontsize(size)
-    table.scale(1.0, 1.45)
+    table.scale(1.0, row_scale)
     styles = column_styles(rows, kinds)
     for (row, column), cell in table.get_celld().items():
         cell.set_text_props(family=FONT)
@@ -336,8 +353,11 @@ def image_page(pdf, heading, entries, tolerance=1.25, subtitle=None):
             # figure's own title, which is part of the rendered image.
             if caption:
                 caption_fraction = CAPTION_IN * scale / page_height
-                figure.text(0.5, top - height_fraction - 0.004, caption, fontsize=9.5, family=FONT,
-                            color="#333333", ha="center", va="top")
+                # Подпись несёт по строке на каждый метод: три метода в одну строку не влезают,
+                # поэтому она переносится по словам (не больше двух строк, иначе съест рисунок).
+                lines = textwrap.wrap(caption, width=118) or [caption]
+                figure.text(0.5, top - height_fraction - 0.004, "\n".join(lines[:2]), fontsize=9.5,
+                            family=FONT, color="#333333", ha="center", va="top")
                 top -= caption_fraction
             top -= height_fraction + 0.012
         with jpeg_rasters():
@@ -361,7 +381,7 @@ def eth3d_table(rows):
     body = []
     for row in rows:
         body.append([
-            row["scene"], row["method"], str(row["frames"]),
+            row["scene"], method_label(row["method"]), str(row["frames"]),
             value(row, "fscore_half", ("cloud",)), value(row, "fscore_one", ("cloud",)),
             value(row, "precision_one", ("cloud",)), value(row, "recall_one", ("cloud",)),
             value(row, "absrel_scale_shift", ("depth",), "%.4f"),
@@ -386,7 +406,7 @@ def ablation_table(rows):
         sky = row.get("sky") or {}
         fraction = sky.get("sky_fraction_mean")
         body.append([
-            row["scene"], row["method"],
+            row["scene"], method_label(row["method"]),
             "—" if fraction is None else "%.1f" % (100.0 * fraction),
             "%.3f" % with_sky["fscore_one"], "%.3f" % without["fscore_one"],
             signed(ablation["delta_fscore_one"]),
@@ -425,7 +445,7 @@ def scheme_table(sparse, dense):
         if old is None:
             continue
         body.append([
-            row["scene"], row["method"], "%s → %d" % (old["frames"], row["frames"]),
+            row["scene"], method_label(row["method"]), "%s → %d" % (old["frames"], row["frames"]),
             pair(lambda r: value(r, "fscore_one", ("cloud",)), old, row),
             pair(lambda r: tolerance_value(r, "accuracy_median_cm"), old, row),
             pair(lambda r: value(r, "rotation_mean_deg", ("pose",), "%.2f"), old, row),
@@ -457,7 +477,7 @@ def eth3d_scheme_table(sparse, dense, coverage_matched):
             continue
         matched = reference.get((row["scene"], row["method"]))
         body.append([
-            row["scene"], row["method"], "%d → %d" % (old["frames"], row["frames"]),
+            row["scene"], method_label(row["method"]), "%d → %d" % (old["frames"], row["frames"]),
             "%s → %s" % (cell(old, "fscore_one"), cell(row, "fscore_one")),
             "%s → %s" % (cell(old, "precision_one"), cell(row, "precision_one")),
             "%s → %s" % (cell(old, "recall_one"), cell(row, "recall_one")),
@@ -477,7 +497,7 @@ def tnt_table(rows):
     body = []
     for row in rows:
         body.append([
-            row["scene"], row["method"], str(row["frames"]),
+            row["scene"], method_label(row["method"]), str(row["frames"]),
             value(row, "fscore_half", ("cloud",)), value(row, "fscore_one", ("cloud",)),
             value(row, "precision_one", ("cloud",)), value(row, "recall_one", ("cloud",)),
             tolerance_value(row, "accuracy_median_cm"), tolerance_value(row, "cover90_cm"),
@@ -506,24 +526,225 @@ def range_of(rows, path, key, spec="%.3f", scale=1.0):
     return "—" if not numbers else "%s…%s" % (spec % min(numbers), spec % max(numbers))
 
 
+def methods_of(rows, default=("da3-giant", "vggt-omega", "dust3r")):
+    """Every method that actually has a row, in the canonical order, so captions follow the data."""
+    present = {row["method"] for row in rows}
+    ordered = [name for name in default if name in present]
+    return ordered + sorted(present - set(ordered))
+
+
 def scene_signature(rows, scene, dataset=None):
     """One caption line tying a scene page back to the numbers in the summary tables."""
     parts = []
-    for method in ("da3-giant", "vggt-omega"):
+    for method in methods_of(rows):
         row = next((row for row in rows if row["scene"] == scene and row["method"] == method
                     and (dataset is None or row["dataset"] == dataset)), None)
         if row is None:
             continue
-        label = "da3" if method == "da3-giant" else "Ω"
+        label = method_label(method, short=True)
         bits = []
         if "cloud" in row:
             bits.append("F@1%% %.3f" % row["cloud"]["fscore_one"])
-        if "depth" in row:
+        if row.get("depth") and row["depth"].get("absrel_scale_shift") is not None:
             bits.append("AbsRel %.4f" % row["depth"]["absrel_scale_shift"])
         if "pose" in row:
             bits.append("rot %.2f°" % row["pose"]["rotation_mean_deg"])
         parts.append("%s: %s" % (label, ", ".join(bits)))
     return " · ".join(parts)
+
+
+# --- DUSt3R page -------------------------------------------------------------
+# DUSt3R is the only pairwise method here: the number of pair-graph edges and the aligner
+# iterations are properties of the run, not of the paper, so they are read back from each run's
+# inference.json (paths come from summary.json's provenance) instead of being typed into the text.
+def dust3r_runs(summary):
+    provenance = ((summary.get("provenance") or {}).get("scenes")) or {}
+    runs = {}
+    for key, root in provenance.items():
+        if not key.endswith("/dust3r"):
+            continue
+        path = Path(root) / "inference.json"
+        if not path.exists():
+            continue
+        info = read_json(path)
+        note = info.get("aligner_note") or {}
+        runs[key] = dict(frames=len(info.get("frames") or []),
+                         graph=info.get("scene_graph"),
+                         niter=info.get("aligner_niter"),
+                         pairs=note.get("pairs"),
+                         edges=note.get("edges"),
+                         seconds=info.get("elapsed_seconds"))
+    return runs
+
+
+def dust3r_blocks(per_method, methods, runs):
+    """The DUSt3R page: what the model does, what came out, and why it came out that way."""
+
+    def span(dataset, path, key, spec, suffix=""):
+        return {name: range_of([row for row in per_method.get(name, {}).get(dataset, [])
+                                if path in row], path, key, spec) + suffix
+                for name in methods}
+
+    def at(dataset, scene, path, key, spec, suffix=""):
+        return {name: value(scene_row(per_method.get(name, {}).get(dataset, []), scene) or {},
+                            key, (path,), spec) + suffix for name in methods}
+
+    def mined(dataset):
+        """Minutes per scene: the wall clock the run itself recorded."""
+        values = [row["seconds"] for row in per_method.get("dust3r", {}).get(dataset, [])
+                  if row.get("seconds")]
+        return "—" if not values else "%.0f" % (sum(values) / len(values) / 60.0)
+
+    eth_rot, tnt_rot, dense_rot = (span("eth3d", "pose", "rotation_mean_deg", "%.2f", "°"),
+                                   span("tnt", "pose", "rotation_mean_deg", "%.2f", "°"),
+                                   span("tnt100", "pose", "rotation_mean_deg", "%.2f", "°"))
+    eth20_rot = span("eth3d20", "pose", "rotation_mean_deg", "%.2f", "°")
+    eth_f, eth20_f, tnt_f, dense_f = (span("eth3d", "cloud", "fscore_one", "%.3f"),
+                                      span("eth3d20", "cloud", "fscore_one", "%.3f"),
+                                      span("tnt", "cloud", "fscore_one", "%.3f"),
+                                      span("tnt100", "cloud", "fscore_one", "%.3f"))
+    # Which ETH3D scene broke worst is a property of the run, so it is picked and not named.
+    worst_scene, worst_rot = None, -1.0
+    for row in per_method.get("dust3r", {}).get("eth3d", []):
+        rotation = (row.get("pose") or {}).get("rotation_mean_deg")
+        if rotation is not None and rotation > worst_rot:
+            worst_scene, worst_rot = row["scene"], rotation
+    worst_rot_at = at("eth3d", worst_scene, "pose", "rotation_mean_deg", "%.2f", "°") if worst_scene else {}
+    worst_f_at = at("eth3d", worst_scene, "cloud", "fscore_one", "%.3f") if worst_scene else {}
+    worst20_rot_at = at("eth3d20", worst_scene, "pose", "rotation_mean_deg", "%.2f", "°") \
+        if worst_scene else {}
+    # Depth keeps the per-frame scale+shift protocol, and some rows carry no depth at all, so the
+    # range is built here instead of through range_of().
+    absrel = {}
+    for name in methods:
+        numbers = [row["depth"]["absrel_scale_shift"]
+                   for row in per_method.get(name, {}).get("eth3d", [])
+                   if (row.get("depth") or {}).get("absrel_scale_shift") is not None]
+        absrel[name] = "%.4f…%.4f" % (min(numbers), max(numbers)) if numbers else "—"
+    # «Во сколько раз хуже Ω» is the honest way to say it, so the ratio is computed per scene.
+    absrel_ratio = []
+    for row in per_method.get("dust3r", {}).get("eth3d", []):
+        peer = scene_row(per_method.get("vggt-omega", {}).get("eth3d", []), row["scene"]) or {}
+        mine = (row.get("depth") or {}).get("absrel_scale_shift")
+        other = (peer.get("depth") or {}).get("absrel_scale_shift")
+        if mine and other:
+            absrel_ratio.append(mine / other)
+    ratio_text = ("%.1f–%.1f раза" % (min(absrel_ratio), max(absrel_ratio))) if absrel_ratio else "—"
+    # How many ETH3D scenes stay close to the best method: that is what «конкурентоспособен» means here.
+    eth3d_f = span("eth3d", "cloud", "fscore_one", "%.3f")
+    close_scenes, eth3d_scenes = 0, sorted({row["scene"] for row in per_method.get("dust3r", {}).get("eth3d", [])})
+    for scene in eth3d_scenes:
+        scores = [(scene_row(per_method.get(name, {}).get("eth3d", []), scene) or {}).get("cloud") or {}
+                  for name in methods]
+        scores = [item.get("fscore_one") for item in scores if item.get("fscore_one") is not None]
+        mine = ((scene_row(per_method.get("dust3r", {}).get("eth3d", []), scene) or {}).get("cloud") or {}).get("fscore_one")
+        if scores and mine is not None and mine >= max(scores) - 0.03:
+            close_scenes += 1
+    # A turn of 150 degrees is a wrong branch of the optimiser, not a drifted average, so those
+    # scenes are listed instead of being buried inside a range.
+    flipped = []
+    for dataset in ("eth3d", "tnt"):
+        for row in per_method.get("dust3r", {}).get(dataset, []):
+            rotation = (row.get("pose") or {}).get("rotation_mean_deg")
+            if rotation is not None and rotation > 90.0:
+                flipped.append("%s %.2f°" % (row["scene"], rotation))
+    barn_rot = at("tnt", "barn", "pose", "rotation_mean_deg", "%.2f", "°")
+    barn_f = at("tnt", "barn", "cloud", "fscore_one", "%.3f")
+    barn_acc = {name: tolerance_metres(scene_row(per_method.get(name, {}).get("tnt", []), "barn"))
+                for name in methods}
+    barn90_rot = at("tnt100", "barn", "pose", "rotation_mean_deg", "%.2f", "°")
+    barn90_f = at("tnt100", "barn", "cloud", "fscore_one", "%.3f")
+    courthouse_rot = at("tnt", "courthouse", "pose", "rotation_mean_deg", "%.2f", "°")
+    courthouse90_rot = at("tnt100", "courthouse", "pose", "rotation_mean_deg", "%.2f", "°")
+
+    # Полный граф или окно — это свойство запуска (scene_graph), а не арифметика в отчёте.
+    dense_frames = sorted({run["frames"] for run in runs.values()
+                           if run.get("frames") and str(run.get("graph") or "").startswith("swin")})
+    sparse_frames = sorted({run["frames"] for run in runs.values()
+                            if run.get("frames") and not str(run.get("graph") or "").startswith("swin")})
+    graph_of = {}
+    for run in runs.values():
+        if run.get("frames") and run.get("pairs") is not None:
+            graph_of.setdefault(run["frames"], (run.get("graph"), run["pairs"]))
+    sparse_pairs = ", ".join("%d кадров — %d пар (%s)" % (frames, graph_of[frames][1], graph_of[frames][0])
+                             for frames in sparse_frames if frames in graph_of)
+    dense_pairs = ", ".join("%d кадров — %s, %d пар" % (frames, graph_of[frames][0], graph_of[frames][1])
+                            for frames in dense_frames if frames in graph_of)
+    full_edges = ["%d·%d/2 = %d" % (frames, frames - 1, frames * (frames - 1) // 2) for frames in dense_frames]
+    niter = sorted({run["niter"] for run in runs.values() if run.get("niter")})
+    niter_text = ("niter=%s, schedule=linear, lr=0.01" % "/".join(str(item) for item in niter)) \
+        if niter else "init='mst'"
+
+    def gap(span):
+        """'ошибка поворота у DUSt3R A против B у DA3 и C у Ω' out of one range dict."""
+        return "ошибка поворота у DUSt3R %s против %s у DA3 и %s у Ω" % (
+            span.get("dust3r", "—"), span.get("da3-giant", "—"), span.get("vggt-omega", "—"))
+
+    sparse_text = ", ".join("%d — %d пар" % (frames, graph_of[frames][1])
+                            for frames in sparse_frames if frames in graph_of)
+    dense_text = ", ".join("%d кадров — %s, %d пар" % (frames, graph_of[frames][0], graph_of[frames][1])
+                           for frames in dense_frames if frames in graph_of)
+    graph_bits = []
+    if sparse_text:
+        graph_bits.append("полный, пока кадров немного (%s)" % sparse_text)
+    if dense_text:
+        graph_bits.append("на плотных — циклическое окно (%s)" % dense_text)
+    graph_text = "; ".join(graph_bits) or "полный на разреженных схемах, окно на плотных"
+    dense_clause = ""
+    if dense_frames:
+        dense_edges = [str(graph_of[frames][1]) for frames in dense_frames if frames in graph_of]
+        dense_clause = (" Полный граф стоил бы %s рёбер вместо %s — не влезает в память; отступление записано "
+                        "в inference.json."
+                        % (" и ".join(full_edges) if full_edges else "тысячи",
+                           " / ".join(dense_edges) if dense_edges else "сотни"))
+
+    return [
+        "## Что это за метод",
+        "- Попарная модель: forward видит ровно два кадра и предсказывает pointmap в системе первого кадра и "
+        "карту уверенности; глобального внимания по всем кадрам нет — сеть не знает число кадров.",
+        "- Геометрия сцены — второй шаг, которого у DA3 и VGGT-Ω нет: PointCloudOptimizer (global_aligner) сводит "
+        "позы пар и глубины кадров в одну систему (старт init='mst' — остов графа пар, %s). Позы и глубины в "
+        "outputs — результат оптимизации, а не вывод сети." % niter_text,
+        "- Граф пар: %s.%s" % (graph_text, dense_clause),
+        "## Что показали числа",
+        "- ETH3D, 10 кадров: %s; F@1%% %s против %s у DA3 и %s у Ω, и на %d из %d сцен отставание от лучшего "
+        "метода не больше 0.03." % (
+            gap(eth_rot), eth_f.get("dust3r", "—"), eth_f.get("da3-giant", "—"), eth_f.get("vggt-omega", "—"),
+            close_scenes, len(eth3d_scenes)),
+        "- Глубина тоже хуже: AbsRel %s против %s у DA3 и %s у Ω, то есть в %s хуже Ω; d1.25 при этом %s. "
+        "Значит глубину попарный forward считает приемлемо, ломает сцену согласование."
+        % (absrel.get("dust3r", "—"), absrel.get("da3-giant", "—"), absrel.get("vggt-omega", "—"), ratio_text,
+           span("eth3d", "depth", "delta125_scale_shift", "%.3f").get("dust3r", "—")),
+        "- ETH3D, 20 кадров: поворот %s против %s у DA3 и %s у Ω, F@1%% %s; на %s ошибка падает с %s до %s — "
+        "плотность кадров помогает и здесь."
+        % (eth20_rot.get("dust3r", "—"), eth20_rot.get("da3-giant", "—"), eth20_rot.get("vggt-omega", "—"),
+           eth20_f.get("dust3r", "—"), worst_scene or "—",
+           worst_rot_at.get("dust3r", "—"), worst20_rot_at.get("dust3r", "—")),
+        "- T&T, 16 кадров: barn — %s против %s и %s, F@1%% %s против %s и %s, медианная точность по позам "
+        "%s м против %s и %s м; courthouse %s."
+        % (barn_rot.get("dust3r", "—"), barn_rot.get("da3-giant", "—"), barn_rot.get("vggt-omega", "—"),
+           barn_f.get("dust3r", "—"), barn_f.get("da3-giant", "—"), barn_f.get("vggt-omega", "—"),
+           barn_acc.get("dust3r", "—"), barn_acc.get("da3-giant", "—"), barn_acc.get("vggt-omega", "—"),
+           courthouse_rot.get("dust3r", "—")),
+        "- T&T, 100 кадров: barn %s против %s и %s (F@1%% %s против %s и %s), а courthouse после разворота на "
+        "16 кадрах — %s против %s и %s." % (
+            barn90_rot.get("dust3r", "—"), barn90_rot.get("da3-giant", "—"), barn90_rot.get("vggt-omega", "—"),
+            barn90_f.get("dust3r", "—"), barn90_f.get("da3-giant", "—"), barn90_f.get("vggt-omega", "—"),
+            courthouse90_rot.get("dust3r", "—"), courthouse90_rot.get("da3-giant", "—"),
+            courthouse90_rot.get("vggt-omega", "—")),
+        "## Почему так",
+        "- Развороты (%s) — не «дрейф средней», а неверная ветвь оптимизатора; настройки у всех сцен одни и те "
+        "же, дело не в них: MST-каркас на разреженном графе склеивает кадры через ошибочную пару, решение "
+        "уходит в сотни градусов, а плотные кадры на тех же сценах это лечат."
+        % (", ".join(flipped) if flipped else "их нет"),
+        "- Глобального согласования у DUSt3R нет: общий знаменатель — оптимизатор на рёбрах графа. На 10–16 "
+        "кадрах с широкими базисами пары дают pointmap-ы разных масштабов с ошибками, и «среднее» решение "
+        "разъезжается; на плотных наборах соседние кадры образуют короткие базисы, где попарная оценка надёжна.",
+        "- Методика не менялась: sim(3) по центрам камер; на T&T показывается вариант pose без ICP — это правило "
+        "протокола для всех трёх методов, а не поблажка DUSt3R (иначе ICP замаскировал бы провал поз). "
+        "Время: %s мин на 10 кадров, %s мин на 16, %s мин на 100."
+        % (mined("eth3d"), mined("tnt"), mined("tnt100")),
+    ]
 
 
 def main() -> int:
@@ -533,7 +754,8 @@ def main() -> int:
     parser.add_argument("--figures-dense", default=None,
                         help="figures for the dense ETH3D scheme (eth3d20-*.png); scene pages skipped without it")
     parser.add_argument("--out", required=True)
-    parser.add_argument("--title", default="DA3-Giant-1.1 и VGGT-Omega: облака точек на ETH3D и Tanks and Temples")
+    parser.add_argument("--title",
+                        default="DA3-Giant, VGGT-Omega и DUSt3R: облака точек на ETH3D и Tanks and Temples")
     args = parser.parse_args()
     plt.rcParams["font.family"] = FONT
     summary = read_json(args.summary)
@@ -546,6 +768,7 @@ def main() -> int:
     eth3d20 = [row for row in rows if row["dataset"] == "eth3d20"]
     eth3d20dense = [row for row in rows if row["dataset"] == "eth3d20dense"]
     methods = summary.get("methods") or [summary.get("method", "da3-giant")]
+    runs = dust3r_runs(summary)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     sky_rows = [row for row in rows if row.get("sky_ablation")]
@@ -559,7 +782,6 @@ def main() -> int:
             tnt100=[row for row in tnt100 if row["method"] == name],
             eth3d20=[row for row in eth3d20 if row["method"] == name],
             eth3d20dense=[row for row in eth3d20dense if row["method"] == name])
-    short = {"da3-giant": "DA3", "vggt-omega": "Ω"}
 
     def render(pdf, plan):
         """Нарисовать все страницы после титульной; вернуть содержание как [(название, страница)].
@@ -586,10 +808,12 @@ def main() -> int:
         top = base - 0.10
         figure.text(0.05, top, "Ключевые числа", fontsize=13, weight="bold", family=FONT)
         column_x = 0.075
-        numbers_x = 0.475
-        second_x = 0.635
-        figure.text(numbers_x, top - 0.001, "DA3-Giant", fontsize=11.5, weight="bold", family=FONT)
-        figure.text(second_x, top - 0.001, "VGGT-Omega", fontsize=11.5, weight="bold", family=FONT)
+        # Одна колонка на каждый метод из summary.json: подписи берутся из METHOD_LABELS, поэтому
+        # третий метод добавляет столбец сам, а не требует правки координат на этой странице.
+        first_x, column_gap = 0.455, 0.155
+        column_xs = [first_x + column_gap * index for index in range(len(methods))]
+        for x, name in zip(column_xs, methods):
+            figure.text(x, top - 0.001, method_label(name), fontsize=11.5, weight="bold", family=FONT)
         metrics = [("F@1%, облака ETH3D", [range_of([row for row in per_method[name]["eth3d"] if "cloud" in row],
                                                    "cloud", "fscore_one") for name in methods]),
                    ("AbsRel (scale+shift), глубина ETH3D", [range_of([row for row in per_method[name]["eth3d"] if "depth" in row],
@@ -615,10 +839,10 @@ def main() -> int:
             label, values = metric
             figure.text(column_x, y, label, fontsize=11.5, family=FONT)
             for index, numbers in enumerate(values):
-                figure.text((numbers_x, second_x)[index], y, numbers, fontsize=11.5, family=FONT, weight="bold")
+                figure.text(column_xs[index], y, numbers, fontsize=11.5, family=FONT, weight="bold")
             y -= 0.038
         if deltas:
-            note = ("небо: ΔF@1%% от sky-маски %s…%s на ETH3D — почти нейтрально, но на T&T маска "
+            note = ("небо: ΔF@1%% от sky-маски %s…%s на ETH3D — вклад небольшой, но на T&T маска "
                     "убирает шипы над крышами (подробно — дополнение A в конце)"
                     % (signed(min(deltas)), signed(max(deltas))))
             for offset, wrapped in enumerate(textwrap.wrap(note, width=104)):
@@ -663,11 +887,13 @@ def main() -> int:
             "- DA3-Giant-1.1 (1B), process_res 504, fp16 autocast, MPS (M3 Max, 36 GB): ~10.3 GiB RSS, ~25 с на сцену "
             "(20 кадров ETH3D — 27–33 с, 100 кадров T&T — ~2 мин).",
             "- VGGT-Omega-1B, image_resolution 512 в режиме balanced, fp32 без autocast, тот же MPS, ~65–75 с на "
-            "сцену (20 кадров ETH3D — 34 с: время растёт с числом кадров слабее, чем у DA3). Веса — из байт-в-байт зеркала 1kaiser/vggt-omega-jax (официальный репозиторий gated).",
+            "сцену (20 кадров ETH3D — 34 с: время растёт с числом кадров слабее, чем у DA3).",
+            "- DUSt3R (ViT-Large, 512, fp32, MPS) — единственный с решателем: попарный forward плюс global_aligner "
+            "(niter=300, third_party/DUSt3R, CC BY-NC-SA 4.0).",
             "- Шаги ограничены по времени и памяти (run_bounded); логи — в outputs/<dataset>/<scene>/logs/.",
             "## Фильтрация и выравнивание",
             "- Отбрасываются 20% наименее уверенных и 5% самых далёких пикселей каждого кадра; небо вырезает внешняя "
-            "маска SegFormer-B1 (Cityscapes, класс sky) — одинаково для обоих методов (см. дополнение A).",
+            "маска SegFormer-B1 (Cityscapes, класс sky) — одинаково для всех методов (см. дополнение A).",
             "- Облако регистрируется в системе координат GT через sim(3) (Umeyama) по центрам камер; ICP-уточнение "
             "принимается только при росте F-score. Без старта по позам «слепой» ICP даёт F@1% 0.15 против 0.975 "
             "(facade) и 0.09 против 0.966 (courtyard).",
@@ -697,6 +923,12 @@ def main() -> int:
             "% диагонали бокса GT-камер.",
         ])
 
+        # --- 2c. what DUSt3R is and what it costs -------------------------------------
+        if per_method.get("dust3r"):
+            mark("DUSt3R: попарная модель и её цена")
+            text_page(pdf, "DUSt3R: попарная модель и её цена",
+                      dust3r_blocks(per_method, methods, runs))
+
         # --- 3-4. summary tables ----------------------------------------------------
         mark("ETH3D: сводная таблица")
         header, body, kinds = eth3d_table(eth3d)
@@ -720,7 +952,9 @@ def main() -> int:
                             "шире; пересчёт при фиксированном пороге 1% диагонали 10-кадрового GT "
                             "(fixed_tau_metrics.py, outputs/eth3d20/fixed_tau_dense.json) даёт те же F@1 в "
                             "пределах 0.003, то есть рост — от precision, а не от порога: courtyard 0.871 → 0.986, "
-                            "facade 0.946 → 0.998, delivery_area 0.966 → 1.000. "
+                            "facade 0.946 → 0.998, delivery_area 0.966 → 1.000. Dense-эталон для DUSt3R посчитан тем "
+                            "же проходом (evaluate.py --dataset eth3d20dense --method dust3r), поэтому у него в "
+                            "последнем столбце тоже числа. "
                             "Число кадров ограничено памятью: 6.2-мегапиксельные кадры ETH3D на 30+ кадрах "
                             "упираются в 36 ГБ машины (см. memory-envelope.md).")
         if tnt:
@@ -740,7 +974,8 @@ def main() -> int:
                        note="Та же сцена, тот же лазерный скан, тот же официальный полигон и то же выравнивание "
                             "pose, но кадров 100 вместо 16: облако плотнее, покрытие выше. Время инференса растёт "
                             "почти линейно по числу кадров: DA3 ~2 мин на сцену (было ~20 с), VGGT-Ω ~5.5 мин "
-                            "(было ~31 с). Столбец «кадров» и GT-облако продублированы, чтобы таблицу можно было "
+                            "(было ~31 с), DUSt3R ~11 мин (было ~4.4 мин: у него время уходит в оптимизатор, "
+                            "а не в сеть). Столбец «кадров» и GT-облако продублированы, чтобы таблицу можно было "
                             "читать отдельно.")
             mark("T&T: 16 кадров против 100")
             header, body, kinds = scheme_table(tnt, tnt100)
@@ -766,13 +1001,14 @@ def main() -> int:
                 entries = []
                 signature = scene_signature(rows, scene, dataset)
                 if dataset == "eth3d20":
-                    # Same clouds, second reference: the two numbers answer different questions.
+                    # Same clouds, second reference: one number per method answers a different
+                    # question than the 10-frame column, so each method gets its own entry.
                     matched = []
-                    for method in ("da3-giant", "vggt-omega"):
+                    for method in methods_of(eth3d20dense):
                         row_ = next((r for r in eth3d20dense
                                      if r["scene"] == scene and r["method"] == method), None)
                         if row_ and "cloud" in row_:
-                            matched.append("%s %s" % ("da3" if method == "da3-giant" else "Ω",
+                            matched.append("%s %s" % (method_label(method, short=True),
                                                       value(row_, "fscore_one", ("cloud",))))
                     if matched:
                         signature += " · к GT 20 кадров: " + ", ".join(matched)
@@ -781,6 +1017,12 @@ def main() -> int:
                 check = source / ("%s-%s-check.png" % (dataset, scene))
                 if inputs.exists():
                     entries.append((str(inputs), ""))
+                # A collapsed cloud hides inside the laser mass on the GT overlay, so for those scenes
+                # the same view is shown from one camera too: that is where the panel states the collapse.
+                d3r_row = scene_row(per_method.get("dust3r", {}).get(dataset, []), scene) or {}
+                d3r_f = (d3r_row.get("cloud") or {}).get("fscore_one")
+                if check.exists() and compare.exists() and d3r_f is not None and d3r_f < 0.15:
+                    entries.append((str(compare), ""))
                 if check.exists():
                     # laser GT present: the orthographic overlay states the agreement better than
                     # a third 3D panel, whose dark pixel colours hide the walls. The dense ETH3D
@@ -820,12 +1062,13 @@ def main() -> int:
             "и часть растительности у горизонта, поэтому остаточные артефакты сохраняются.",
             "- Веса VGGT-Omega — из публичного зеркала (официальный facebook/VGGT-Omega gated, запрос отклонён); файл "
             "совпадает с официальным байт-в-байт (4 576 706 117 байт), но лицензия fair-noncommercial-research.",
-            "- Разрешения сеток у методов разные (336x504 против 416x624), поэтому глубина считается на своей сетке "
+            "- Разрешения сеток разные (336x504, 336x512, 416x624), поэтому глубина считается на своей сетке "
             "каждого метода.",
             "## Что дальше",
             "- Добрать лазерный GT для ignatius и meetingroom (официальный training.zip на Drive) и расширить "
             "облачные метрики T&T с двух сцен на четыре.",
-            "- Добавить третью модель с открытой коммерческой лицензией: Pi3 (BSD-2) или AnySplat (MIT).",
+            "- Третьим методом взят DUSt3R (CC BY-NC-SA 4.0 — тоже не коммерческая); следующий кандидат — модель "
+            "с разрешительной лицензией: Pi3 (BSD-2) или AnySplat (MIT).",
             "- Заменить эвристики на обучаемую голову неба и маску растительности, чтобы убрать артефакты у горизонта.",
         ])
 
@@ -840,7 +1083,8 @@ def main() -> int:
             "- sh run_dense_tnt.sh  (небо, облака, позы, метрики, рисунки и просмотрщик для tnt100)",
             "- prepare_tnt_gt.py --scene barn --cloud <Barn.ply> --crop-json <Barn.json> --transform <Barn_trans.txt>"
             "  (лазерный GT: обрезка официальным полигоном + перевод в COLMAP)",
-            "- tolerance_metrics.py --dataset tnt --scenes barn courthouse --methods da3-giant vggt-omega --out <dir>/tolerance.json",
+            "- tolerance_metrics.py --dataset tnt --scenes barn courthouse --methods da3-giant vggt-omega dust3r "
+            "--out <dir>/tolerance.json",
             "- prepare_eth3d_geometry.py --dataset eth3d20 --budget 20 --force  (докачивает 10 лишних кадров "
             "из сырого набора и недисторсирует их глубины)",
             "- sh run_dense_eth3d.sh  (20 кадров, откат на 16 при нехватке памяти)",
@@ -851,11 +1095,13 @@ def main() -> int:
             "- make_pdf.py ... --figures-dense <dir>/figures-eth3d20",
             "- run_pipeline.py --dataset eth3d --method da3-giant",
             "- omega_worker.py --dataset eth3d --scene <scene>  (VGGT-Omega, MPS, fp32)",
+            "- dust3r_worker.py --scene <scene> --device mps (DUSt3R: попарный forward + global_aligner) и "
+            "sh run_dust3r.sh (все четыре схемы целиком)",
             "- sky_segment.py --dataset eth3d --scenes ... --method <method>",
             "- build_clouds.py --dataset eth3d --scenes ... --method <method> [--sky-source none --output-tag=-nosky]",
-            "- ablation_sky.py --dataset eth3d --scenes ... --methods da3-giant vggt-omega",
-            "- figures.py --dataset eth3d --scenes ... --methods da3-giant vggt-omega --out <figures>",
-            "- summarize.py --methods da3-giant vggt-omega --out <experiment dir>",
+            "- ablation_sky.py --dataset eth3d --scenes ... --methods da3-giant vggt-omega dust3r",
+            "- figures.py --dataset eth3d --scenes ... --methods da3-giant vggt-omega dust3r --out <figures>",
+            "- summarize.py --methods da3-giant vggt-omega dust3r --out <experiment dir>",
             "- make_pdf.py --summary <dir>/summary.json --figures <dir>/figures --out <dir>/da3-omega-geometry.pdf",
             "- make_viewer.py --dataset eth3d --scenes ... --out <dir>/viewer  (интерактивные облака, Plotly)",
         ])
@@ -874,7 +1120,7 @@ def main() -> int:
             "viewer/data/*.bin) — three.js, до 750 000 точек на облако и 2 000 000 на страницу, вращение мышью; "
             "страницы грузят бинарные полезные нагрузки через fetch, поэтому открывать их нужно по http "
             "(method/geometry/serve_viewer.py), а не по file://. На странице сцены две "
-            "группы кнопок: «Облако» (GT-лазер / DA3-Giant / VGGT-Ω / оба предсказания; GT есть у ETH3D и у "
+            "группы кнопок: «Облако» (GT-лазер / DA3-Giant / VGGT-Ω / DUSt3R / все предсказания; GT есть у ETH3D и у "
             "barn/courthouse из T&T) и "
             "«Раскраска» (цвет пикселей или расстояние до GT — зелёный → красный, порог τ = 1% диагонали GT-облака), "
             "плюс чекбокс «центры камер GT». Шкала под раскраской подписана в метрических единицах: подписи "
@@ -883,30 +1129,54 @@ def main() -> int:
         ])
 
         # --- 11-13. supplement: sky ------------------------------------------------
+        # The ablation numbers moved once already (both sides are now built at the same confidence
+        # quantile), so the page computes its ranges from summary.json instead of quoting them.
+        def span_of(numbers, formatter="%.3f", joiner="…"):
+            return joiner.join([formatter % min(numbers), formatter % max(numbers)]) if numbers else "—"
+
+        sky_delta = [row["sky_ablation"]["delta_fscore_one"] for row in sky_rows]
+        sky_precision = [row["sky_ablation"]["delta_precision_one"] for row in sky_rows
+                         if row["sky_ablation"].get("delta_precision_one") is not None]
+        sky_removed = [100.0 * (row["sky_ablation"]["with_sky"]["points"]
+                                - row["sky_ablation"]["without_sky"]["points"])
+                       / row["sky_ablation"]["with_sky"]["points"]
+                       for row in sky_rows
+                       if (row["sky_ablation"].get("with_sky") or {}).get("points")
+                       and (row["sky_ablation"].get("without_sky") or {}).get("points")]
+        clear_scenes = sorted({row["scene"] for row in sky_rows
+                              if not (row.get("sky") or {}).get("sky_fraction_mean")})
+        tnt_sky = [100.0 * row["sky"]["sky_fraction_mean"] for row in rows
+                   if row["dataset"] in ("tnt", "tnt100") and (row.get("sky") or {}).get("sky_fraction_mean")]
         mark("Дополнение A: небо — зачем и как")
         text_page(pdf, "Дополнение A: небо — зачем, как и что получилось", [
             "## Зачем",
-            "- Ни у DA3-Giant, ни у VGGT-Omega нет головы неба: пиксели неба получают дальнюю (или случайную) "
+            "- Ни у одной из трёх моделей нет головы неба: пиксели неба получают дальнюю (или случайную) "
             "глубину и превращаются в «шипы» и облака-артефакты, которые портят precision.",
             "- Решение: внешний SegFormer-B1 (Cityscapes, класс sky) на каждом кадре в разрешении сетки предсказания, "
             "маска расширена на 2 px, чтобы снять ореол у границы.",
             "## Как измерено",
             "- Каждая сцена ETH3D собрана дважды — с маской и без (--sky-source none) — и оценена ОДНИМИ И ТЕМИ ЖЕ "
             "параметрами sim(3) из pose-выравнивания, чтобы отличие было только в наборе точек; ΔF@1% > 0 значит, "
-            "что отсечение неба помогает.",
+            "что отсечение неба помогает. Обе сборки идут на одном кванте уверенности, вокселе и порогах.",
             "## Что получилось",
-            "- На ETH3D эффект мал: ΔF@1% в пределах −0.001…+0.003. Маска снимает 0.2–3.3% точек, precision на "
-            "сценах с небом растёт на 0.002–0.006 (facade: 0.984 против 0.982 у DA3, 0.987 против 0.981 у Ω).",
+            "- На ETH3D ΔF@1%% лежит в пределах %s…%s при изменении числа точек на %s%% и precision на "
+            "%s…%s: обе сборки идут на одном кванте уверенности, так что Δ — вклад маски, а не плотности облака." % (
+                signed(min(sky_delta)) if sky_delta else "—", signed(max(sky_delta)) if sky_delta else "—",
+                span_of([round(item, 1) for item in sky_removed], "%+.1f"),
+                signed(min(sky_precision)) if sky_precision else "—",
+                signed(max(sky_precision)) if sky_precision else "—"),
             "- Причина слабого эффекта честная: самые далёкие 5% пикселей и так отбрасываются, а небо почти всегда "
             "попадает именно туда; GT-облако ETH3D покрывает только область сканирования, поэтому небесные выбросы "
             "почти не портят recall.",
-            "- На сценах без неба (courtyard, office, meetingroom: 0.0%) метрики не меняются вообще — маска пустая, "
-            "и это проверка, что фильтр не портит облако «на всякий случай».",
-            "- Реальная польза — на T&T, где небо занимает 14–23% кадра: без маски появляются вертикальные шипы и "
-            "облачные пятна над крышами, с маской уходят (следующая страница). Остаточные артефакты у горизонта "
-            "связаны с тем, что класс sky не покрывает пересветы и дымку.",
-            "- Вывод: sky-маску оставить как гигиену облака, но численно на ETH3D она почти нейтральна — так и надо "
-            "писать, а не продавать как заметный прирост.",
+            "- На сценах без неба (%s: 0.0%% кадра) метрики не меняются вообще — маска пустая, "
+            "и это проверка, что фильтр не портит облако «на всякий случай»." % (
+                ", ".join(clear_scenes) if clear_scenes else "courtyard, office"),
+            "- Основная польза — там, где небо вообще есть: на T&T оно занимает %s кадра, и без маски над крышами "
+            "появляются вертикальные шипы и облачные пятна, а с маской уходят (следующая страница). Остаточные "
+            "артефакты у горизонта связаны с тем, что класс sky не покрывает пересветы и дымку." % (
+                ("до %.0f%%" % max(tnt_sky)) if tnt_sky else "заметную часть"),
+            "- Вывод: sky-маску оставить как гигиену облака; на ETH3D её вклад заметно скромнее, чем на T&T, а на "
+            "сценах без неба — ровно нулевой. Так и надо писать, а не продавать как заметный прирост.",
         ])
 
         # --- 12. supplement: ablation table ------------------------------------------------------
@@ -916,7 +1186,9 @@ def main() -> int:
             table_page(pdf, "Дополнение A: небо — абляция фильтра", header, body, kinds,
                        note="Заливка: белый — лучшее значение в колонке, красный — худшее; для ΔF@1% красится модуль "
                             "(ближе к нулю — лучше), «небо, % кадра» — просто доля неба по маске и не оценивается как "
-                            "качество. Оба варианта выровнены одинаковым sim(3) по позам камер.")
+                            "качество. Обе стороны сравнения отличаются ТОЛЬКО маской неба: один и тот же квант "
+                            "уверенности, воксель и пороги, поэтому Δ — это вклад маски, а не плотности облака; "
+                            "оба варианта выровнены одинаковым sim(3) по позам камер.")
 
             # --- 13. supplement: what the mask actually removes: the two sky-heaviest scenes -------
             entries, named = [], []
